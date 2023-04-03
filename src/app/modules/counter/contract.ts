@@ -28,18 +28,20 @@ const CONTRACT_ENVIRONMENT = {
 
 type ContractEnvironment = keyof typeof CONTRACT_ENVIRONMENT
 
-function getContractEnvironment(contractEnvironment: ContractEnvironment) {
-    const NODE_ENV_LUT = {
+function getContractEnvironment() {
+    const NODE_ENV_TO_CONTRACT_ENVIRONMENT: Record<string, ContractEnvironment> = {
         "production": "mainnet",
         "development": "testnet",
         "test": "testnet",
     }
 
-    return CONTRACT_ENVIRONMENT[contractEnvironment]
+    const nodeEnv = process.env.NODE_ENV || "development"
+
+    return CONTRACT_ENVIRONMENT[NODE_ENV_TO_CONTRACT_ENVIRONMENT[nodeEnv]]
 }
 
 const provider = new providers.JsonRpcProvider({
-    url: getContractEnvironment("testnet").nodeUrl
+    url: getContractEnvironment().nodeUrl
 })
 
 async function callFunction<T>(methodName: string, args: Object = {}): Promise<T> {
