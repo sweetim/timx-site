@@ -28,7 +28,7 @@ const CONTRACT_ENVIRONMENT = {
 
 type ContractEnvironment = keyof typeof CONTRACT_ENVIRONMENT
 
-function getContractEnvironment() {
+export function getContractEnvironment() {
     const NODE_ENV_TO_CONTRACT_ENVIRONMENT: Record<string, ContractEnvironment> = {
         "production": "mainnet",
         "development": "testnet",
@@ -82,9 +82,9 @@ export async function queryRecords(fromIndex: number, limit: number) {
 }
 
 export async function getValue() {
-    return callFunction<number>("get_value")
+    return callFunction<string>("get_value")
 }
 
 export async function getRecordsLength() {
-    return callFunction<number>("get_records_length")
+    return callFunction<string>("get_records_length")
 }
