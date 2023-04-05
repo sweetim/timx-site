@@ -29,8 +29,8 @@ const CONTRACT_ENVIRONMENT = {
 type ContractEnvironment = keyof typeof CONTRACT_ENVIRONMENT
 
 export function getContractEnvironment() {
-    const NODE_ENV_TO_CONTRACT_ENVIRONMENT: Record<string, ContractEnvironment> = {
-        "production": "mainnet",
+    const NODE_ENV_TO_CONTRACT_ENVIRONMENT: Record<typeof process.env.NODE_ENV, ContractEnvironment> = {
+        "production": "testnet",
         "development": "testnet",
         "test": "testnet",
     }

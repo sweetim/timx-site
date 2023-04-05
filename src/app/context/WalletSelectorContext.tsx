@@ -9,25 +9,10 @@ import { setupModal } from "@near-wallet-selector/modal-ui";
 
 import { distinctUntilChanged, map } from "rxjs";
 
-import { setupCoin98Wallet } from "@near-wallet-selector/coin98-wallet";
 import { setupWalletSelector } from "@near-wallet-selector/core";
-import { setupHereWallet } from "@near-wallet-selector/here-wallet";
-import { setupMathWallet } from "@near-wallet-selector/math-wallet";
-import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
-import { setupNarwallets } from "@near-wallet-selector/narwallets";
 import { setupNearWallet } from "@near-wallet-selector/near-wallet";
-import { setupNearFi } from "@near-wallet-selector/nearfi";
-import { setupNightly } from "@near-wallet-selector/nightly";
-import { setupSender } from "@near-wallet-selector/sender";
 import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
-import { setupNearSnap } from "@near-wallet-selector/near-snap";
-import { setupWelldoneWallet } from "@near-wallet-selector/welldone-wallet";
-import { setupXDEFI } from "@near-wallet-selector/xdefi";
-import { setupNeth } from "@near-wallet-selector/neth";
-import { setupOptoWallet } from "@near-wallet-selector/opto-wallet";
-import { setupFinerWallet } from "@near-wallet-selector/finer-wallet";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
-import { setupLedger } from "@near-wallet-selector/ledger";
 
 import { CONTRACT_ADDRESS, getContractEnvironment } from "@/app/modules/counter/contract";
 
@@ -60,25 +45,7 @@ export const WalletSelectorContextProvider: FC<{
             debug: true,
             modules: [
                 setupMyNearWallet(),
-                setupLedger(),
                 setupNearWallet(),
-                setupSender(),
-                setupMathWallet(),
-                setupNightly(),
-                setupMeteorWallet(),
-                setupNearSnap(),
-                setupNarwallets(),
-                setupWelldoneWallet(),
-                setupHereWallet(),
-                setupCoin98Wallet(),
-                setupNearFi(),
-                setupNeth({
-                    gas: "300000000000000",
-                    bundle: false,
-                }),
-                setupOptoWallet(),
-                setupFinerWallet(),
-                setupXDEFI(),
                 setupWalletConnect({
                     projectId: "e9e38e0cb406f453196879846291454f",
                     metadata: {

@@ -23,12 +23,19 @@ export default function Counter() {
         modal.show()
     }
 
+    async function signOutHandler() {
+        const wallet = await selector.wallet()
+        await wallet.signOut()
+    }
+
     return (
         <div>
             <p>hah</p>
             <p>{accountId}</p>
             <p>{JSON.stringify(accounts)}</p>
             <button onClick={connectWalletHandler}>Connect Wallet</button>
+            <button onClick={signOutHandler}>Sign Out</button>
+
         </div>
     )
 }
