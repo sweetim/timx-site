@@ -11,6 +11,7 @@ import { distinctUntilChanged, map } from "rxjs";
 
 import { setupWalletSelector } from "@near-wallet-selector/core";
 import { setupNearWallet } from "@near-wallet-selector/near-wallet";
+import { setupSender } from "@near-wallet-selector/sender";
 import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 
@@ -46,6 +47,7 @@ export const WalletSelectorContextProvider: FC<{
             modules: [
                 setupMyNearWallet(),
                 setupNearWallet(),
+                setupSender(),
                 setupWalletConnect({
                     projectId: "e9e38e0cb406f453196879846291454f",
                     metadata: {
