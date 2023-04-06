@@ -1,41 +1,12 @@
-"use client"
+import "@near-wallet-selector/modal-ui/styles.css";
 
-import { getRecordsLength, getValue, queryAllRecords, queryRecords } from "@/app/modules/counter/contract"
-import { useWalletSelector } from "@/app/context/WalletSelectorContext"
-import { useEffect } from "react"
+import { WalletSelectorContextProvider } from "@/app/context/WalletSelectorContext"
+import Counter from "@/app/modules/counter/components/Counter";
 
-export default function Counter() {
-    const { selector, modal, accounts, accountId } = useWalletSelector()
-
-    // useEffect(() => {
-    //     async function readContract() {
-
-    //         const records = await queryAllRecords()
-    //         const value = await getValue()
-    //         const recordsLength = await getRecordsLength()
-    //         const partial = await queryRecords(1, 2)
-
-    //     }
-
-    // }, [])
-
-    function connectWalletHandler() {
-        modal.show()
-    }
-
-    async function signOutHandler() {
-        const wallet = await selector.wallet()
-        await wallet.signOut()
-    }
-
+export default function CounterPage() {
     return (
-        <div>
-            <p>hah</p>
-            <p>{accountId}</p>
-            <p>{JSON.stringify(accounts)}</p>
-            <button onClick={connectWalletHandler}>Connect Wallet</button>
-            <button onClick={signOutHandler}>Sign Out</button>
-
-        </div>
+        <WalletSelectorContextProvider>
+            <Counter />
+        </WalletSelectorContextProvider>
     )
 }

@@ -1,7 +1,19 @@
-import { keyStores, providers } from "near-api-js"
+import { keyStores, providers, utils } from "near-api-js"
 import { CodeResult } from "near-api-js/lib/providers/provider";
 
 export const CONTRACT_ADDRESS = "dev-1680191357301-34714780160980"
+
+export const MIN_GAS_FEE = utils.format.parseNearAmount("0.00000000003")!;
+export const COUNTER_ENTRY_FEE = 1_000_000_000_000_000_000_000
+
+export enum MethodName {
+    Increment = "increment",
+    Decrement = "decrement",
+    GetValue = "get_value",
+    GetRecordsLength = "get_records_length",
+    QueryAllRecords = "query_all_records",
+    QueryRecords = "query_records"
+}
 
 const keyStore = new keyStores.InMemoryKeyStore()
 
@@ -59,17 +71,17 @@ async function callFunction<T>(methodName: string, args: Object = {}): Promise<T
     return JSON.parse(Buffer.from(res.result).toString())
 }
 
-type CounterAction =  "Increment"
+export type CounterAction =  "Increment"
     | "Decrement"
 
-type CounterRecord = {
+export type CounterRecord = {
     timestamp_ms: number,
     action: CounterAction,
     user: string
 }
 
 export async function queryAllRecords() {
-    return callFunction<CounterRecord[]>("query_all_records")
+    return callFunction<CounterRecord[]>(MethodName.QueryAllRecords)
 }
 
 export async function queryRecords(fromIndex: number, limit: number) {
@@ -78,13 +90,13 @@ export async function queryRecords(fromIndex: number, limit: number) {
         limit: limit.toString()
     }
 
-    return callFunction<CounterRecord[]>("query_records", args)
+    return callFunction<CounterRecord[]>(MethodName.QueryRecords, args)
 }
 
 export async function getValue() {
-    return callFunction<string>("get_value")
+    return callFunction<string>(MethodName.GetValue)
 }
 
 export async function getRecordsLength() {
-    return callFunction<string>("get_records_length")
+    return callFunction<string>(MethodName.GetRecordsLength)
 }
