@@ -3,6 +3,8 @@ import "@near-wallet-selector/modal-ui/styles.css";
 import { WalletSelectorContextProvider } from "@/app/context/WalletSelectorContext"
 import { getRecordsLength, getValue, queryAllRecords, queryRecords } from "@/app/modules/counter/contract"
 
+export const revalidate = 1
+
 export default async function RootLayout({ children,
 }: {
     children: React.ReactNode

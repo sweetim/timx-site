@@ -1,7 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react";
-import { FC, useCallback, useContext, useEffect, useState, createContext } from "react";
+import { FC, ReactNode, useMemo, useCallback, useContext, useEffect, useState, createContext } from "react";
 
 import type { AccountState, WalletSelector } from "@near-wallet-selector/core";
 import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
@@ -16,13 +15,6 @@ import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 
 import { CONTRACT_ADDRESS, getContractEnvironment } from "@/app/modules/counter/contract";
-
-declare global {
-    interface Window {
-        selector: WalletSelector;
-        modal: WalletSelectorModal;
-    }
-}
 
 interface WalletSelectorContextValue {
     selector: WalletSelector;
@@ -39,6 +31,7 @@ export const WalletSelectorContextProvider: FC<{
     const [selector, setSelector] = useState<WalletSelector | null>(null);
     const [modal, setModal] = useState<WalletSelectorModal | null>(null);
     const [accounts, setAccounts] = useState<Array<AccountState>>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const init = useCallback(async () => {
         const _selector = await setupWalletSelector({
@@ -65,11 +58,9 @@ export const WalletSelectorContextProvider: FC<{
         const state = _selector.store.getState();
         setAccounts(state.accounts);
 
-        window.selector = _selector;
-        window.modal = _modal;
-
         setSelector(_selector);
         setModal(_modal);
+        setLoading(false)
     }, []);
 
     useEffect(() => {
@@ -90,39 +81,32 @@ export const WalletSelectorContextProvider: FC<{
                 distinctUntilChanged()
             )
             .subscribe((nextAccounts) => {
-                console.log("Accounts Update", nextAccounts);
-
                 setAccounts(nextAccounts);
             });
 
-        const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {
-            console.log(`The reason for hiding the modal ${hideReason}`);
-        });
-
         return () => {
             subscription.unsubscribe();
-            onHideSubscription.remove();
         };
     }, [selector]);
 
-    if (!selector || !modal) {
+    const walletSelectorContextValue = useMemo<WalletSelectorContextValue>(
+        () => ({
+            selector: selector!,
+            modal: modal!,
+            accounts,
+            accountId: accounts.find((account) => account.active)?.accountId || null,
+        }),
+        [selector, modal, accounts]
+    );
+
+    if (loading) {
         return <>
             <p>loading..</p>
         </>;
     }
 
-    const accountId =
-        accounts.find((account) => account.active)?.accountId || null;
-
     return (
-        <WalletSelectorContext.Provider
-            value={{
-                selector,
-                modal,
-                accounts,
-                accountId,
-            }}
-        >
+        <WalletSelectorContext.Provider value={walletSelectorContextValue}>
             {children}
         </WalletSelectorContext.Provider>
     );
