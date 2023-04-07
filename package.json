@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001 & local-ssl-proxy --source 3000 --target 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -24,6 +24,7 @@
     "date-fns": "^2.29.3",
     "eslint": "8.37.0",
     "eslint-config-next": "13.2.4",
+    "local-ssl-proxy": "^2.0.5",
     "near-api-js": "^1.1.0",
     "next": "13.2.4",
     "react": "18.2.0",
