@@ -15,7 +15,7 @@ import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 
 import { CONTRACT_ADDRESS, getContractEnvironment } from "@/app/modules/counter/contract";
-import Loading from "@/app/components/Loading";
+import Loading from "@/app/modules/common/Loading";
 
 interface WalletSelectorContextValue {
     selector: WalletSelector;

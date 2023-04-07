@@ -1,5 +1,5 @@
 import { Inter } from 'next/font/google'
-import Profile, { ProfileProps } from '@/app/components/Profile'
+import Profile, { ProfileProps } from '@/app/modules/home/Profile'
 
 const inter = Inter({ subsets: ['latin'] })
 
