@@ -15,6 +15,7 @@ import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
 import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 
 import { CONTRACT_ADDRESS, getContractEnvironment } from "@/app/modules/counter/contract";
+import Loading from "@/app/components/Loading";
 
 interface WalletSelectorContextValue {
     selector: WalletSelector;
@@ -100,9 +101,7 @@ export const WalletSelectorContextProvider: FC<{
     );
 
     if (loading) {
-        return <>
-            <p>loading..</p>
-        </>;
+        return <Loading />
     }
 
     return (
