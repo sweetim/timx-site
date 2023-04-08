@@ -1,7 +1,7 @@
 import { FC, useMemo } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { CounterAction, CounterRecord } from "../contract"
-
+import { PlusIcon, MinusIcon } from "@heroicons/react/20/solid"
 export type TimelineProps = {
     records: CounterRecord[]
 }
@@ -10,15 +10,8 @@ const Timeline: FC<TimelineProps> = ({ records }) => {
     function renderTimeline(records: CounterRecord[]) {
         const getActionIcon = (action: CounterAction): JSX.Element => {
             const ACTION_ICONS: Record<CounterAction, JSX.Element> = {
-                Increment: (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="lime" className="w-3 h-3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                ),
-                Decrement: (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="red" className="w-3 h-3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
-                    </svg>)
+                Increment: <PlusIcon className="fill-lime-300"/>,
+                Decrement: <MinusIcon className="fill-red-600" />
             }
 
             return ACTION_ICONS[action]
@@ -49,7 +42,7 @@ const Timeline: FC<TimelineProps> = ({ records }) => {
     const timeline = useMemo(() => renderTimeline(records), [records])
 
     return (
-        <ol className="relative border-l border-gray-200 dark:border-gray-700">
+        <ol className="relative border-l border-gray-700">
             {timeline}
         </ol>
     )

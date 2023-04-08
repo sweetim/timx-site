@@ -1,9 +1,16 @@
 import './globals.css'
 
+import { Mali } from "next/font/google"
+
 export const metadata = {
   title: 'timx',
   description: 'my personal site',
 }
+
+const mali = Mali({
+  weight: "400",
+  subsets: ["latin"],
+})
 
 export default function RootLayout({
   children,
@@ -12,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${mali.className}`}>{children}</body>
     </html>
   )
 }

@@ -1,18 +1,12 @@
 "use client"
 
 import { FC, useEffect, useState } from "react"
-import { Mali } from 'next/font/google';
 
 import { useWalletSelector } from "@/app/context/WalletSelectorContext"
 import { COUNTER_ENTRY_FEE, CounterRecord, MIN_GAS_FEE, MethodName, queryAllRecords, getValue } from "../contract"
 
 import Timeline from "./Timeline"
-import Loading from "@/app/components/Loading";
-
-const patrickHand = Mali({
-    weight: '400',
-    subsets: ["latin"],
-})
+import IconDropDown from "@/app/modules/common/IconDropDown";
 
 const Counter: FC = () => {
     const [records, setRecords] = useState<Array<CounterRecord>>([])
@@ -69,15 +63,16 @@ const Counter: FC = () => {
     }
 
     return (
-        <div className={`${patrickHand.className}`}>
+        <div>
             <nav>
                 <div className="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl p-4">
-                    <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">{accountId}</span>
+                    <span className="self-center text-1xl font-semibold whitespace-nowrap text-white">{accountId}</span>
                     <div className="flex items-center">
+                        <IconDropDown />
                         <button className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                             onClick={connectHandler}>CONNECT</button>
-                        <button className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                            onClick={signOutHandler}>Sign Out</button>
+                        {/* <button className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                            onClick={signOutHandler}>Sign Out</button> */}
                     </div>
                 </div>
             </nav>
