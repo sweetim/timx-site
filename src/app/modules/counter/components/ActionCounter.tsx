@@ -9,15 +9,12 @@ const ActionCounter: FC = () => {
     const { selector, accountId } = useWalletSelector();
 
     const [value, setValue] = useState<string>("")
-    const [isVisible, setIsVisble] = useState(false)
+
+    const isVisible = !!accountId
 
     useEffect(() => {
         getValue().then(setValue)
     }, []);
-
-    useEffect(() => {
-        setIsVisble(!!accountId)
-    }, [accountId])
 
     async function signAndSendTransaction(methodName: string) {
         if (!accountId) {
@@ -55,7 +52,7 @@ const ActionCounter: FC = () => {
             {isVisible && <button
                 onClick={incrementHandler}
                 type="button"
-                className="text-blue-700 border border-blue-700 hover:bg-blue-700 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800 dark:hover:bg-blue-500">
+                className="border focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
                 <PlusIcon className="w-6" />
                 <span className="sr-only">Increment</span>
             </button>}
@@ -67,7 +64,7 @@ const ActionCounter: FC = () => {
             {isVisible && <button
                 onClick={decrementHandler}
                 type="button"
-                className="text-blue-700 border border-blue-700 hover:bg-blue-700 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800 dark:hover:bg-blue-500">
+                className="border focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
                 <MinusIcon className="w-6" />
                 <span className="sr-only">Decrement</span>
             </button>}

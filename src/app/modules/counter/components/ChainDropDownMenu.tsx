@@ -3,7 +3,7 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
 import { NearLogo } from "@/app/icons";
 
-const IconDropDown: FC = () => {
+const ChainDropDownMenu: FC = () => {
     return (
         <div>
             <button
@@ -37,4 +37,4 @@ const IconDropDown: FC = () => {
     );
 };
 
-export default IconDropDown;
+export default ChainDropDownMenu;

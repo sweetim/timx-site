@@ -1,6 +1,6 @@
 import { SVGProps } from "react"
 
-export const CounterLogo = (props: SVGProps<SVGSVGElement>) => (
+const CounterLogo = (props: SVGProps<SVGSVGElement>) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 258 205"
@@ -11,3 +11,5 @@ export const CounterLogo = (props: SVGProps<SVGSVGElement>) => (
         />
     </svg>
 )
+
+export default CounterLogo
