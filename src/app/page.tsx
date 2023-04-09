@@ -34,7 +34,7 @@ function getProfile(): ProfileProps {
 
 export default function Home() {
   return (
-    <div className="flex justify-center items-center h-screen bg-neutral-200">
+    <div className="flex justify-center items-center h-full bg-neutral-200">
       <Profile {...getProfile()} />
     </div>
   )

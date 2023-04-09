@@ -1,5 +1,4 @@
 import './globals.css'
-
 import { Mali } from "next/font/google"
 
 export const metadata = {
@@ -18,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={`${mali.className}`}>{children}</body>
+    <html lang="en" className="h-full">
+      <body className={`${mali.className} h-full`}>{children}</body>
     </html>
   )
 }
