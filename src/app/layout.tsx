@@ -1,9 +1,9 @@
-import './globals.css'
+import "./globals.css"
 import { Mali } from "next/font/google"
 
 export const metadata = {
-  title: 'timx',
-  description: 'my personal site',
+  title: "timx",
+  description: "my personal site",
 }
 
 const mali = Mali({

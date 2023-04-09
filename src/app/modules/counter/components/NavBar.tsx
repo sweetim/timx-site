@@ -20,7 +20,7 @@ const NavBar: FC = () => {
 
     return (
         <nav>
-            <div className="flex  justify-between items-center p-3">
+            <div className="flex justify-between items-center p-3">
                 <CounterLogo className="w-8 fill-white" />
                 <div className="flex items-center">
                     <IconDropDown />
