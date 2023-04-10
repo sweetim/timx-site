@@ -15,7 +15,7 @@
     "@near-wallet-selector/modal-ui": "^7.9.2",
     "@near-wallet-selector/my-near-wallet": "^7.9.2",
     "@near-wallet-selector/near-wallet": "^7.9.2",
-    "@near-wallet-selector/sender": "^7.9.2",
+    "@near-wallet-selector/sender": "^7.9.3",
     "@near-wallet-selector/wallet-connect": "^7.9.2",
     "@types/node": "18.15.11",
     "@types/react": "18.0.33",
