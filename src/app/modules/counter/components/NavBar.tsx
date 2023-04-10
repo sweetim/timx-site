@@ -127,7 +127,7 @@ const NavBar: FC = () => {
                 </button>}
 
                 <div id="profile-drawer"
-                    className="border-t border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full h-[calc(100vh-64px)] p-4 overflow-y-auto transition-transform bg-zinc-900"
+                    className="border-t border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full h-[calc(100vh-128px)] p-4 overflow-y-auto transition-transform bg-zinc-900"
                     tabIndex={1}
                     aria-labelledby="drawer-bottom-label">
 
