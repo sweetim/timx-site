@@ -36,13 +36,13 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <WalletSelectorContextProvider>
-            <div className="bg-slate-800 h-full flex flex-col overflow-hidden">
+        <div className="bg-slate-800 h-full flex flex-col overflow-hidden">
+            <WalletSelectorContextProvider>
                 <NavBar />
                 <div className="flex-grow overflow-y-auto">
                     {children}
                 </div>
-            </div>
-        </WalletSelectorContextProvider>
+            </WalletSelectorContextProvider>
+        </div>
     )
 }
