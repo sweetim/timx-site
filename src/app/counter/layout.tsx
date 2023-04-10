@@ -14,6 +14,7 @@ export const metadata: Metadata = {
             type: "image/svg"
         }
     },
+    themeColor: "#1e293b",
     openGraph: {
         title: "counter",
         description: "counter - near dapp",

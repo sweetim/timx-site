@@ -20,7 +20,7 @@ export default function CounterPage() {
     return (
         <div className="flex flex-col sm:flex-row h-full">
             <div className="w-full sm:w-1/2">
-                <div className="flex justify-center items-center h-full">
+                <div className="flex justify-center items-center h-full p-8">
                     <ActionCounter />
                 </div>
             </div>

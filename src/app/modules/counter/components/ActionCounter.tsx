@@ -48,7 +48,7 @@ const ActionCounter: FC = () => {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center mb-3 mt-10">
+        <div className="flex flex-col justify-center items-center">
             {isVisible && <button
                 onClick={incrementHandler}
                 type="button"
