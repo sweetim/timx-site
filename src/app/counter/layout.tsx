@@ -37,7 +37,7 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="bg-slate-800 h-full flex flex-col overflow-hidden inset-0">
+        <div className="bg-slate-800 h-full flex flex-col overflow-hidden">
             <WalletSelectorContextProvider>
                 <NavBar />
                 <div className="flex-grow overflow-y-auto">
