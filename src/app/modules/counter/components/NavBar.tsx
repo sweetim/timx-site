@@ -73,13 +73,13 @@ const NavBar: FC = () => {
     const [chainDrawer, setChainDrawer] = useState<Drawer | null>(null)
 
     useEffect(() => {
-        console.log(chainDrawerRef.current)
         const options: DrawerOptions = {
             placement: "bottom",
             backdrop: true,
             bodyScrolling: false,
             edge: false,
         }
+
         setChainDrawer(new Drawer(chainDrawerRef.current, options))
     }, [chainDrawerRef])
 
@@ -100,7 +100,7 @@ const NavBar: FC = () => {
                 </button>
 
                 <div ref={chainDrawerRef}
-                    className="border-t border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full overflow-y-auto transition-transform bg-zinc-900"
+                    className="rounded-2xl border-t-2 border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full overflow-y-auto transition-transform bg-zinc-900"
                     tabIndex={1}
                     aria-labelledby="chain-drawer-bottom-label">
                     <ul
@@ -127,7 +127,7 @@ const NavBar: FC = () => {
                 </button>}
 
                 <div id="profile-drawer"
-                    className="border-t border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full h-[calc(100vh-128px)] p-4 overflow-y-auto transition-transform bg-zinc-900"
+                    className="rounded-2xl border-t-2 border-blue-300 translate-y-full fixed bottom-0 left-0 z-40 w-full h-[calc(100vh-4rem)] p-4 overflow-y-auto transition-transform bg-zinc-900"
                     tabIndex={1}
                     aria-labelledby="drawer-bottom-label">
 
@@ -155,7 +155,6 @@ const NavBar: FC = () => {
             </div>
         </nav>
     )
-
 }
 
 export default NavBar
