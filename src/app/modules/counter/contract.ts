@@ -3,8 +3,8 @@ import { CodeResult } from "near-api-js/lib/providers/provider";
 
 export const CONTRACT_ADDRESS = "dev-1681221529948-56135846288509"
 
-export const MIN_GAS_FEE = utils.format.parseNearAmount("0.00000000003")!;
-export const COUNTER_ENTRY_FEE = utils.format.parseNearAmount("0.01")!;
+export const MIN_GAS_FEE = utils.format.parseNearAmount("0.00000000003")!
+export const COUNTER_ENTRY_FEE = utils.format.parseNearAmount("0.01")!
 
 export enum MethodName {
     Increment = "increment",
