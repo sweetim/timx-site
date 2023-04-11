@@ -66,7 +66,6 @@ export const WalletSelectorContextProvider: FC<{
 
     useEffect(() => {
         init().catch((err) => {
-            console.error(err);
             alert("Failed to initialise wallet selector");
         });
     }, [init]);
