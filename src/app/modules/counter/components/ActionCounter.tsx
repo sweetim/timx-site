@@ -1,11 +1,16 @@
 "use client"
 
 import { FC, useEffect, useState } from "react"
-import { PlusIcon, MinusIcon } from "@heroicons/react/20/solid"
-import { COUNTER_ENTRY_FEE, MIN_GAS_FEE, MethodName, getValue } from "../contract";
+import { PlusIcon, MinusIcon, QuestionMarkCircleIcon } from "@heroicons/react/20/solid"
+import { MIN_GAS_FEE, MethodName, getValue } from "../contract";
 import { useWalletSelector } from "@/app/context/WalletSelectorContext";
+import { QuestionMarkIcon } from "@/app/icons";
 
-const ActionCounter: FC = () => {
+type ActionCounterProps = {
+    entryFee: string
+}
+
+const ActionCounter: FC<ActionCounterProps> = ({ entryFee }) => {
     const { selector, accountId } = useWalletSelector();
 
     const [value, setValue] = useState<string>("")
@@ -32,7 +37,7 @@ const ActionCounter: FC = () => {
                         methodName,
                         args: {},
                         gas: MIN_GAS_FEE,
-                        deposit: COUNTER_ENTRY_FEE,
+                        deposit: entryFee,
                     },
                 },
             ],
@@ -47,24 +52,37 @@ const ActionCounter: FC = () => {
         signAndSendTransaction(MethodName.Decrement)
     }
 
+    async function randomHandler() {
+        signAndSendTransaction(MethodName.Random)
+    }
+
     return (
         <div className="flex flex-col justify-center items-center">
             {isVisible && <button
                 onClick={incrementHandler}
                 type="button"
-                className="border focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
+                className="border stroke-white focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
                 <PlusIcon className="w-6" />
                 <span className="sr-only">Increment</span>
             </button>}
 
-            <h1 className="m-6 text-9xl	font-extrabold text-white">
-                {value}
-            </h1>
+            <div className="relative">
+                <h1 className="m-6 text-9xl	font-extrabold text-white">
+                    {value}
+                </h1>
+                {isVisible && <button
+                    onClick={randomHandler}
+                    type="button"
+                    className="absolute bottom-1/3 -right-1/2 border focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
+                    <QuestionMarkIcon className="w-6 h-6" />
+                    <span className="sr-only">Random</span>
+                </button>}
+            </div>
 
             {isVisible && <button
                 onClick={decrementHandler}
                 type="button"
-                className="border focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
+                className="border stroke-white focus:ring-4 focus:outline-none font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center border-blue-500 text-blue-500 hover:text-white focus:ring-blue-800 hover:bg-blue-500">
                 <MinusIcon className="w-6" />
                 <span className="sr-only">Decrement</span>
             </button>}

@@ -2,6 +2,7 @@ import { FC, useMemo } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { CounterAction, CounterRecord } from "../contract"
 import { PlusIcon, MinusIcon } from "@heroicons/react/20/solid"
+import { QuestionMarkIcon } from "@/app/icons"
 
 export type TimelineProps = {
     records: CounterRecord[]
@@ -12,7 +13,8 @@ const Timeline: FC<TimelineProps> = ({ records }) => {
         const getActionIcon = (action: CounterAction): JSX.Element => {
             const ACTION_ICONS: Record<CounterAction, JSX.Element> = {
                 Increment: <PlusIcon className="fill-lime-300"/>,
-                Decrement: <MinusIcon className="fill-rose-500" />
+                Decrement: <MinusIcon className="fill-rose-500" />,
+                Random: <QuestionMarkIcon className="p-1 stroke-orange-500" />
             }
 
             return ACTION_ICONS[action]

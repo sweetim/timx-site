@@ -4,12 +4,13 @@ import { CodeResult } from "near-api-js/lib/providers/provider";
 export const CONTRACT_ADDRESS = "dev-1681221529948-56135846288509"
 
 export const MIN_GAS_FEE = utils.format.parseNearAmount("0.00000000003")!
-export const COUNTER_ENTRY_FEE = utils.format.parseNearAmount("0.01")!
 
 export enum MethodName {
     Increment = "increment",
     Decrement = "decrement",
+    Random = "random",
     GetValue = "get_value",
+    GetEntryFee = "get_entry_fee",
     GetRecordsLength = "get_records_length",
     QueryAllRecords = "query_all_records",
     QueryRecords = "query_records"
@@ -73,6 +74,7 @@ async function callFunction<T>(methodName: string, args: Object = {}): Promise<T
 
 export type CounterAction =  "Increment"
     | "Decrement"
+    | "Random"
 
 export type CounterRecord = {
     timestamp_ms: number,
@@ -95,6 +97,10 @@ export async function queryRecords(fromIndex: number, limit: number) {
 
 export async function getValue() {
     return callFunction<string>(MethodName.GetValue)
+}
+
+export async function getEntryFee() {
+    return callFunction<string>(MethodName.GetEntryFee)
 }
 
 export async function getRecordsLength() {
