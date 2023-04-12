@@ -14,12 +14,12 @@ const ChainDrawerButton: FC = () => {
     const [supportedChains, setSupportedChains] = useState([
         {
             name: "mainnet",
-            color:"white",
+            color:"fill-white",
             isSelected: false
         },
         {
             name: "testnet",
-            color: "pink",
+            color: "fill-pink-600",
             isSelected: true
         }
     ])
@@ -35,13 +35,17 @@ const ChainDrawerButton: FC = () => {
         setChainDrawer(new Drawer(chainDrawerRef.current, options))
     }, [chainDrawerRef])
 
+    function renderNearLogo(color?: string) {
+        return <NearLogo className={`mr-2 ${color || "fill-white"} w-4`} />
+    }
+
     const renderSupportedChains = supportedChains
         .map(chain => {
             return (
                 <li key={chain.name} className="hover:bg-gray-600 hover:text-white">
                     <button type="button" className="w-full" onClick={ev => selectedChainHandler(chain.name)}>
                         <div className="flex flex-row items-center p-4">
-                            <NearLogo className={`mr-2 fill-${chain.color}-600 w-4`} />
+                            {renderNearLogo(chain.color)}
                             <span className="flex-1 flex justify-start">
                                 {chain.name}
                             </span>
@@ -74,7 +78,7 @@ const ChainDrawerButton: FC = () => {
             <button onClick={chainDrawerClickHandler}
                 className="mr-2 text-white rounded-lg text-sm px-2 py-2 text-center inline-flex items-center hover:bg-slate-700"
                 type="button">
-                <NearLogo className={`mr-2 fill-${renderSelectedChainColor}-600 w-4`} />
+                {renderNearLogo(renderSelectedChainColor)}
                 <ChevronDownIcon className="w-4 h-4" />
             </button>
 
