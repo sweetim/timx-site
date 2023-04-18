@@ -144,7 +144,7 @@ const ProfileDrawerButton: FC = () => {
                         role="tabpanel"
                         aria-labelledby="profile-tab">
 
-                        <ul className="max-w-md divide-y divide-gray-700">
+                        <ul className="max-w divide-y divide-gray-700">
                             {ftMetadata?.icon && <li className="pb-3 sm:pb-4">
                                 <div className="flex items-center space-x-4">
                                     <div className="flex-shrink-0">
