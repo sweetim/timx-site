@@ -1,7 +1,7 @@
 "use client"
 
 import { FC, useEffect, useState } from "react"
-import { PlusIcon, MinusIcon, QuestionMarkCircleIcon } from "@heroicons/react/20/solid"
+import { PlusIcon, MinusIcon } from "@heroicons/react/20/solid"
 import { MIN_GAS_FEE, MethodName, getValue } from "../contract";
 import { useWalletSelector } from "@/app/context/WalletSelectorContext";
 import { QuestionMarkIcon } from "@/app/icons";
@@ -13,7 +13,7 @@ type ActionCounterProps = {
 const ActionCounter: FC<ActionCounterProps> = ({ entryFee }) => {
     const { selector, accountId } = useWalletSelector();
 
-    const [value, setValue] = useState<string>("")
+    const [value, setValue] = useState<string>("...")
 
     const isVisible = !!accountId
 

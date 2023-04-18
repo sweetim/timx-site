@@ -15,10 +15,6 @@ export default function CounterPage() {
     const [entryFee, setEntryFee] = useState<string>("")
 
     useEffect(() => {
-        initFlowbite()
-    }, [])
-
-    useEffect(() => {
         getEntryFee().then(setEntryFee)
         queryAllRecords().then(setRecords)
     }, [])

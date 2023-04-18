@@ -1,9 +1,10 @@
 import { keyStores, providers, utils } from "near-api-js"
 import { CodeResult } from "near-api-js/lib/providers/provider";
 
-export const CONTRACT_ADDRESS = "dev-1681221529948-56135846288509"
+export const CONTRACT_ADDRESS = "dev-1681818876967-82084098872358"
+export const FT_CONTRACT_ADDRESS = "dev-1681832116683-59715775518634"
 
-export const MIN_GAS_FEE = utils.format.parseNearAmount("0.00000000003")!
+export const MIN_GAS_FEE = utils.format.parseNearAmount("0.0000000003")!
 
 export enum MethodName {
     Increment = "increment",
@@ -13,12 +14,14 @@ export enum MethodName {
     GetEntryFee = "get_entry_fee",
     GetRecordsLength = "get_records_length",
     QueryAllRecords = "query_all_records",
-    QueryRecords = "query_records"
+    QueryRecords = "query_records",
+    FTMetaData = "ft_metadata",
+    FTBalanceOf = "ft_balance_of",
 }
 
 const keyStore = new keyStores.InMemoryKeyStore()
 
-const CONTRACT_ENVIRONMENT = {
+export const CONTRACT_ENVIRONMENT = {
     "mainnet": {
         networkId: "mainnet",
         keyStore,
@@ -105,4 +108,41 @@ export async function getEntryFee() {
 
 export async function getRecordsLength() {
     return callFunction<string>(MethodName.GetRecordsLength)
+}
+
+export type CounterFTMetaData = {
+    spec: string,
+    name: string,
+    symbol: string,
+    icon: string,
+    reference: string | null,
+    reference_hash: string | null,
+    decimals: number,
+}
+
+async function callFunctionFT<T>(methodName: string, args: Object = {}): Promise<T> {
+    const args_base64 = Buffer.from(JSON.stringify(args))
+        .toString("base64")
+
+    const res = await provider.query<CodeResult>({
+        request_type: "call_function",
+        account_id: FT_CONTRACT_ADDRESS,
+        method_name: methodName,
+        args_base64,
+        finality: "optimistic",
+    })
+
+    return JSON.parse(Buffer.from(res.result).toString())
+}
+
+export async function counterFTMetadata() {
+    return callFunctionFT<CounterFTMetaData>(MethodName.FTMetaData)
+}
+
+export async function counterFTBalanceOf(accountId: string) {
+    const args = {
+        account_id: accountId
+    }
+
+    return callFunctionFT<string>(MethodName.FTBalanceOf, args)
 }
