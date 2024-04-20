@@ -1,6 +1,6 @@
 export async function GET(request: Request) {
-  const data = await request.json()
-  console.log(data)
+  // const data = await request.json()
+  console.log(JSON.stringify(request))
   return new Response('Hello, Next.js!')
 }
 
