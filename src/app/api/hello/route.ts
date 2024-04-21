@@ -1,31 +1,35 @@
 import { Realtime } from "ably"
 
-const ABLY_APTOS_COUNTER_CHANNEL_NAME = "aptos-counter"
-
 const {
   ABLY_API_KEY,
 } = process.env
+
+const ABLY_APTOS_COUNTER_CHANNEL_NAME = "aptos-counter"
+
+const APTOS_COUNTER_MODULE_ADDRESS = "0x6b2cf48e40e3b651c309dc444d0d094ed9c342089289c8bf50c4a5646271f20b"
+const APTOS_COUNTER_RECORD_EVENT_NAME = `${APTOS_COUNTER_MODULE_ADDRESS}::counter::CounterRecordEvent`
 
 const ably = new Realtime(ABLY_API_KEY!)
 const channel = ably.channels.get(ABLY_APTOS_COUNTER_CHANNEL_NAME);
 
 export async function GET(request: Request) {
-  // const data = await request.json()
   console.log(JSON.stringify(request))
-  return new Response('Hello, Next.js!')
+  return new Response("OK")
 }
 
 export async function POST(request: Request) {
   const data = await request.json()
 
   const ev = data.events
-      .filter(({ type }: any) => type === "0x6b2cf48e40e3b651c309dc444d0d094ed9c342089289c8bf50c4a5646271f20b::counter::CounterRecordEvent")
+      .filter(({ type }: any) => type === APTOS_COUNTER_RECORD_EVENT_NAME)
       .map(({ data }: any) => data);
 
   console.log(ev)
-  await channel.publish(ev)
+  await channel.publish({
+    data: ev
+  })
 
-  return new Response('Hello, Next.js POST!')
+  return new Response()
 }
 // {
 //   block: {
