@@ -15,7 +15,7 @@ function renderWhitespace(value: string): React.ReactNode {
       tokens.push(
         <span
           key={key}
-          className="text-[#484f58]"
+          className="text-dev-text-secondary"
         >
           ·
         </span>,
@@ -24,7 +24,7 @@ function renderWhitespace(value: string): React.ReactNode {
       tokens.push(
         <span
           key={key}
-          className="text-[#484f58]"
+          className="text-dev-text-secondary"
         >
           →
         </span>,
@@ -47,10 +47,14 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
     return (
       <div style={{ paddingLeft: depth * 20 }}>
         {label !== undefined && (
-          <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
+          <span className="text-dev-syntax-property">
+            {JSON.stringify(label)}
+          </span>
         )}
-        {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#569CD6]">null</span>
+        {label !== undefined && (
+          <span className="text-dev-syntax-punctuation">: </span>
+        )}
+        <span className="text-dev-syntax-null">null</span>
       </div>
     )
   }
@@ -59,10 +63,14 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
     return (
       <div style={{ paddingLeft: depth * 20 }}>
         {label !== undefined && (
-          <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
+          <span className="text-dev-syntax-property">
+            {JSON.stringify(label)}
+          </span>
         )}
-        {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#569CD6]">{value.toString()}</span>
+        {label !== undefined && (
+          <span className="text-dev-syntax-punctuation">: </span>
+        )}
+        <span className="text-dev-syntax-boolean">{value.toString()}</span>
       </div>
     )
   }
@@ -71,10 +79,14 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
     return (
       <div style={{ paddingLeft: depth * 20 }}>
         {label !== undefined && (
-          <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
+          <span className="text-dev-syntax-property">
+            {JSON.stringify(label)}
+          </span>
         )}
-        {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#B5CEA8]">{value}</span>
+        {label !== undefined && (
+          <span className="text-dev-syntax-punctuation">: </span>
+        )}
+        <span className="text-dev-syntax-number">{value}</span>
       </div>
     )
   }
@@ -83,10 +95,14 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
     return (
       <div style={{ paddingLeft: depth * 20 }}>
         {label !== undefined && (
-          <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
+          <span className="text-dev-syntax-property">
+            {JSON.stringify(label)}
+          </span>
         )}
-        {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#CE9178]">
+        {label !== undefined && (
+          <span className="text-dev-syntax-punctuation">: </span>
+        )}
+        <span className="text-dev-syntax-string">
           {'"'}
           {renderWhitespace(value)}
           {'"'}
@@ -108,22 +124,26 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
       <button
         type="button"
         style={{ paddingLeft: depth * 20 }}
-        className="cursor-pointer hover:bg-[#161b22] inline-flex w-full text-left"
+        className="cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
         onClick={() => setCollapsed((c) => !c)}
       >
-        <span className="text-[#484f58] select-none mr-1 w-3 inline-block">
+        <span className="text-dev-text-secondary select-none mr-1 w-3 inline-block">
           {collapsed ? "▶" : "▼"}
         </span>
         {label !== undefined && (
-          <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
+          <span className="text-dev-syntax-property">
+            {JSON.stringify(label)}
+          </span>
         )}
-        {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#D4D4D4]">{bracketOpen}</span>
+        {label !== undefined && (
+          <span className="text-dev-syntax-punctuation">: </span>
+        )}
+        <span className="text-dev-syntax-punctuation">{bracketOpen}</span>
         {!collapsed && entries.length > 0 && (
-          <span className="text-[#484f58] ml-1">{summary}</span>
+          <span className="text-dev-text-secondary ml-1">{summary}</span>
         )}
         {collapsed && (
-          <span className="text-[#484f58] ml-1">{bracketClose}</span>
+          <span className="text-dev-text-secondary ml-1">{bracketClose}</span>
         )}
       </button>
       {!collapsed && (
@@ -137,7 +157,7 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
             />
           ))}
           <div style={{ paddingLeft: depth * 20 }}>
-            <span className="text-[#D4D4D4]">{bracketClose}</span>
+            <span className="text-dev-syntax-punctuation">{bracketClose}</span>
           </div>
         </div>
       )}
@@ -196,16 +216,16 @@ const JsonViewer: FC = () => {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1117] text-[#e6edf3]">
-      <div className="flex items-center justify-end px-4 py-2 border-b border-[#30363d]">
+    <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
+      <div className="flex items-center justify-end px-4 py-2 border-b border-dev-border">
         <div className="flex gap-2">
           <button
             type="button"
             className={classNames(
               "px-3 py-1 text-sm rounded transition-colors",
               showWhitespace
-                ? "bg-[#388bfd] text-white"
-                : "bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9]",
+                ? "bg-dev-accent-blue text-white"
+                : "bg-dev-button hover:bg-dev-button-hover text-dev-text",
             )}
             onClick={() => setShowWhitespace((v) => !v)}
           >
@@ -213,7 +233,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
+            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleFormat}
             disabled={!parsed}
           >
@@ -221,7 +241,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
+            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleMinify}
             disabled={!parsed}
           >
@@ -229,7 +249,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
+            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleClear}
           >
             Clear
@@ -237,15 +257,15 @@ const JsonViewer: FC = () => {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 flex flex-col border-r border-[#30363d]">
-          <div className="px-3 py-2 text-xs text-[#8b949e] uppercase tracking-wider border-b border-[#30363d]">
+        <div className="w-1/2 flex flex-col border-r border-dev-border">
+          <div className="px-3 py-2 text-xs text-dev-text-secondary uppercase tracking-wider border-b border-dev-border">
             Input
           </div>
           <div className="relative flex-1 overflow-hidden">
             <textarea
               className={classNames(
                 "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full",
-                error ? "text-[#f85149]" : "text-[#c9d1d9]",
+                error ? "text-dev-accent-red" : "text-dev-text",
                 showWhitespace && "opacity-0",
               )}
               value={input}
@@ -257,7 +277,7 @@ const JsonViewer: FC = () => {
               <pre
                 className={classNames(
                   "absolute inset-0 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto w-full h-full pointer-events-none",
-                  error ? "text-[#f85149]" : "text-[#c9d1d9]",
+                  error ? "text-dev-accent-red" : "text-dev-text",
                 )}
                 aria-hidden="true"
               >
@@ -267,12 +287,12 @@ const JsonViewer: FC = () => {
           </div>
         </div>
         <div className="w-1/2 flex flex-col overflow-hidden">
-          <div className="px-3 py-2 text-xs text-[#8b949e] uppercase tracking-wider border-b border-[#30363d]">
+          <div className="px-3 py-2 text-xs text-dev-text-secondary uppercase tracking-wider border-b border-dev-border">
             Tree View
           </div>
           <div className="flex-1 overflow-auto p-4 font-mono text-sm leading-relaxed">
             {error && (
-              <div className="text-[#f85149] bg-[#f85149]/10 rounded p-3 mb-3 text-xs">
+              <div className="text-dev-accent-red bg-dev-accent-red/10 rounded p-3 mb-3 text-xs">
                 {error}
               </div>
             )}
@@ -283,7 +303,7 @@ const JsonViewer: FC = () => {
               />
             )}
             {!parsed && !error && (
-              <span className="text-[#484f58]">No data</span>
+              <span className="text-dev-text-secondary">No data</span>
             )}
           </div>
         </div>

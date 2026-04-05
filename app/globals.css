@@ -2,6 +2,33 @@
 
 @theme {
   --font-sans: var(--font-mali);
+
+  --color-dev-canvas: #22272e;
+  --color-dev-surface: #2d333b;
+  --color-dev-inset: #1c2128;
+  --color-dev-button: #373e47;
+  --color-dev-button-hover: #444c56;
+
+  --color-dev-border: #373e47;
+  --color-dev-border-muted: #444c56;
+
+  --color-dev-text: #adbac7;
+  --color-dev-text-secondary: #768390;
+  --color-dev-link: #539bf5;
+
+  --color-dev-accent-blue: #539bf5;
+  --color-dev-accent-green: #57ab5a;
+  --color-dev-accent-red: #e5534b;
+  --color-dev-accent-orange: #c69026;
+  --color-dev-accent-purple: #b083f0;
+
+  --color-dev-syntax-keyword: #f47067;
+  --color-dev-syntax-string: #96d0ff;
+  --color-dev-syntax-number: #e6b450;
+  --color-dev-syntax-boolean: #ff8b39;
+  --color-dev-syntax-null: #ff8b39;
+  --color-dev-syntax-property: #6cb6ff;
+  --color-dev-syntax-punctuation: #adbac7;
 }
 
 * {
