@@ -2,6 +2,7 @@
 
 import classNames from "classnames"
 import { type FC, useCallback, useMemo, useState } from "react"
+import { match, P } from "ts-pattern"
 
 type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
@@ -43,126 +44,96 @@ type JsonTreeNodeProps = {
 const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
   const [collapsed, setCollapsed] = useState(depth > 2)
 
-  if (value === null) {
+  const labelElement =
+    label !== undefined ? (
+      <>
+        <span className="text-dev-syntax-property">
+          {JSON.stringify(label)}
+        </span>
+        <span className="text-dev-syntax-punctuation">: </span>
+      </>
+    ) : null
+
+  if (value !== null && typeof value === "object") {
+    const isArr = Array.isArray(value)
+    const entries: [string, JsonValue][] = isArr
+      ? value.map((v, i) => [String(i), v])
+      : Object.entries(value)
+    const bracketOpen = isArr ? "[" : "{"
+    const bracketClose = isArr ? "]" : "}"
+    const summary = isArr ? `${entries.length} items` : `${entries.length} keys`
+
     return (
-      <div style={{ paddingLeft: depth * 20 }}>
-        {label !== undefined && (
-          <span className="text-dev-syntax-property">
-            {JSON.stringify(label)}
+      <div>
+        <button
+          type="button"
+          style={{ paddingLeft: depth * 20 }}
+          className="cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
+          onClick={() => setCollapsed((c) => !c)}
+        >
+          <span className="text-dev-text-secondary select-none mr-1 w-3 inline-block">
+            {collapsed ? "▶" : "▼"}
           </span>
+          {labelElement}
+          <span className="text-dev-syntax-punctuation">{bracketOpen}</span>
+          {!collapsed && entries.length > 0 && (
+            <span className="text-dev-text-secondary ml-1">{summary}</span>
+          )}
+          {collapsed && (
+            <span className="text-dev-text-secondary ml-1">{bracketClose}</span>
+          )}
+        </button>
+        {!collapsed && (
+          <div>
+            {entries.map(([key, val]) => (
+              <JsonTreeNode
+                key={key}
+                label={isArr ? undefined : key}
+                value={val}
+                depth={depth + 1}
+              />
+            ))}
+            <div style={{ paddingLeft: depth * 20 }}>
+              <span className="text-dev-syntax-punctuation">
+                {bracketClose}
+              </span>
+            </div>
+          </div>
         )}
-        {label !== undefined && (
-          <span className="text-dev-syntax-punctuation">: </span>
-        )}
+      </div>
+    )
+  }
+
+  return match(value as JsonPrimitive)
+    .with(null, () => (
+      <div style={{ paddingLeft: depth * 20 }}>
+        {labelElement}
         <span className="text-dev-syntax-null">null</span>
       </div>
-    )
-  }
-
-  if (typeof value === "boolean") {
-    return (
+    ))
+    .with(P.boolean, (value) => (
       <div style={{ paddingLeft: depth * 20 }}>
-        {label !== undefined && (
-          <span className="text-dev-syntax-property">
-            {JSON.stringify(label)}
-          </span>
-        )}
-        {label !== undefined && (
-          <span className="text-dev-syntax-punctuation">: </span>
-        )}
+        {labelElement}
         <span className="text-dev-syntax-boolean">{value.toString()}</span>
       </div>
-    )
-  }
-
-  if (typeof value === "number") {
-    return (
+    ))
+    .with(P.number, (value) => (
       <div style={{ paddingLeft: depth * 20 }}>
-        {label !== undefined && (
-          <span className="text-dev-syntax-property">
-            {JSON.stringify(label)}
-          </span>
-        )}
-        {label !== undefined && (
-          <span className="text-dev-syntax-punctuation">: </span>
-        )}
+        {labelElement}
         <span className="text-dev-syntax-number">{value}</span>
       </div>
-    )
-  }
-
-  if (typeof value === "string") {
-    return (
+    ))
+    .with(P.string, (value) => (
       <div style={{ paddingLeft: depth * 20 }}>
-        {label !== undefined && (
-          <span className="text-dev-syntax-property">
-            {JSON.stringify(label)}
-          </span>
-        )}
-        {label !== undefined && (
-          <span className="text-dev-syntax-punctuation">: </span>
-        )}
+        {labelElement}
         <span className="text-dev-syntax-string">
           {'"'}
           {renderWhitespace(value)}
           {'"'}
         </span>
       </div>
-    )
-  }
-
-  const isArr = Array.isArray(value)
-  const entries: [string, JsonValue][] = isArr
-    ? value.map((v, i) => [String(i), v])
-    : Object.entries(value)
-  const bracketOpen = isArr ? "[" : "{"
-  const bracketClose = isArr ? "]" : "}"
-  const summary = isArr ? `${entries.length} items` : `${entries.length} keys`
-
-  return (
-    <div>
-      <button
-        type="button"
-        style={{ paddingLeft: depth * 20 }}
-        className="cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
-        onClick={() => setCollapsed((c) => !c)}
-      >
-        <span className="text-dev-text-secondary select-none mr-1 w-3 inline-block">
-          {collapsed ? "▶" : "▼"}
-        </span>
-        {label !== undefined && (
-          <span className="text-dev-syntax-property">
-            {JSON.stringify(label)}
-          </span>
-        )}
-        {label !== undefined && (
-          <span className="text-dev-syntax-punctuation">: </span>
-        )}
-        <span className="text-dev-syntax-punctuation">{bracketOpen}</span>
-        {!collapsed && entries.length > 0 && (
-          <span className="text-dev-text-secondary ml-1">{summary}</span>
-        )}
-        {collapsed && (
-          <span className="text-dev-text-secondary ml-1">{bracketClose}</span>
-        )}
-      </button>
-      {!collapsed && (
-        <div>
-          {entries.map(([key, val]) => (
-            <JsonTreeNode
-              key={key}
-              label={isArr ? undefined : key}
-              value={val}
-              depth={depth + 1}
-            />
-          ))}
-          <div style={{ paddingLeft: depth * 20 }}>
-            <span className="text-dev-syntax-punctuation">{bracketClose}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+    ))
+    .exhaustive()
 }
 
 const SAMPLE_JSON = JSON.stringify(
@@ -194,8 +165,12 @@ const JsonViewer: FC = () => {
       const value = JSON.parse(input) as JsonValue
       setError(null)
       return value
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid JSON")
+    } catch (error) {
+      setError(
+        match(error)
+          .with(P.instanceOf(Error), (error) => error.message)
+          .otherwise(() => "Invalid JSON"),
+      )
       return null
     }
   }, [input])
