@@ -6,7 +6,7 @@ export default function DeveloperLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col h-full bg-neutral-950">
+    <div className="flex flex-col h-full bg-dev-canvas">
       <NavBar />
       <div className="flex-1 overflow-hidden">{children}</div>
     </div>

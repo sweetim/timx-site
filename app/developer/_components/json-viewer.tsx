@@ -6,6 +6,34 @@ import { type FC, useCallback, useMemo, useState } from "react"
 type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
 
+function renderWhitespace(value: string): React.ReactNode {
+  const tokens: React.ReactNode[] = []
+  let charIndex = 0
+  for (const char of value) {
+    const key = `ws-${charIndex++}`
+    if (char === " ")
+      tokens.push(
+        <span
+          key={key}
+          className="text-[#484f58]"
+        >
+          ·
+        </span>,
+      )
+    else if (char === "\t")
+      tokens.push(
+        <span
+          key={key}
+          className="text-[#484f58]"
+        >
+          →
+        </span>,
+      )
+    else tokens.push(char)
+  }
+  return tokens
+}
+
 type JsonTreeNodeProps = {
   label?: string
   value: JsonValue
@@ -58,7 +86,11 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
           <span className="text-[#9CDCFE]">{JSON.stringify(label)}</span>
         )}
         {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
-        <span className="text-[#CE9178]">{JSON.stringify(value)}</span>
+        <span className="text-[#CE9178]">
+          {'"'}
+          {renderWhitespace(value)}
+          {'"'}
+        </span>
       </div>
     )
   }
@@ -76,10 +108,10 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
       <button
         type="button"
         style={{ paddingLeft: depth * 20 }}
-        className="cursor-pointer hover:bg-white/5 inline-flex w-full text-left"
+        className="cursor-pointer hover:bg-[#161b22] inline-flex w-full text-left"
         onClick={() => setCollapsed((c) => !c)}
       >
-        <span className="text-neutral-600 select-none mr-1 w-3 inline-block">
+        <span className="text-[#484f58] select-none mr-1 w-3 inline-block">
           {collapsed ? "▶" : "▼"}
         </span>
         {label !== undefined && (
@@ -88,10 +120,10 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
         {label !== undefined && <span className="text-[#D4D4D4]">: </span>}
         <span className="text-[#D4D4D4]">{bracketOpen}</span>
         {!collapsed && entries.length > 0 && (
-          <span className="text-neutral-600 ml-1">{summary}</span>
+          <span className="text-[#484f58] ml-1">{summary}</span>
         )}
         {collapsed && (
-          <span className="text-neutral-600 ml-1">{bracketClose}</span>
+          <span className="text-[#484f58] ml-1">{bracketClose}</span>
         )}
       </button>
       {!collapsed && (
@@ -116,6 +148,7 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
 const SAMPLE_JSON = JSON.stringify(
   {
     name: "Developer Tools",
+    description: "A suite of tools\tfor developers.\nTry editing this JSON!",
     version: 1,
     features: ["json-viewer", "formatter", "validator"],
     config: {
@@ -123,6 +156,7 @@ const SAMPLE_JSON = JSON.stringify(
       indent: 2,
       autoFormat: true,
     },
+    multiline: "line one\nline two\r\nline three",
     metadata: null,
   },
   null,
@@ -132,6 +166,7 @@ const SAMPLE_JSON = JSON.stringify(
 const JsonViewer: FC = () => {
   const [input, setInput] = useState(SAMPLE_JSON)
   const [error, setError] = useState<string | null>(null)
+  const [showWhitespace, setShowWhitespace] = useState(true)
 
   const parsed = useMemo(() => {
     if (!input.trim()) return null
@@ -161,12 +196,24 @@ const JsonViewer: FC = () => {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-neutral-950 text-neutral-100">
-      <div className="flex items-center justify-end px-4 py-2 border-b border-neutral-800">
+    <div className="flex flex-col h-full bg-[#0d1117] text-[#e6edf3]">
+      <div className="flex items-center justify-end px-4 py-2 border-b border-[#30363d]">
         <div className="flex gap-2">
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-300"
+            className={classNames(
+              "px-3 py-1 text-sm rounded transition-colors",
+              showWhitespace
+                ? "bg-[#388bfd] text-white"
+                : "bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9]",
+            )}
+            onClick={() => setShowWhitespace((v) => !v)}
+          >
+            Whitespace
+          </button>
+          <button
+            type="button"
+            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
             onClick={handleFormat}
             disabled={!parsed}
           >
@@ -174,7 +221,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-300"
+            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
             onClick={handleMinify}
             disabled={!parsed}
           >
@@ -182,7 +229,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-300"
+            className="px-3 py-1 text-sm rounded bg-[#21262d] hover:bg-[#30363d] transition-colors text-[#c9d1d9]"
             onClick={handleClear}
           >
             Clear
@@ -190,28 +237,42 @@ const JsonViewer: FC = () => {
         </div>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 flex flex-col border-r border-neutral-800">
-          <div className="px-3 py-2 text-xs text-neutral-500 uppercase tracking-wider border-b border-neutral-800">
+        <div className="w-1/2 flex flex-col border-r border-[#30363d]">
+          <div className="px-3 py-2 text-xs text-[#8b949e] uppercase tracking-wider border-b border-[#30363d]">
             Input
           </div>
-          <textarea
-            className={classNames(
-              "flex-1 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed",
-              error ? "text-red-400" : "text-neutral-200",
+          <div className="relative flex-1 overflow-hidden">
+            <textarea
+              className={classNames(
+                "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full",
+                error ? "text-[#f85149]" : "text-[#c9d1d9]",
+                showWhitespace && "opacity-0",
+              )}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Paste your JSON here..."
+              spellCheck={false}
+            />
+            {showWhitespace && (
+              <pre
+                className={classNames(
+                  "absolute inset-0 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto w-full h-full pointer-events-none",
+                  error ? "text-[#f85149]" : "text-[#c9d1d9]",
+                )}
+                aria-hidden="true"
+              >
+                {renderWhitespace(input)}
+              </pre>
             )}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Paste your JSON here..."
-            spellCheck={false}
-          />
+          </div>
         </div>
         <div className="w-1/2 flex flex-col overflow-hidden">
-          <div className="px-3 py-2 text-xs text-neutral-500 uppercase tracking-wider border-b border-neutral-800">
+          <div className="px-3 py-2 text-xs text-[#8b949e] uppercase tracking-wider border-b border-[#30363d]">
             Tree View
           </div>
           <div className="flex-1 overflow-auto p-4 font-mono text-sm leading-relaxed">
             {error && (
-              <div className="text-red-400 bg-red-950/30 rounded p-3 mb-3 text-xs">
+              <div className="text-[#f85149] bg-[#f85149]/10 rounded p-3 mb-3 text-xs">
                 {error}
               </div>
             )}
@@ -222,7 +283,7 @@ const JsonViewer: FC = () => {
               />
             )}
             {!parsed && !error && (
-              <span className="text-neutral-600">No data</span>
+              <span className="text-[#484f58]">No data</span>
             )}
           </div>
         </div>

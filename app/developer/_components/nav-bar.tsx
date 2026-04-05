@@ -11,19 +11,19 @@ const NavBar = () => {
   const isHome = pathname === "/developer"
 
   return (
-    <nav className="flex items-center gap-6 px-4 py-2.5 border-b border-neutral-800 bg-neutral-950">
+    <nav className="flex items-center gap-6 px-4 py-2.5 border-b border-dev-border bg-dev-canvas">
       <Link
         href="/developer"
         className={classNames(
           "text-sm font-medium transition-colors shrink-0",
           isHome
-            ? "text-neutral-100"
-            : "text-neutral-500 hover:text-neutral-300",
+            ? "text-dev-text"
+            : "text-dev-text-secondary hover:text-dev-text",
         )}
       >
         Developer Tools
       </Link>
-      <div className="w-px h-4 bg-neutral-800" />
+      <div className="w-px h-4 bg-dev-border" />
       <div className="flex gap-1 overflow-x-auto">
         {tools.map((tool) => {
           const href = `/developer/${tool.slug}`
@@ -35,8 +35,8 @@ const NavBar = () => {
               className={classNames(
                 "text-sm px-2.5 py-1 rounded transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-neutral-800 text-neutral-100"
-                  : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900",
+                  ? "bg-dev-border text-dev-text"
+                  : "text-dev-text-secondary hover:text-dev-text hover:bg-dev-inset",
               )}
             >
               {tool.name}
