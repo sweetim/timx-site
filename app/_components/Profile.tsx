@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import type { FC } from "react"
 
 import ProfileLink, { type ProfileLinkProps } from "./ProfileLink"
@@ -22,13 +23,15 @@ const Profile: FC<ProfileProps> = (props) => {
   return (
     <div className="text-center">
       <div className="flex justify-center">
-        <Image
-          className="p-1.5 rounded-full content-center"
-          src={props.imageUrl}
-          width={160}
-          height={160}
-          alt="Extra large avatar"
-        />
+        <Link href="/developer">
+          <Image
+            className="p-1.5 rounded-full content-center"
+            src={props.imageUrl}
+            width={160}
+            height={160}
+            alt="Extra large avatar"
+          />
+        </Link>
       </div>
       <h1 className="text-5xl p-5">{props.title}</h1>
       <p className="text-slate-900">{props.description}</p>
