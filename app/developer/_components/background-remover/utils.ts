@@ -33,20 +33,20 @@ export function resolveProgressUpdate(
 
 export function mapProgressKeyToPhase(key: string): ProcessingStatus {
   return match(key)
-    .with(P.string.startsWith("fetch"), () => ({
-      phase: "downloading-model" as const,
-    }))
-    .with(P.string.startsWith("compute:encode"), () => ({
-      phase: "encoding" as const,
-    }))
-    .with(P.string.startsWith("compute:decode"), () => ({
-      phase: "decoding" as const,
-    }))
-    .with(P.string.startsWith("compute:inference"), () => ({
+    .with(P.string.includes("compute:inference"), () => ({
       phase: "computing-inference" as const,
     }))
-    .with(P.string.startsWith("compute:mask"), () => ({
+    .with(P.string.includes("compute:mask"), () => ({
       phase: "computing-mask" as const,
+    }))
+    .with(P.string.includes("compute:encode"), () => ({
+      phase: "encoding" as const,
+    }))
+    .with(P.string.includes("compute:decode"), () => ({
+      phase: "decoding" as const,
+    }))
+    .with(P.string.startsWith("fetch"), () => ({
+      phase: "downloading-model" as const,
     }))
     .otherwise(() => ({
       phase: "decoding" as const,

@@ -1,8 +1,7 @@
 import classNames from "classnames"
-import { LoaderCircle } from "lucide-react"
+import { Check, LoaderCircle } from "lucide-react"
 import { match } from "ts-pattern"
 import { COMPUTE_STEPS } from "../constants"
-import ProgressRing from "../progress-ring"
 import type { ComputePhase } from "../types"
 import { getComputeStepIndex } from "../utils"
 
@@ -12,45 +11,54 @@ type ComputeProgressProps = {
 
 function ComputeProgress({ phase }: ComputeProgressProps) {
   const currentStepIndex = getComputeStepIndex(phase)
-  const progress = (currentStepIndex + 1) / COMPUTE_STEPS.length
 
   return (
     <div className="flex flex-col items-center justify-center rounded-md border border-dev-border bg-dev-inset min-h-[300px] p-8">
-      <div className="relative flex items-center justify-center">
-        <ProgressRing progress={progress} />
-        <span className="absolute text-sm font-semibold text-dev-text">
-          {Math.round(progress * 100)}%
-        </span>
-      </div>
-      <p className="mt-4 text-base font-semibold text-dev-text">
+      <p className="text-base font-semibold text-dev-text">
         Removing background…
       </p>
-      <ol className="mt-5 flex items-center w-full max-w-xs">
+      <ol className="mt-6 flex items-center w-full max-w-md">
         {COMPUTE_STEPS.map((step, index) => {
           const isCompleted = index < currentStepIndex
           const isCurrent = index === currentStepIndex
           return (
             <li
               key={step.phase}
-              className="flex items-center flex-1"
+              className="flex items-center flex-1 last:flex-none"
             >
-              <div className="flex flex-col items-center gap-1.5">
-                {match({ isCompleted, isCurrent })
-                  .with({ isCompleted: true }, () => (
-                    <span className="w-2 h-2 rounded-full bg-dev-accent-blue" />
-                  ))
-                  .with({ isCurrent: true }, () => (
-                    <span className="w-2 h-2">
-                      <LoaderCircle className="w-2 h-2 text-dev-accent-blue animate-spin" />
-                    </span>
-                  ))
-                  .with({ isCompleted: false, isCurrent: false }, () => (
-                    <span className="w-2 h-2 rounded-full bg-dev-text-secondary/30" />
-                  ))
-                  .exhaustive()}
+              <div className="flex flex-col items-center gap-2">
+                <div
+                  className={classNames(
+                    "flex items-center justify-center w-7 h-7 rounded-full border-2 shrink-0 transition-colors",
+                    match({ isCompleted, isCurrent })
+                      .with(
+                        { isCurrent: true },
+                        () => "border-dev-accent-blue bg-dev-accent-blue/10",
+                      )
+                      .with(
+                        { isCompleted: true },
+                        () => "border-dev-accent-blue bg-dev-accent-blue",
+                      )
+                      .with(
+                        { isCompleted: false, isCurrent: false },
+                        () => "border-dev-text-secondary/30",
+                      )
+                      .exhaustive(),
+                  )}
+                >
+                  {match({ isCompleted, isCurrent })
+                    .with({ isCompleted: true }, () => (
+                      <Check className="w-3.5 h-3.5 text-dev-canvas" />
+                    ))
+                    .with({ isCurrent: true }, () => (
+                      <LoaderCircle className="w-4 h-4 text-dev-accent-blue animate-spin" />
+                    ))
+                    .with({ isCompleted: false, isCurrent: false }, () => null)
+                    .exhaustive()}
+                </div>
                 <span
                   className={classNames(
-                    "text-xs transition-colors whitespace-nowrap",
+                    "text-xs whitespace-nowrap",
                     match({ isCompleted, isCurrent })
                       .with(
                         { isCurrent: true },
@@ -70,7 +78,7 @@ function ComputeProgress({ phase }: ComputeProgressProps) {
               {index < COMPUTE_STEPS.length - 1 && (
                 <div
                   className={classNames(
-                    "flex-1 h-px mx-2 mb-4 transition-colors",
+                    "flex-1 h-px mx-2 mb-5 transition-colors",
                     match(index < currentStepIndex)
                       .with(true, () => "bg-dev-accent-blue")
                       .with(false, () => "bg-dev-border")
