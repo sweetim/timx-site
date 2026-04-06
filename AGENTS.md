@@ -20,6 +20,7 @@ Personal portfolio and developer tools site built with Next.js App Router.
 - Tailwind CSS v4 (CSS-first config via `@theme {}` in `app/globals.css`, no `tailwind.config.*`)
 - Biome — formatter + linter (primary)
 - ESLint — secondary, for Next.js core-web-vitals rules
+- Storybook 10 (configured but not yet scaffolded — no `.storybook/` or stories)
 
 ## Formatting Rules
 

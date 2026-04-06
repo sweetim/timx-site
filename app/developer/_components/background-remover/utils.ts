@@ -1,6 +1,57 @@
-import { match } from "ts-pattern"
+import { match, P } from "ts-pattern"
 import { COMPUTE_STEPS } from "./constants"
-import type { ComputePhase, ProcessingStatus } from "./types"
+import type { ComputePhase, ProcessingStatus, Status } from "./types"
+
+type ProcessingState = Extract<Status, { phase: "processing" }>
+
+type TransitionResult = {
+  immediate: ProcessingState
+  delayed: { status: ProcessingStatus; progress: number } | null
+}
+
+export function resolveProgressUpdate(
+  prev: ProcessingState,
+  nextStatus: ProcessingStatus,
+  progress: number,
+): TransitionResult {
+  const isTransitioningFromFetch =
+    prev.status.phase === "downloading-model"
+    && nextStatus.phase !== "downloading-model"
+
+  if (isTransitioningFromFetch) {
+    return {
+      immediate: { ...prev, progress: 1 },
+      delayed: { status: nextStatus, progress: 0 },
+    }
+  }
+
+  return {
+    immediate: { ...prev, status: nextStatus, progress },
+    delayed: null,
+  }
+}
+
+export function mapProgressKeyToPhase(key: string): ProcessingStatus {
+  return match(key)
+    .with(P.string.startsWith("fetch"), () => ({
+      phase: "downloading-model" as const,
+    }))
+    .with(P.string.startsWith("compute:encode"), () => ({
+      phase: "encoding" as const,
+    }))
+    .with(P.string.startsWith("compute:decode"), () => ({
+      phase: "decoding" as const,
+    }))
+    .with(P.string.startsWith("compute:inference"), () => ({
+      phase: "computing-inference" as const,
+    }))
+    .with(P.string.startsWith("compute:mask"), () => ({
+      phase: "computing-mask" as const,
+    }))
+    .otherwise(() => ({
+      phase: "decoding" as const,
+    }))
+}
 
 export function getComputeStepIndex(phase: ComputePhase): number {
   return COMPUTE_STEPS.findIndex((step) => step.phase === phase)
