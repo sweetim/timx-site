@@ -1,5 +1,6 @@
 "use client"
 
+import { ChevronsLeftRight } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import CheckerboardPattern from "./checkerboard-pattern"
 
@@ -77,16 +78,17 @@ function ImageComparisonSlider({
           if (e.key === "ArrowLeft") setPosition((p) => Math.max(0, p - 2))
           if (e.key === "ArrowRight") setPosition((p) => Math.min(100, p + 2))
         }}
-        className="relative select-none rounded-md border border-dev-border overflow-hidden cursor-ew-resize max-h-[500px] outline-none"
+        className="relative select-none rounded-md border border-dev-border overflow-hidden cursor-ew-resize max-h-125 outline-none"
         onMouseDown={handlePointerDown}
         onTouchStart={handlePointerDown}
       >
         <div className="relative">
           <CheckerboardPattern />
+          {/** biome-ignore lint/performance/noImgElement: using native img for blob URLs that bypass Next.js image optimization */}
           <img
             src={resultUrl}
             alt="Result with background removed"
-            className="relative w-full h-auto max-h-[500px] object-contain"
+            className="relative w-full h-auto max-h-125 object-contain"
             draggable={false}
           />
         </div>
@@ -95,10 +97,11 @@ function ImageComparisonSlider({
           className="absolute inset-0"
           style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
         >
+          {/** biome-ignore lint/performance/noImgElement: using native img for blob URLs that bypass Next.js image optimization */}
           <img
             src={originalUrl}
             alt="Original"
-            className="w-full h-auto max-h-[500px] object-contain"
+            className="w-full h-auto max-h-125 object-contain"
             draggable={false}
           />
         </div>
@@ -108,20 +111,12 @@ function ImageComparisonSlider({
           style={{ left: `${position}%` }}
         >
           <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center pointer-events-none">
-            <svg
+            <ChevronsLeftRight
               aria-hidden="true"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#1c2128"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6" />
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+              width={16}
+              height={16}
+              className="text-dev-inset"
+            />
           </div>
         </div>
 

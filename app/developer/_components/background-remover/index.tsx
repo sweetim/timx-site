@@ -1,13 +1,10 @@
 "use client"
 
 import classNames from "classnames"
+import { CircleX, Download, LoaderCircle, Upload } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 import { match, P } from "ts-pattern"
 import { COMPUTE_STEPS } from "./constants"
-import DownloadIcon from "./icons/download-icon"
-import ErrorIcon from "./icons/error-icon"
-import SpinningIcon from "./icons/spinning-icon"
-import UploadIcon from "./icons/upload-icon"
 import ImageComparisonSlider from "./image-comparison-slider"
 import ProgressRing from "./progress-ring"
 import type { Status } from "./types"
@@ -50,7 +47,7 @@ const BackgroundRemover = () => {
         output: { format: "image/png" },
         progress: (key: string, current: number, total: number) => {
           const progress = total > 0 ? current / total : 0
-
+          console.log(key, current, total)
           const statusPhase = match(key)
             .with(P.string.startsWith("fetch"), () => ({
               phase: "downloading-model" as const,
@@ -180,13 +177,13 @@ const BackgroundRemover = () => {
                 onDragLeave={handleDragLeave}
                 className={classNames(
                   "flex flex-col items-center justify-center rounded-md border-2 border-dashed cursor-pointer transition-colors w-full text-left",
-                  "min-h-[300px] p-8",
+                  "min-h-75 p-8",
                   isDragOver
                     ? "border-dev-accent-blue bg-dev-inset"
                     : "border-dev-border hover:border-dev-border-muted hover:bg-dev-inset",
                 )}
               >
-                <UploadIcon />
+                <Upload className="w-12 h-12 text-dev-text-secondary" />
                 <p className="mt-3 text-sm font-medium text-dev-text">
                   Drop an image here, or click to browse
                 </p>
@@ -198,8 +195,7 @@ const BackgroundRemover = () => {
             .with({ phase: "processing" }, ({ status, progress }) =>
               match(status)
                 .with({ phase: "downloading-model" }, () => (
-                  <div className="flex flex-col items-center justify-center rounded-md border border-dev-border bg-dev-inset min-h-[300px] p-8">
-                    <SpinningIcon />
+                  <div className="flex flex-col items-center justify-center rounded-md border border-dev-border bg-dev-inset min-h-75 p-8">
                     <p className="mt-4 text-sm text-dev-text">
                       {formatProgressLabel(status, progress)}
                     </p>
@@ -262,8 +258,8 @@ const BackgroundRemover = () => {
                                   {isCompleted ? (
                                     <span className="w-2 h-2 rounded-full bg-dev-accent-blue" />
                                   ) : isCurrent ? (
-                                    <span className="w-2 h-2 [&>svg]:w-2 [&>svg]:h-2">
-                                      <SpinningIcon />
+                                    <span className="w-2 h-2">
+                                      <LoaderCircle className="w-2 h-2 text-dev-accent-blue animate-spin" />
                                     </span>
                                   ) : (
                                     <span className="w-2 h-2 rounded-full bg-dev-text-secondary/30" />
@@ -304,7 +300,7 @@ const BackgroundRemover = () => {
             )
             .with({ phase: "error" }, ({ message }) => (
               <div className="flex flex-col items-center justify-center rounded-md border border-dev-accent-red/30 bg-dev-inset min-h-[300px] p-8">
-                <ErrorIcon />
+                <CircleX className="w-8 h-8 text-dev-accent-red" />
                 <p className="mt-3 text-sm text-dev-accent-red">{message}</p>
                 <button
                   type="button"
@@ -327,7 +323,7 @@ const BackgroundRemover = () => {
                     onClick={handleDownload}
                     className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-accent-blue hover:brightness-110 text-white transition-all"
                   >
-                    <DownloadIcon />
+                    <Download className="w-3.5 h-3.5" />
                     Download PNG
                   </button>
                   <button
@@ -335,7 +331,7 @@ const BackgroundRemover = () => {
                     onClick={handleReset}
                     className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors"
                   >
-                    <UploadIcon className="w-4 h-4" />
+                    <Upload className="w-4 h-4" />
                     Upload image
                   </button>
                 </div>
