@@ -106,6 +106,10 @@ All pages under `app/developer/` use the **GitHub Soft Dark** (`dark-dimmed`) co
 
 This is Next.js 16 with breaking changes from earlier versions. APIs, conventions, and file structure may differ from training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing code. Heed deprecation notices.
 
+## Storybook
+
+Write a Storybook story for every new component added to `_components/`. When updating an existing component, update its corresponding story to reflect the changes.
+
 ## Testing
 
 No test framework is currently configured. There are no test files or test runners.
