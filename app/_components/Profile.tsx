@@ -16,6 +16,7 @@ const Profile: FC<ProfileProps> = (props) => {
   const renderLinkUrl = props.linkUrl.map((props, i) => (
     <ProfileLink
       key={`${props.imageUrl}`}
+      index={i}
       {...props}
     />
   ))
@@ -25,7 +26,7 @@ const Profile: FC<ProfileProps> = (props) => {
       <div className="flex justify-center">
         <Link href="/developer">
           <Image
-            className="p-1.5 rounded-full content-center"
+            className="p-1.5 blob-splash content-center"
             src={props.imageUrl}
             width={160}
             height={160}
