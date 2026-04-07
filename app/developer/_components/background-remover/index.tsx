@@ -1,6 +1,6 @@
 "use client"
 
-import { match, P } from "ts-pattern"
+import { match } from "ts-pattern"
 import ComputeProgress from "./_components/compute-progress"
 import DownloadProgress from "./_components/download-progress"
 import ErrorState from "./_components/error-state"
@@ -44,23 +44,12 @@ const BackgroundRemover = () => {
                 onDragLeave={handleDragLeave}
               />
             ))
-            .with(
-              { phase: "processing", status: { phase: "downloading-model" } },
-              ({ progress }) => <DownloadProgress progress={progress} />,
-            )
-            .with(
-              {
-                phase: "processing",
-                status: {
-                  phase: P.union(
-                    "decoding",
-                    "computing-inference",
-                    "computing-mask",
-                    "encoding",
-                  ),
-                },
-              },
-              ({ status: { phase } }) => <ComputeProgress phase={phase} />,
+            .with({ phase: "processing" }, ({ status, progress }) =>
+              status.phase === "downloading-model" ? (
+                <DownloadProgress progress={progress} />
+              ) : (
+                <ComputeProgress phase={status.phase} />
+              ),
             )
             .with({ phase: "error" }, ({ message }) => (
               <ErrorState

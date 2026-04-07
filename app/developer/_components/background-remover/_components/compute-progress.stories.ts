@@ -5,7 +5,7 @@ import ComputeProgress from "./compute-progress"
 const meta = {
   title: "BackgroundRemover/ComputeProgress",
   component: ComputeProgress,
-  parameters: { layout: "centered" },
+  parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
   argTypes: {
     phase: {

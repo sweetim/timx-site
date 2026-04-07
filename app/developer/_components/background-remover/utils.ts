@@ -4,31 +4,12 @@ import type { ComputePhase, ProcessingStatus, Status } from "./types"
 
 type ProcessingState = Extract<Status, { phase: "processing" }>
 
-type TransitionResult = {
-  immediate: ProcessingState
-  delayed: { status: ProcessingStatus; progress: number } | null
-}
-
 export function resolveProgressUpdate(
   prev: ProcessingState,
   nextStatus: ProcessingStatus,
   progress: number,
-): TransitionResult {
-  const isTransitioningFromFetch =
-    prev.status.phase === "downloading-model"
-    && nextStatus.phase !== "downloading-model"
-
-  if (isTransitioningFromFetch) {
-    return {
-      immediate: { ...prev, progress: 1 },
-      delayed: { status: nextStatus, progress: 0 },
-    }
-  }
-
-  return {
-    immediate: { ...prev, status: nextStatus, progress },
-    delayed: null,
-  }
+): { immediate: ProcessingState } {
+  return { immediate: { ...prev, status: nextStatus, progress } }
 }
 
 export function mapProgressKeyToPhase(key: string): ProcessingStatus {
