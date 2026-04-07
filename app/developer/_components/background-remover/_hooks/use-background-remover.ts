@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { match, P } from "ts-pattern"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { match } from "ts-pattern"
 import type { Status } from "../types"
 import { mapProgressKeyToPhase, resolveProgressUpdate } from "../utils"
+import type { WorkerEvent } from "./background-remover.worker"
 
 function useBackgroundRemover() {
   const [status, setStatus] = useState<Status>({ phase: "idle" })
@@ -11,8 +12,49 @@ function useBackgroundRemover() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const originalUrlRef = useRef<string | null>(null)
   const resultUrlRef = useRef<string | null>(null)
+  const workerRef = useRef<Worker | null>(null)
 
-  const processImage = useCallback(async (file: File) => {
+  useEffect(() => {
+    workerRef.current = new Worker(
+      new URL("./background-remover.worker.ts", import.meta.url),
+    )
+
+    workerRef.current.onmessage = (event: MessageEvent<WorkerEvent>) => {
+      const data = event.data
+
+      match(data)
+        .with({ type: "progress" }, ({ key, current, total }) => {
+          const progress = total > 0 ? current / total : 0
+          const nextStatus = mapProgressKeyToPhase(key)
+
+          setStatus((prev) => {
+            if (prev.phase !== "processing") return prev
+            return resolveProgressUpdate(prev, nextStatus, progress).immediate
+          })
+        })
+        .with({ type: "done" }, ({ blob }) => {
+          const resultUrl = URL.createObjectURL(blob)
+          resultUrlRef.current = resultUrl
+          if (!originalUrlRef.current) return
+          setStatus({
+            phase: "done",
+            originalUrl: originalUrlRef.current,
+            resultUrl,
+          })
+        })
+        .with({ type: "error" }, ({ message }) => {
+          setStatus({ phase: "error", message })
+        })
+        .exhaustive()
+    }
+
+    return () => {
+      workerRef.current?.terminate()
+      workerRef.current = null
+    }
+  }, [])
+
+  const processImage = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
       setStatus({
         phase: "error",
@@ -38,54 +80,7 @@ function useBackgroundRemover() {
       progress: 0,
     })
 
-    await new Promise((resolve) => requestAnimationFrame(resolve))
-
-    try {
-      const { removeBackground } = await import("@imgly/background-removal")
-
-      const resultBlob = await removeBackground(file, {
-        output: { format: "image/png" },
-        progress: (key: string, current: number, total: number) => {
-          const progress = total > 0 ? current / total : 0
-          console.log(key, current, total)
-
-          const nextStatus = mapProgressKeyToPhase(key)
-
-          setStatus((prev) => {
-            if (prev.phase !== "processing") return prev
-
-            const result = resolveProgressUpdate(prev, nextStatus, progress)
-
-            if (result.delayed) {
-              const { status: delayedStatus, progress: delayedProgress } =
-                result.delayed
-              setTimeout(() => {
-                setStatus((prev2) =>
-                  match(prev2)
-                    .with({ phase: "processing" }, () => ({
-                      ...prev2,
-                      status: delayedStatus,
-                      progress: delayedProgress,
-                    }))
-                    .otherwise(() => prev2),
-                )
-              }, 300)
-            }
-
-            return result.immediate
-          })
-        },
-      })
-
-      const resultUrl = URL.createObjectURL(resultBlob)
-      resultUrlRef.current = resultUrl
-      setStatus({ phase: "done", originalUrl, resultUrl })
-    } catch (error) {
-      const message = match(error)
-        .with(P.instanceOf(Error), (error) => error.message)
-        .otherwise(() => "An unexpected error occurred.")
-      setStatus({ phase: "error", message })
-    }
+    workerRef.current?.postMessage({ type: "process", file })
   }, [])
 
   const handleFiles = useCallback(
