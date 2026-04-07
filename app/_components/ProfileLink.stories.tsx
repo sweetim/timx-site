@@ -31,6 +31,11 @@ export const Square: Story = {
 }
 
 export const MultipleLinks: Story = {
+  args: {
+    imageUrl: "",
+    linkUrl: "",
+    index: 0,
+  },
   render: () => (
     <div className="flex gap-4">
       <ProfileLink
