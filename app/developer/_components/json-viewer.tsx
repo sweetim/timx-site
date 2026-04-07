@@ -239,9 +239,12 @@ const JsonViewer: FC = () => {
           <div className="relative flex-1 overflow-hidden">
             <textarea
               className={classNames(
-                "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full",
-                error ? "text-dev-accent-red" : "text-dev-text",
-                showWhitespace && "opacity-0",
+                "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full z-10",
+                error
+                  ? "text-dev-accent-red"
+                  : showWhitespace
+                    ? "text-transparent caret-dev-text"
+                    : "text-dev-text",
               )}
               value={input}
               onChange={(e) => setInput(e.target.value)}
