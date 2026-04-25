@@ -4,7 +4,7 @@ import ImageCropper from "./_components/image-cropper"
 export const metadata: Metadata = {
   title: "Image Cropper",
   description:
-    "Crop images from the center by dragging to select your desired area",
+    "Crop images with configurable aspect ratios and anchor modes. Everything runs locally in your browser.",
 }
 
 export default function ImageCropperPage() {

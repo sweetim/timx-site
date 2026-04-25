@@ -58,10 +58,12 @@ All routes are static (no dynamic segments, no server actions).
 
 1. User uploads or drops an image into `UploadZone`.
 2. The image is loaded and displayed scaled to fit the container.
-3. A centered crop rectangle overlay is rendered with 8 drag handles (corners + edges).
-4. User drags handles to resize or the rectangle body to reposition the crop area.
-5. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
-6. The result is displayed with download and reset actions.
+3. A centered crop rectangle overlay is rendered with 8 drag handles (corners + edges), defaulting to a 1:1 square aspect ratio.
+4. User selects an aspect ratio (Free, 1:1, 4:3, 3:4, 16:9, 9:16) and anchor mode (center or edge).
+5. In center anchor mode, handles expand/shrink the crop symmetrically from the center. In edge anchor mode, the opposite edge stays fixed.
+6. User drags handles to resize or the rectangle body to reposition the crop area.
+7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
+8. The result is displayed with download and reset actions.
 
 ### JSON Viewer flow
 
@@ -136,11 +138,16 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 
 Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
 
+### `app/` assets
+
+| File | Purpose |
+|---|---|
+| `app/favicon.ico` | Site favicon (Next.js App Router convention) |
+
 ### `public/` (static assets)
 
 | File | Purpose |
 |---|---|
-| `public/favicon.ico` | Site favicon |
 | `public/github.svg` | GitHub icon |
 | `public/gitlab.svg` | GitLab icon |
 | `public/docker.svg` | Docker icon |
@@ -247,6 +254,39 @@ type WorkerEvent =
   | { type: "error"; message: string }
 ```
 
+### Image Cropper types (app/developer/image-cropper/_components/image-cropper.tsx)
+
+```typescript
+type CropRect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type AnchorMode = "center" | "edge"
+
+type AspectRatioPreset = "free" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16"
+
+type AspectRatioOption = {
+  label: string
+  preset: AspectRatioPreset
+  ratio: number | null
+}
+
+type DragState = {
+  type: "move" | "nw" | "ne" | "sw" | "se" | "n" | "s" | "e" | "w"
+  startX: number
+  startY: number
+  startCrop: CropRect
+}
+
+type Status =
+  | { phase: "idle" }
+  | { phase: "editing"; imageUrl: string; imageWidth: number; imageHeight: number }
+  | { phase: "cropped"; originalUrl: string; croppedUrl: string }
+```
+
 ### JSON Viewer types (app/developer/json-viewer/_components/json-viewer.tsx)
 
 ```typescript
@@ -260,6 +300,7 @@ Defined in `app/globals.css` under `@theme`:
 
 | Token | Value | Usage |
 |---|---|---|
+| `--font-sans` | var(--font-mali) | Primary font family |
 | `--color-dev-canvas` | #22272e | Page background |
 | `--color-dev-surface` | #2d333b | Elevated surface |
 | `--color-dev-inset` | #1c2128 | Recessed areas |
