@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import ImageCropper from "../_components/image-cropper"
+import ImageCropper from "./_components/image-cropper"
 
 export const metadata: Metadata = {
   title: "Image Cropper",

@@ -2,8 +2,8 @@
 
 import classNames from "classnames"
 import { Crop, Download, RotateCcw, Upload } from "lucide-react"
-import { match } from "ts-pattern"
 import { useCallback, useRef, useState } from "react"
+import { match } from "ts-pattern"
 
 type CropRect = {
   x: number
@@ -21,7 +21,12 @@ type DragState = {
 
 type Status =
   | { phase: "idle" }
-  | { phase: "editing"; imageUrl: string; imageWidth: number; imageHeight: number }
+  | {
+      phase: "editing"
+      imageUrl: string
+      imageWidth: number
+      imageHeight: number
+    }
   | { phase: "cropped"; originalUrl: string; croppedUrl: string }
 
 const HANDLE_SIZE = 10
@@ -134,36 +139,57 @@ function CropOverlay({
     },
     {
       type: "ne",
-      style: { left: crop.x + crop.width - handleHalf, top: crop.y - handleHalf },
+      style: {
+        left: crop.x + crop.width - handleHalf,
+        top: crop.y - handleHalf,
+      },
     },
     {
       type: "sw",
-      style: { left: crop.x - handleHalf, top: crop.y + crop.height - handleHalf },
+      style: {
+        left: crop.x - handleHalf,
+        top: crop.y + crop.height - handleHalf,
+      },
     },
     {
       type: "se",
-      style: { left: crop.x + crop.width - handleHalf, top: crop.y + crop.height - handleHalf },
+      style: {
+        left: crop.x + crop.width - handleHalf,
+        top: crop.y + crop.height - handleHalf,
+      },
     },
     {
       type: "n",
-      style: { left: crop.x + crop.width / 2 - handleHalf, top: crop.y - handleHalf },
+      style: {
+        left: crop.x + crop.width / 2 - handleHalf,
+        top: crop.y - handleHalf,
+      },
     },
     {
       type: "s",
-      style: { left: crop.x + crop.width / 2 - handleHalf, top: crop.y + crop.height - handleHalf },
+      style: {
+        left: crop.x + crop.width / 2 - handleHalf,
+        top: crop.y + crop.height - handleHalf,
+      },
     },
     {
       type: "e",
-      style: { left: crop.x + crop.width - handleHalf, top: crop.y + crop.height / 2 - handleHalf },
+      style: {
+        left: crop.x + crop.width - handleHalf,
+        top: crop.y + crop.height / 2 - handleHalf,
+      },
     },
     {
       type: "w",
-      style: { left: crop.x - handleHalf, top: crop.y + crop.height / 2 - handleHalf },
+      style: {
+        left: crop.x - handleHalf,
+        top: crop.y + crop.height / 2 - handleHalf,
+      },
     },
   ]
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0" role="application" aria-label="Image crop area">
       <div
         className="absolute inset-0"
         style={{
@@ -183,8 +209,10 @@ function CropOverlay({
           )`,
         }}
       />
-      <div
-        className="absolute border-2 border-white/70"
+      <button
+        type="button"
+        aria-label="Move crop area"
+        className="absolute border-2 border-white/70 bg-transparent cursor-grab"
         style={{
           left: crop.x,
           top: crop.y,
@@ -203,8 +231,10 @@ function CropOverlay({
         }}
       />
       {handles.map(({ type, style }) => (
-        <div
+        <button
           key={type}
+          type="button"
+          aria-label={`Resize ${type}`}
           className="absolute bg-white border border-dev-border rounded-sm"
           style={{
             ...style,
@@ -232,8 +262,17 @@ function CropOverlay({
 function ImageCropper() {
   const [status, setStatus] = useState<Status>({ phase: "idle" })
   const [isDragOver, setIsDragOver] = useState(false)
-  const [crop, setCrop] = useState<CropRect>({ x: 0, y: 0, width: 0, height: 0 })
-  const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0, scale: 1 })
+  const [crop, setCrop] = useState<CropRect>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  })
+  const [displayDimensions, setDisplayDimensions] = useState({
+    width: 0,
+    height: 0,
+    scale: 1,
+  })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -254,7 +293,11 @@ function ImageCropper() {
         containerWidth,
         containerHeight,
       )
-      setDisplayDimensions({ width: displayWidth, height: displayHeight, scale })
+      setDisplayDimensions({
+        width: displayWidth,
+        height: displayHeight,
+        scale,
+      })
       setCrop(getInitialCrop(displayWidth, displayHeight))
       setStatus({
         phase: "editing",
@@ -275,6 +318,10 @@ function ImageCropper() {
         const maxX = displayDimensions.width
         const maxY = displayDimensions.height
 
+        const aspect = sc.width / sc.height
+        const cx = sc.x + sc.width / 2
+        const cy = sc.y + sc.height / 2
+
         const next = match(newDrag.type)
           .with("move", () => ({
             x: sc.x + dx,
@@ -282,55 +329,20 @@ function ImageCropper() {
             width: sc.width,
             height: sc.height,
           }))
-          .with("nw", () => ({
-            x: sc.x + dx,
-            y: sc.y + dy,
-            width: sc.width - dx,
-            height: sc.height - dy,
-          }))
-          .with("ne", () => ({
-            x: sc.x,
-            y: sc.y + dy,
-            width: sc.width + dx,
-            height: sc.height - dy,
-          }))
-          .with("sw", () => ({
-            x: sc.x + dx,
-            y: sc.y,
-            width: sc.width - dx,
-            height: sc.height + dy,
-          }))
-          .with("se", () => ({
-            x: sc.x,
-            y: sc.y,
-            width: sc.width + dx,
-            height: sc.height + dy,
-          }))
-          .with("n", () => ({
-            x: sc.x,
-            y: sc.y + dy,
-            width: sc.width,
-            height: sc.height - dy,
-          }))
-          .with("s", () => ({
-            x: sc.x,
-            y: sc.y,
-            width: sc.width,
-            height: sc.height + dy,
-          }))
-          .with("e", () => ({
-            x: sc.x,
-            y: sc.y,
-            width: sc.width + dx,
-            height: sc.height,
-          }))
-          .with("w", () => ({
-            x: sc.x + dx,
-            y: sc.y,
-            width: sc.width - dx,
-            height: sc.height,
-          }))
-          .exhaustive()
+          .otherwise(() => {
+            const rawDx = e.clientX - newDrag.startX
+            const rawDy = e.clientY - newDrag.startY
+            const signedDist =
+              Math.abs(rawDx) > Math.abs(rawDy) ? rawDx : rawDy * aspect
+            const newW = sc.width + signedDist * 2
+            const newH = newW / aspect
+            return {
+              x: cx - newW / 2,
+              y: cy - newH / 2,
+              width: newW,
+              height: newH,
+            }
+          })
 
         setCrop(clampCrop(next, maxX, maxY))
       }
@@ -414,7 +426,10 @@ function ImageCropper() {
   return (
     <div className="flex flex-col h-full bg-dev-canvas">
       <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto px-6 py-8" ref={wrapperRef}>
+        <div
+          className="max-w-4xl mx-auto px-6 py-8"
+          ref={wrapperRef}
+        >
           <h1 className="text-2xl font-semibold text-dev-text mb-1">
             Image Cropper
           </h1>
@@ -455,7 +470,10 @@ function ImageCropper() {
                       height: displayDimensions.height,
                     }}
                   />
-                  <CropOverlay crop={crop} onDragStart={handleDragStart} />
+                  <CropOverlay
+                    crop={crop}
+                    onDragStart={handleDragStart}
+                  />
                 </div>
                 <div className="flex gap-2">
                   <button

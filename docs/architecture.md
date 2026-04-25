@@ -77,6 +77,7 @@ All routes are static (no dynamic segments, no server actions).
 - **Tool registry pattern**: tools are defined centrally in `app/developer/_lib/tools.ts` and referenced by both the index page and the navbar.
 - **ts-pattern for exhaustive matching**: used throughout for state machine transitions and conditional rendering.
 - **Private component folders**: components prefixed with `_` (e.g. `_components`, `_lib`, `_hooks`) are colocated with their routes and excluded from routing.
+- **Colocated Storybook stories**: UI stories live beside the components they document as `*.stories.tsx` files under `app/`.
 
 ## File map
 
@@ -84,13 +85,22 @@ All routes are static (no dynamic segments, no server actions).
 
 | File | Purpose |
 |---|---|
+| `README.md` | Project overview and local development instructions |
+| `AGENTS.md` | Repository-specific engineering instructions and workflow constraints |
 | `mise.toml` | Pins Bun 1 for local development via mise |
+| `bun.lock` | Bun dependency lockfile for the main application |
+| `next-env.d.ts` | Next.js generated type declarations |
 | `next.config.ts` | Next.js configuration (image remote patterns) |
 | `tsconfig.json` | TypeScript configuration |
 | `postcss.config.mjs` | PostCSS with Tailwind |
 | `eslint.config.mjs` | ESLint flat config |
 | `biome.json` | Biome linter/formatter config |
 | `package.json` | Dependencies, Bun package-manager metadata, and scripts |
+| `.storybook/main.ts` | Storybook file discovery and framework configuration |
+| `.storybook/preview.ts` | Storybook global preview configuration |
+| `.kilo/commands/doc-sync.md` | Local Kilo command for syncing architecture docs |
+
+Generated or dependency-managed directories such as `.next/`, `node_modules/`, `.git/`, and `tsconfig.tsbuildinfo` are intentionally omitted from the file map.
 
 ### `app/` (routes and components)
 
@@ -105,7 +115,7 @@ All routes are static (no dynamic segments, no server actions).
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
 | `app/developer/_components/nav-bar.tsx` | Top navigation bar for developer section |
-| `app/developer/_components/json-viewer.tsx` | JSON Viewer client component |
+| `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/_components/background-remover/index.tsx` | Background Remover client component |
 | `app/developer/_components/background-remover/types.ts` | Status and phase types |
@@ -121,8 +131,10 @@ All routes are static (no dynamic segments, no server actions).
 | `app/developer/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
 | `app/developer/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
 | `app/developer/background-remover/page.tsx` | Background Remover route page |
-| `app/developer/_components/image-cropper.tsx` | Image Cropper client component |
+| `app/developer/image-cropper/_components/image-cropper.tsx` | Image Cropper client component |
 | `app/developer/image-cropper/page.tsx` | Image Cropper route page |
+
+Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
 
 ### `public/` (static assets)
 
@@ -235,7 +247,7 @@ type WorkerEvent =
   | { type: "error"; message: string }
 ```
 
-### JSON Viewer types (app/developer/_components/json-viewer.tsx)
+### JSON Viewer types (app/developer/json-viewer/_components/json-viewer.tsx)
 
 ```typescript
 type JsonPrimitive = string | number | boolean | null

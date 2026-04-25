@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import JsonViewer from "../_components/json-viewer"
+import JsonViewer from "./_components/json-viewer"
 
 export const metadata: Metadata = {
   title: "JSON Viewer",
