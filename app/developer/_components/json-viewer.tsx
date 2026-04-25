@@ -190,6 +190,37 @@ const JsonViewer: FC = () => {
     setError(null)
   }, [])
 
+  const handleUnescape = useCallback(() => {
+    if (!parsed) return
+
+    function unescapeJson(value: JsonValue): JsonValue {
+      if (value !== null && typeof value === "object") {
+        if (Array.isArray(value)) {
+          return value.map(unescapeJson)
+        }
+        const result: { [key: string]: JsonValue } = {}
+        for (const [key, val] of Object.entries(value)) {
+          result[key] = unescapeJson(val)
+        }
+        return result
+      }
+      if (typeof value === "string") {
+        try {
+          const unescaped = JSON.parse(value) as JsonValue
+          if (unescaped !== null && typeof unescaped === "object") {
+            return unescapeJson(unescaped)
+          }
+        } catch {
+          // not valid JSON, return original string
+        }
+      }
+      return value
+    }
+
+    const result = unescapeJson(parsed)
+    setInput(JSON.stringify(result, null, 2))
+  }, [parsed])
+
   return (
     <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
       <div className="flex items-center justify-end px-4 py-2 border-b border-dev-border">
@@ -213,6 +244,14 @@ const JsonViewer: FC = () => {
             disabled={!parsed}
           >
             Format
+          </button>
+          <button
+            type="button"
+            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            onClick={handleUnescape}
+            disabled={!parsed}
+          >
+            Unescape
           </button>
           <button
             type="button"

@@ -17,4 +17,10 @@ export const tools: Tool[] = [
     description:
       "Remove the background from any image using AI — entirely in your browser",
   },
+  {
+    name: "Image Cropper",
+    slug: "image-cropper",
+    description:
+      "Crop images from the center by dragging to select your desired area",
+  },
 ]

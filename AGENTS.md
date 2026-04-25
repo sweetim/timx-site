@@ -1,115 +1,88 @@
-# timx-site
+## 0. Know the Project
 
-Personal portfolio and developer tools site built with Next.js App Router.
+Read `docs/architecture.md` for the full project structure: file map, routing, types, dependencies, execution flows, and theme tokens. Consult it whenever you need context about how the app is organized.
 
-## Commands
+## 1. Think Before Coding
 
-- `npm run dev` — start dev server
-- `npm run build` — production build
-- `npm run lint` — run ESLint
-- `npx biome check .` — run Biome formatter + linter
-- `npx biome check --write .` — auto-fix Biome issues
-- `npm run storybook` — start Storybook (port 6006)
-- `npm run build-storybook` — build Storybook static
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-## Tech Stack
+Before implementing:
+- Present your plan to the user and wait for their approval before writing any code.
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
 
-- Next.js 16 (App Router only — no `pages/` directory)
-- React 19
-- TypeScript (strict mode)
-- Tailwind CSS v4 (CSS-first config via `@theme {}` in `app/globals.css`, no `tailwind.config.*`)
-- Biome — formatter + linter (primary)
-- ESLint — secondary, for Next.js core-web-vitals rules
-- Storybook 10 (configured but not yet scaffolded — no `.storybook/` or stories)
+## 2. Simplicity First
 
-## Formatting Rules
+**Minimum code that solves the problem. Nothing speculative.**
 
-Configured in `biome.json`. Key settings:
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
 
-- 2-space indent, spaces (no tabs)
-- Double quotes
-- No semicolons (as needed)
-- Multiline JSX attributes
-- Operator linebreak before
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-## TypeScript Rules
+## 3. Surgical Changes
 
-- Use `type` instead of `interface` for all type definitions
-- Path alias: `@/*` maps to `./*`
-- Use `ts-pattern@5` for pattern matching and exhaustive type handling
-- No abbreviations — use full names
+**Touch only what you must. Clean up only your own mess.**
 
-## Architecture
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
 
-### App Router Structure
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
 
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
 ```
-app/
-  layout.tsx              # Root layout (server component)
-  page.tsx                # Home page /
-  _components/            # Shared components (underscore prefix = excluded from routing)
-  developer/
-    layout.tsx            # Developer section layout
-    page.tsx              # Developer tools index /developer
-    _components/          # Developer-specific shared components
-      background-remover/ # Feature module (self-contained)
-      nav-bar.tsx
-      json-viewer.tsx
-    _lib/
-      tools.ts            # Tool registry (single source of truth)
-    background-remover/   # Route: /developer/background-remover
-    json-viewer/          # Route: /developer/json-viewer
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
 ```
 
-### Component Patterns
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-- **Server components by default** — pages and presentational components stay server-side
-- **`"use client"` only when needed** — for state, effects, browser APIs, or hooks
-- **Thin server-component pages** — route pages export metadata and delegate to client components
-- **Co-located components** — use `_components/` (underscore prefix) next to routes
-- **Self-contained feature modules** — complex features (e.g., background-remover) have their own `types.ts`, `constants.ts`, `utils.ts`, and sub-components
+## 5. Keep Docs in Sync
 
-### Adding a New Developer Tool
+**When you change code, update the corresponding docs.**
 
-1. Create route directory: `app/developer/<tool-name>/page.tsx` (server component, exports metadata)
-2. Create component in `app/developer/_components/<tool-name>/` (client component)
-3. Add entry to `app/developer/_lib/tools.ts` registry
+- If you add, remove, or rename a source file, update the file map in `docs/`.
+- If you add, remove, or change a command, endpoint, or export, update the documented API surface.
+- If you add or remove a dependency, update the documented dependency list.
+- If you add or change an environment variable, update the documented env var list.
+- If you add, remove, or modify a type or schema, update the documented type definitions.
+- If you change an execution flow or architecture, update the documented flow description.
 
-### Key Libraries
+The rule: every implementation change must include a corresponding doc change. Don't leave docs stale.
 
-- `lucide-react` — icons (required for all icons)
-- `classnames` — conditional CSS class composition (no custom `cn` helper)
-- `ts-pattern@5` — pattern matching with `.exhaustive()`
-- `@imgly/background-removal` — client-side AI processing (dynamically imported)
+## 6. Keep Storybook in Sync
 
-### State Management
+**When you implement or materially change UI, add or update the corresponding Storybook stories.**
 
-- React built-in hooks only (`useState`, `useRef`, `useCallback`, `useMemo`, `useEffect`)
-- No external state management libraries
+- New UI components should ship with stories.
+- Existing components with changed behavior or states should have their stories updated to match.
 
-## Color Theme — Developer Pages
+# Coding Rules
 
-All pages under `app/developer/` use the **GitHub Soft Dark** (`dark-dimmed`) color tokens from `app/globals.css` under the `dev-` namespace.
-
-- Always use `dev-` prefixed Tailwind classes (e.g. `bg-dev-canvas`, `text-dev-text`)
-- Never use arbitrary hex values (e.g. `bg-[#22272e]`)
-- Never use the "hard dark" GitHub palette
-
-## Coding Rules
-
-- When the API implementation is updated, update `docs/api.md`
-- Use discriminated unions with `ts-pattern` `.exhaustive()` for state machines
-- Dynamically import heavy dependencies (e.g. `await import("@imgly/background-removal")`)
-- Use `biome-ignore` comments for intentional lint suppressions
-
-## Next.js
-
-This is Next.js 16 with breaking changes from earlier versions. APIs, conventions, and file structure may differ from training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing code. Heed deprecation notices.
-
-## Storybook
-
-Write a Storybook story for every new component added to `_components/`. When updating an existing component, update its corresponding story to reflect the changes.
-
-## Testing
-
-No test framework is currently configured. There are no test files or test runners.
+- Use `type` instead of `interface` when defining TypeScript types to ensure
+  consistency and avoid unintended interface merging.
+- Prefer [`ts-pattern@5`](https://github.com/gvergnaud/ts-pattern) for pattern
+  matching and exhaustive type handling whenever possible.
+- Don't use abbreviations, always use full names.
