@@ -23,4 +23,10 @@ export const tools: Tool[] = [
     description:
       "Crop images from the center by dragging to select your desired area",
   },
+  {
+    name: "LLM Pricing",
+    slug: "llm-usage",
+    description:
+      "Compare pricing across LLM providers via OpenRouter",
+  },
 ]

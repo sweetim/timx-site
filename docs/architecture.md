@@ -27,6 +27,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/json-viewer     → JSON Viewer tool
 /developer/background-remover → Background Remover tool
 /developer/image-cropper     → Image Cropper tool
+/developer/llm-usage        → LLM Pricing tool
 ```
 
 All routes are static (no dynamic segments, no server actions).
@@ -44,6 +45,7 @@ All routes are static (no dynamic segments, no server actions).
 1. `app/developer/layout.tsx` wraps all developer routes with a `NavBar`.
 2. `app/developer/page.tsx` reads the tool registry from `app/developer/_lib/tools.ts` and renders a card grid linking to each tool.
 3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
+4. The LLM Pricing page fetches model data server-side from the OpenRouter API and passes it to a client component for interactive sorting and filtering.
 
 ### Background Remover flow
 
@@ -135,6 +137,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/background-remover/page.tsx` | Background Remover route page |
 | `app/developer/image-cropper/_components/image-cropper.tsx` | Image Cropper client component |
 | `app/developer/image-cropper/page.tsx` | Image Cropper route page |
+| `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing client component (sortable/filterable table) |
+| `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
 
 Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
 

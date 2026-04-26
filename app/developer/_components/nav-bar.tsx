@@ -15,13 +15,13 @@ const NavBar = () => {
     <nav className="flex items-center gap-6 px-4 py-2.5 border-b border-dev-border bg-dev-canvas">
       <Link
         href="/"
-        className="shrink-0 hover:bg-neutral-300 rounded-full"
+        className="shrink-0 transition-opacity hover:opacity-80"
       >
         <Image
-          src="/favicon.ico"
+          src="/timx-logo.png"
           alt="timx"
-          width={20}
-          height={20}
+          width={28}
+          height={28}
         />
       </Link>
       <div className="w-px h-4 bg-dev-border" />
