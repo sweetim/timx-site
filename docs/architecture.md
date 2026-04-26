@@ -23,6 +23,8 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 
 ```
 /                          → Profile page (home)
+/about                     → About page
+/privacy                   → Privacy policy
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
 /developer/background-remover → Background Remover tool
@@ -111,10 +113,15 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | File | Purpose |
 |---|---|
 | `app/layout.tsx` | Root layout (Mali font, global CSS) |
-| `app/page.tsx` | Home page — profile card |
+| `app/page.tsx` | Home page — profile card with Person JSON-LD |
+| `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
+| `app/sitemap.ts` | XML sitemap listing all pages |
 | `app/globals.css` | Tailwind import, theme tokens, animations |
+| `app/about/page.tsx` | About page |
+| `app/privacy/page.tsx` | Privacy policy page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
+| `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, WebApplication) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar |
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
@@ -230,8 +237,28 @@ type ProfileProps = {
 type ProfileLinkProps = {
   imageUrl: string
   linkUrl: string
+  label: string
   isRounded?: boolean
   index?: number
+}
+```
+
+### JSON-LD types (app/_components/json-ld.tsx)
+
+```typescript
+type PersonJsonLdProps = {
+  name: string
+  url: string
+  jobTitle: string
+  description: string
+  sameAs: string[]
+}
+
+type WebApplicationJsonLdProps = {
+  name: string
+  description: string
+  url: string
+  applicationCategory: string
 }
 ```
 

@@ -21,18 +21,22 @@ const defaultArgs: Story["args"] = {
     {
       imageUrl: "https://cdn.simpleicons.org/github/ffffff",
       linkUrl: "https://github.com",
+      label: "GitHub",
     },
     {
       imageUrl: "https://cdn.simpleicons.org/linkedin/0A66C2",
       linkUrl: "https://linkedin.com",
+      label: "LinkedIn",
     },
     {
       imageUrl: "https://cdn.simpleicons.org/x/ffffff",
       linkUrl: "https://x.com",
+      label: "X",
     },
     {
       imageUrl: "https://cdn.simpleicons.org/gmail/EA4335",
       linkUrl: "mailto:test@example.com",
+      label: "Email",
     },
   ],
 }
@@ -46,6 +50,7 @@ export const SingleLink: Story = {
       {
         imageUrl: "https://cdn.simpleicons.org/github/ffffff",
         linkUrl: "https://github.com",
+        label: "GitHub",
       },
     ],
   },

@@ -17,6 +17,7 @@ const blobShapes = [
 export type ProfileLinkProps = {
   imageUrl: string
   linkUrl: string
+  label: string
   isRounded?: boolean
   index?: number
 }
@@ -24,10 +25,11 @@ export type ProfileLinkProps = {
 const ProfileLink: FC<ProfileLinkProps> = ({
   imageUrl,
   linkUrl,
+  label,
   isRounded,
   index = 0,
 }) => {
-  isRounded = isRounded ?? true
+  const rounded = isRounded ?? true
 
   const clickHandler = (linkUrl: string) => {
     window.open(linkUrl)
@@ -37,8 +39,8 @@ const ProfileLink: FC<ProfileLinkProps> = ({
 
   const imageShapeClass = classNames({
     "text-blue-700 hover:bg-neutral-300 focus:ring-3 focus:outline-none focus:ring-blue-300 font-medium p-2.5 text-center inline-flex items-center": true,
-    "rounded-full": isRounded,
-    "rounded-lg": !isRounded,
+    "rounded-full": rounded,
+    "rounded-lg": !rounded,
   })
 
   return (
@@ -48,22 +50,22 @@ const ProfileLink: FC<ProfileLinkProps> = ({
         onClick={() => clickHandler(linkUrl)}
         className={imageShapeClass}
         style={
-          isRounded
+          rounded
             ? ({ "--hover-radius": hoverRadius } as React.CSSProperties)
             : undefined
         }
         onMouseEnter={(event) => {
-          if (isRounded) event.currentTarget.style.borderRadius = hoverRadius
+          if (rounded) event.currentTarget.style.borderRadius = hoverRadius
         }}
         onMouseLeave={(event) => {
-          if (isRounded) event.currentTarget.style.borderRadius = "9999px"
+          if (rounded) event.currentTarget.style.borderRadius = "9999px"
         }}
       >
         <Image
           src={imageUrl}
           height={36}
           width={36}
-          alt={linkUrl}
+          alt={label}
         />
       </button>
     </div>

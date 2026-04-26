@@ -1,3 +1,4 @@
+import { PersonJsonLd } from "@/app/_components/json-ld"
 import Profile, { type ProfileProps } from "@/app/_components/Profile"
 
 function getProfile(): ProfileProps {
@@ -10,22 +11,27 @@ function getProfile(): ProfileProps {
       {
         imageUrl: "/gitlab.svg",
         linkUrl: "https://gitlab.com/users/hosweetim/projects",
+        label: "GitLab",
       },
       {
         imageUrl: "/github.svg",
         linkUrl: "https://github.com/sweetim",
+        label: "GitHub",
       },
       {
         imageUrl: "/docker.svg",
         linkUrl: "https://hub.docker.com/r/timx/",
+        label: "Docker Hub",
       },
       {
         imageUrl: "/linkedin.svg",
         linkUrl: "https://www.linkedin.com/in/swee-tim-ho-8a378048",
+        label: "LinkedIn",
       },
       {
         imageUrl: "/stackoverflow.svg",
-        linkUrl: "http://stackoverflow.com/users/2297825/tim",
+        linkUrl: "https://stackoverflow.com/users/2297825/tim",
+        label: "Stack Overflow",
         isRounded: false,
       },
     ],
@@ -34,8 +40,22 @@ function getProfile(): ProfileProps {
 
 export default function Home() {
   return (
-    <div className="flex justify-center items-center h-full bg-neutral-200">
-      <Profile {...getProfile()} />
-    </div>
+    <>
+      <PersonJsonLd
+        name="Tim"
+        url="https://timx.co"
+        jobTitle="Software Developer"
+        description="Developer based in Tokyo building free browser-based tools"
+        sameAs={[
+          "https://github.com/sweetim",
+          "https://gitlab.com/users/hosweetim/projects",
+          "https://www.linkedin.com/in/swee-tim-ho-8a378048",
+          "https://stackoverflow.com/users/2297825/tim",
+        ]}
+      />
+      <div className="flex justify-center items-center h-full bg-neutral-200">
+        <Profile {...getProfile()} />
+      </div>
+    </>
   )
 }

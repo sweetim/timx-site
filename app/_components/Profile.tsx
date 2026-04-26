@@ -30,7 +30,7 @@ const Profile: FC<ProfileProps> = (props) => {
             src={props.imageUrl}
             width={160}
             height={160}
-            alt="Extra large avatar"
+            alt="Tim — developer portrait"
           />
         </Link>
       </div>

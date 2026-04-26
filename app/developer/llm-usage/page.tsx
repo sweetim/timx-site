@@ -1,9 +1,19 @@
 import type { Metadata } from "next"
+import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import LlmUsage from "./_components/llm-usage"
 
 export const metadata: Metadata = {
-  title: "LLM Pricing",
-  description: "Compare pricing across LLM providers via OpenRouter",
+  title: "LLM Pricing Comparison",
+  description:
+    "Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more. Data sourced from OpenRouter and updated hourly.",
+  alternates: { canonical: "https://timx.co/developer/llm-usage" },
+  openGraph: {
+    title: "LLM Pricing Comparison",
+    description:
+      "Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more.",
+    url: "https://timx.co/developer/llm-usage",
+    images: [{ url: "https://timx.co/opengraph.webp" }],
+  },
 }
 
 export const revalidate = 3600
@@ -36,5 +46,15 @@ async function getModels(): Promise<Model[]> {
 
 export default async function LlmUsagePage() {
   const models = await getModels()
-  return <LlmUsage models={models} />
+  return (
+    <>
+      <WebApplicationJsonLd
+        name="LLM Pricing Comparison"
+        description="Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more"
+        url="https://timx.co/developer/llm-usage"
+        applicationCategory="DeveloperApplication"
+      />
+      <LlmUsage models={models} />
+    </>
+  )
 }

@@ -16,6 +16,7 @@ export const Rounded: Story = {
   args: {
     imageUrl: "https://cdn.simpleicons.org/github/ffffff",
     linkUrl: "https://github.com",
+    label: "GitHub",
     isRounded: true,
     index: 0,
   },
@@ -25,6 +26,7 @@ export const Square: Story = {
   args: {
     imageUrl: "https://cdn.simpleicons.org/github/ffffff",
     linkUrl: "https://github.com",
+    label: "GitHub",
     isRounded: false,
     index: 0,
   },
@@ -34,6 +36,7 @@ export const MultipleLinks: Story = {
   args: {
     imageUrl: "",
     linkUrl: "",
+    label: "",
     index: 0,
   },
   render: () => (
@@ -41,21 +44,25 @@ export const MultipleLinks: Story = {
       <ProfileLink
         imageUrl="https://cdn.simpleicons.org/github/ffffff"
         linkUrl="https://github.com"
+        label="GitHub"
         index={0}
       />
       <ProfileLink
         imageUrl="https://cdn.simpleicons.org/linkedin/0A66C2"
         linkUrl="https://linkedin.com"
+        label="LinkedIn"
         index={1}
       />
       <ProfileLink
         imageUrl="https://cdn.simpleicons.org/x/ffffff"
         linkUrl="https://x.com"
+        label="X"
         index={2}
       />
       <ProfileLink
         imageUrl="https://cdn.simpleicons.org/gmail/EA4335"
         linkUrl="mailto:test@example.com"
+        label="Email"
         index={3}
       />
     </div>

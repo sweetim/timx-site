@@ -8,8 +8,20 @@ const mali = Mali({
 })
 
 export const metadata: Metadata = {
-  title: "timx",
-  description: "my personal site",
+  title: { default: "Tim — Developer Tools & Portfolio", template: "%s | timx" },
+  description:
+    "Free browser-based developer tools: JSON viewer, background remover, image cropper, and LLM pricing comparison. By Tim, a developer in Tokyo.",
+  alternates: { canonical: "https://timx.co" },
+  openGraph: {
+    type: "website",
+    url: "https://timx.co",
+    siteName: "timx",
+    title: "Tim — Developer Tools & Portfolio",
+    description:
+      "Free browser-based developer tools: JSON viewer, background remover, image cropper, and LLM pricing comparison. By Tim, a developer in Tokyo.",
+    images: [{ url: "https://timx.co/opengraph.webp" }],
+  },
+  twitter: { card: "summary_large_image" },
 }
 
 export default function RootLayout({

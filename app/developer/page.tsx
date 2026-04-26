@@ -3,8 +3,17 @@ import Link from "next/link"
 import { tools } from "./_lib/tools"
 
 export const metadata: Metadata = {
-  title: "Developer Tools",
-  description: "Useful applications for developers",
+  title: "Free Developer Tools",
+  description:
+    "A collection of free browser-based developer tools. JSON viewer, AI background remover, image cropper, and LLM pricing comparison — no uploads, no sign-up.",
+  alternates: { canonical: "https://timx.co/developer" },
+  openGraph: {
+    title: "Free Developer Tools",
+    description:
+      "A collection of free browser-based developer tools. JSON viewer, AI background remover, image cropper, and LLM pricing comparison.",
+    url: "https://timx.co/developer",
+    images: [{ url: "https://timx.co/opengraph.webp" }],
+  },
 }
 
 export default function DeveloperPage() {
