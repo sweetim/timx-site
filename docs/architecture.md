@@ -126,7 +126,6 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all pages |
 | `app/globals.css` | Tailwind import, theme tokens, animations |
-| `app/about/page.tsx` | About page |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
@@ -389,4 +388,4 @@ Defined in `app/globals.css` under `@theme`:
 | `--color-dev-syntax-boolean` | #ff8b39 | JSON boolean |
 | `--color-dev-syntax-null` | #ff8b39 | JSON null |
 | `--color-dev-syntax-property` | #6cb6ff | JSON property |
-| `--color-dev-syntax-punctuation` | #adbac7 | JSON punctuation |
+| `--color-dev-syntax-punctuation` | #adbac7 | JSON punctuatio    
