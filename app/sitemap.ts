@@ -13,5 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/developer/background-remover`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/developer/image-cropper`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/developer/llm-usage`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/developer/og-preview`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ]
 }

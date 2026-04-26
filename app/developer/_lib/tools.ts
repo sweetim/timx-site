@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Crop, Eraser, Scale } from "lucide-react"
+import { Braces, Crop, Eraser, Globe, Scale } from "lucide-react"
 
 export type Tool = {
   name: string
@@ -36,5 +36,12 @@ export const tools: Tool[] = [
     description:
       "Compare pricing across LLM providers via OpenRouter",
     icon: Scale,
+  },
+  {
+    name: "OG Preview",
+    slug: "og-preview",
+    description:
+      "Debug Open Graph and Twitter meta tags for any URL",
+    icon: Globe,
   },
 ]

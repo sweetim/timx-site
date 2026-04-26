@@ -30,9 +30,10 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/background-remover → Background Remover tool
 /developer/image-cropper     → Image Cropper tool
 /developer/llm-usage        → LLM Pricing tool
+/developer/og-preview       → OG Preview tool
 ```
 
-All routes are static (no dynamic segments, no server actions).
+All routes are static (no dynamic segments). The OG Preview tool uses a server action for server-side URL fetching.
 
 ## Execution flow
 
@@ -48,6 +49,7 @@ All routes are static (no dynamic segments, no server actions).
 2. `app/developer/page.tsx` reads the tool registry from `app/developer/_lib/tools.ts` and renders a card grid linking to each tool.
 3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
 4. The LLM Pricing page fetches model data server-side from the OpenRouter API and passes it to a client component for interactive sorting and filtering.
+5. The OG Preview page uses a server action (`fetchOgData`) to fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
 
 ### Background Remover flow
 
@@ -76,9 +78,16 @@ All routes are static (no dynamic segments, no server actions).
 3. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
 4. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
 
+### OG Preview flow
+
+1. User enters a URL in the input field and submits.
+2. The client component calls the `fetchOgData` server action with the URL.
+3. The server action fetches the HTML, parses `<meta property="og:*">` and `<meta name="twitter:*">` tags via regex, resolves relative URLs, and returns structured data.
+4. The client renders a social-media-style preview card (image, title, description) and a raw tags table showing all discovered meta values.
+
 ## Key design decisions
 
-- **No API routes**: all tools run entirely in the browser.
+- **No API routes**: all tools run entirely in the browser, except OG Preview which uses a server action for server-side URL fetching.
 - **Web Worker for AI inference**: background removal runs off the main thread to keep the UI responsive.
 - **Tool registry pattern**: tools are defined centrally in `app/developer/_lib/tools.ts` and referenced by both the index page and the navbar.
 - **ts-pattern for exhaustive matching**: used throughout for state machine transitions and conditional rendering.
@@ -151,6 +160,9 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/_components/constants.ts` | Release filter options |
 | `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
+| `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
+| `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
+| `app/developer/og-preview/page.tsx` | OG Preview route page |
 
 Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
 
@@ -329,6 +341,24 @@ type Status =
 ```typescript
 type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
+```
+
+### OG Preview types (app/developer/og-preview/_lib/fetch-og.ts)
+
+```typescript
+type OgData = {
+  url: string
+  title: string | null
+  description: string | null
+  image: string | null
+  siteName: string | null
+  type: string | null
+  twitterCard: string | null
+  twitterTitle: string | null
+  twitterDescription: string | null
+  twitterImage: string | null
+  favicon: string | null
+}
 ```
 
 ## Theme tokens
