@@ -32,8 +32,8 @@
 }
 
 * {
-    scrollbar-width: thin;
-    scrollbar-color: #1e293b #1e293b;
+    scrollbar-width: auto;
+    scrollbar-color: #333 #1e293b;
 }
 
 .no-scrollbar {
