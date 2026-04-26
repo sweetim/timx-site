@@ -2,7 +2,7 @@
 
 import classNames from "classnames"
 import { Download, Images, Plus, RotateCcw, Trash2, Upload } from "lucide-react"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 type ImageItem = {
   id: string
@@ -202,6 +202,18 @@ function ImageResizer() {
     }
   }, [])
 
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const files = e.clipboardData?.files
+      if (files && files.length > 0) {
+        e.preventDefault()
+        addFiles(files)
+      }
+    }
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [addFiles])
+
   const removeImage = useCallback((id: string) => {
     setImages((prev) => {
       const item = prev.find((i) => i.id === id)
@@ -295,7 +307,7 @@ function ImageResizer() {
             >
               <Upload className="w-12 h-12 text-dev-text-secondary" />
               <p className="mt-3 text-sm font-medium text-dev-text">
-                Drop images here, or click to browse
+                Drop images here, paste from clipboard, or click to browse
               </p>
               <p className="mt-1 text-xs text-dev-text-secondary">
                 PNG, JPEG, or WebP — select multiple files

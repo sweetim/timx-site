@@ -122,6 +122,19 @@ function useBackgroundRemover() {
     fileInputRef.current?.click()
   }, [])
 
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (status.phase !== "idle") return
+      const file = e.clipboardData?.files[0]
+      if (file?.type.startsWith("image/")) {
+        e.preventDefault()
+        processImage(file)
+      }
+    }
+    document.addEventListener("paste", handlePaste)
+    return () => document.removeEventListener("paste", handlePaste)
+  }, [status.phase, processImage])
+
   const handleDownload = useCallback(() => {
     if (status.phase !== "done") return
     const link = document.createElement("a")
