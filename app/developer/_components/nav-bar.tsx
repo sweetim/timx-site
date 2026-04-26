@@ -39,6 +39,7 @@ const NavBar = () => {
       <div className="w-px h-4 bg-dev-border shrink-0" />
       <div
         className="no-scrollbar flex items-center gap-1 overflow-x-auto"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         onWheel={(e) => {
           const target = e.currentTarget
           if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
