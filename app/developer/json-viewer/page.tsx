@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import opengraph from "@/app/opengraph.jpg"
 import JsonViewer from "./_components/json-viewer"
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     description:
       "View, format, validate, and explore JSON data with a collapsible tree view. Runs entirely in your browser.",
     url: "https://timx.co/developer/json-viewer",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
 }
 

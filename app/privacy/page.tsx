@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import opengraph from "@/app/opengraph.jpg"
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     description:
       "Privacy policy for timx.co — free browser-based developer tools. No data is collected or sent to any server.",
     url: "https://timx.co/privacy",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
 }
 
@@ -51,9 +52,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">
-            LLM Pricing
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900">LLM Pricing</h2>
           <p className="text-slate-700 leading-relaxed">
             Model pricing data is fetched from the public OpenRouter API. No
             personal information is included in these requests.

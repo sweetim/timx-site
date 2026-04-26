@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import opengraph from "@/app/opengraph.jpg"
 import BackgroundRemover from "../_components/background-remover"
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     description:
       "Remove the background from any image using AI — entirely in your browser. No uploads, no sign-up.",
     url: "https://timx.co/developer/background-remover",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
 }
 

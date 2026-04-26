@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import opengraph from "@/app/opengraph.jpg"
 import ImageCropper from "./_components/image-cropper"
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     description:
       "Crop images with configurable aspect ratios and anchor modes. Everything runs locally in your browser.",
     url: "https://timx.co/developer/image-cropper",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
 }
 

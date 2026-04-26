@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Mali } from "next/font/google"
+import opengraph from "@/app/opengraph.jpg"
 import "./globals.css"
 
 const mali = Mali({
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     title: "Tim — Developer Tools & Portfolio",
     description:
       "Free browser-based developer tools: JSON viewer, background remover, image cropper, and LLM pricing comparison. By Tim, a developer in Tokyo.",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
   twitter: { card: "summary_large_image" },
 }

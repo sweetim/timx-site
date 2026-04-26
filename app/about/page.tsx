@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import opengraph from "@/app/opengraph.jpg"
 
 export const metadata: Metadata = {
   title: "About",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     description:
       "About Tim — a software developer based in Tokyo building free browser-based developer tools.",
     url: "https://timx.co/about",
-    images: [{ url: "https://timx.co/opengraph.webp" }],
+    images: [opengraph.src],
   },
 }
 
