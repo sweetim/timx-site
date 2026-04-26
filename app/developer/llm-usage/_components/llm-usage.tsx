@@ -121,8 +121,16 @@ export default function LlmUsage({ models }: { models: Model[] }) {
           shown per 1M tokens.
         </p>
         {bannerVisible && (
-        <div className="flex items-center justify-between gap-4 mb-6 p-4 rounded-lg border border-dev-border bg-dev-inset">
-          <p className="text-sm text-dev-text-secondary flex-1">
+        <div className="relative mb-6 p-4 rounded-lg border border-dev-border bg-dev-inset">
+          <button
+            type="button"
+            onClick={() => setBannerVisible(false)}
+            className="absolute top-2 right-2 p-1 text-dev-text-secondary hover:text-dev-text transition-colors"
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+          <p className="text-sm text-dev-text-secondary pr-6 mb-3 sm:mb-0">
             Track your actual LLM usage and estimated costs automatically with{" "}
             <a
               href="https://github.com/sweetim/token-lens"
@@ -147,25 +155,15 @@ export default function LlmUsage({ models }: { models: Model[] }) {
             </a>{" "}
             — a VS Code extension that monitors your consumption in real-time.
           </p>
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href="https://marketplace.visualstudio.com/items?itemName=timx.token-lens"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-dev-link text-white hover:bg-dev-link/90 transition-colors"
-            >
-              <Download size={12} />
-              VS Code Marketplace
-            </a>
-            <button
-              type="button"
-              onClick={() => setBannerVisible(false)}
-              className="p-1 text-dev-text-secondary hover:text-dev-text transition-colors"
-              aria-label="Dismiss"
-            >
-              <X size={14} />
-            </button>
-          </div>
+          <a
+            href="https://marketplace.visualstudio.com/items?itemName=timx.token-lens"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-dev-link text-white hover:bg-dev-link/90 transition-colors"
+          >
+            <Download size={12} />
+            VS Code Marketplace
+          </a>
         </div>
         )}
         <input

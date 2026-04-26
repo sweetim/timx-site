@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function DeveloperPage() {
   return (
-    <div className="flex-1 overflow-auto bg-dev-canvas flex items-center">
+    <div className="min-h-full bg-dev-canvas flex items-center">
       <div className="max-w-3xl mx-auto px-6 py-12 w-full">
         <h1 className="text-2xl font-semibold text-dev-text mb-2">
           Developer Tools
