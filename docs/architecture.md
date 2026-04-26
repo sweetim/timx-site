@@ -30,6 +30,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/background-remover → Background Remover tool
 /developer/image-cropper     → Image Cropper tool
 /developer/llm-usage        → LLM Pricing tool
+/developer/image-resizer    → Image Resizer tool
 /developer/og-preview       → OG Preview tool
 ```
 
@@ -78,12 +79,20 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 3. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
 4. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
 
+### Image Resizer flow
+
+1. User uploads one or more images via drag-and-drop or file picker (multiple files supported).
+2. Thumbnails of uploaded images are shown with dimensions; individual images can be removed.
+3. User configures target width × height (defaults to smallest image dimensions), resize mode (Cover, Contain, or Stretch), and optional background color for Contain mode.
+4. Clicking "Resize" processes each image via the Canvas API using the selected mode.
+5. Resized images are displayed side by side in a preview grid with per-image download buttons and a "Download All" action.
+
 ### OG Preview flow
 
 1. User enters a URL in the input field and submits.
 2. The client component calls the `fetchOgData` server action with the URL.
 3. The server action fetches the HTML, parses `<meta property="og:*">` and `<meta name="twitter:*">` tags via regex, resolves relative URLs, and returns structured data.
-4. The client renders a social-media-style preview card (image, title, description) and a raw tags table showing all discovered meta values.
+4. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn, Pinterest) via a tabbed interface, plus a raw tags table showing all discovered meta values.
 
 ## Key design decisions
 
@@ -159,6 +168,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/_components/constants.ts` | Release filter options |
 | `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
+| `app/developer/image-resizer/_components/image-resizer.tsx` | Image Resizer client component (multi-image upload, resize modes, preview grid) |
+| `app/developer/image-resizer/page.tsx` | Image Resizer route page |
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
@@ -340,6 +351,27 @@ type Status =
 ```typescript
 type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
+```
+
+### Image Resizer types (app/developer/image-resizer/_components/image-resizer.tsx)
+
+```typescript
+type ImageItem = {
+  id: string
+  file: File
+  originalUrl: string
+  element: HTMLImageElement
+  naturalWidth: number
+  naturalHeight: number
+}
+
+type ResizeMode = "cover" | "contain" | "stretch"
+
+type ResizedItem = {
+  id: string
+  url: string
+  fileName: string
+}
 ```
 
 ### OG Preview types (app/developer/og-preview/_lib/fetch-og.ts)

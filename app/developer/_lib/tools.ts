@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Crop, Eraser, Globe, Scale } from "lucide-react"
+import { Braces, Crop, Eraser, Globe, Images, Scale } from "lucide-react"
 
 export type Tool = {
   name: string
@@ -33,15 +33,20 @@ export const tools: Tool[] = [
   {
     name: "LLM Pricing",
     slug: "llm-usage",
-    description:
-      "Compare pricing across LLM providers via OpenRouter",
+    description: "Compare pricing across LLM providers via OpenRouter",
     icon: Scale,
+  },
+  {
+    name: "Image Resizer",
+    slug: "image-resizer",
+    description:
+      "Resize multiple images to the same dimensions for a consistent look",
+    icon: Images,
   },
   {
     name: "OG Preview",
     slug: "og-preview",
-    description:
-      "Debug Open Graph and Twitter meta tags for any URL",
+    description: "Debug Open Graph and Twitter meta tags for any URL",
     icon: Globe,
   },
 ]
