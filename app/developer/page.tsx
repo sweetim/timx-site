@@ -24,9 +24,12 @@ export default function DeveloperPage() {
               href={`/developer/${tool.slug}`}
               className="group block p-5 rounded-md border border-dev-border bg-dev-inset hover:border-dev-border-muted hover:bg-dev-surface transition-colors"
             >
-              <h2 className="text-base font-medium text-dev-text group-hover:text-dev-link mb-1">
-                {tool.name}
-              </h2>
+              <div className="flex items-center gap-2 mb-1">
+                <tool.icon size={16} className="text-dev-text-secondary" />
+                <h2 className="text-base font-medium text-dev-text group-hover:text-dev-link">
+                  {tool.name}
+                </h2>
+              </div>
               <p className="text-sm text-dev-text-secondary">
                 {tool.description}
               </p>

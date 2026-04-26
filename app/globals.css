@@ -36,6 +36,14 @@
     scrollbar-color: #1e293b #1e293b;
 }
 
+.no-scrollbar {
+    scrollbar-width: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+}
+
 *::-webkit-scrollbar {
     width: 12px;
     height: 12px;

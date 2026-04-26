@@ -36,23 +36,34 @@ const NavBar = () => {
       >
         Developer Tools
       </Link>
-      <div className="w-px h-4 bg-dev-border" />
-      <div className="flex gap-1 overflow-x-auto">
+      <div className="w-px h-4 bg-dev-border shrink-0" />
+      <div
+        className="no-scrollbar flex items-center gap-1 overflow-x-auto"
+        onWheel={(e) => {
+          const target = e.currentTarget
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            target.scrollLeft += e.deltaY
+            e.preventDefault()
+          }
+        }}
+      >
         {tools.map((tool) => {
           const href = `/developer/${tool.slug}`
           const isActive = pathname === href
+          const Icon = tool.icon
           return (
             <Link
               key={tool.slug}
               href={href}
               className={classNames(
-                "text-sm px-2.5 py-1 rounded transition-colors whitespace-nowrap",
+                "flex items-center justify-center gap-1.5 text-sm px-2.5 py-1 rounded transition-colors",
                 isActive
                   ? "bg-dev-border text-dev-text"
                   : "text-dev-text-secondary hover:text-dev-text hover:bg-dev-inset",
               )}
             >
-              {tool.name}
+              <Icon className="size-4 shrink-0" />
+              <span className="whitespace-nowrap">{tool.name}</span>
             </Link>
           )
         })}

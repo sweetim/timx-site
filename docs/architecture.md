@@ -14,7 +14,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 | Package manager | Bun 1 via mise |
 | Pattern matching | ts-pattern 5 |
 | Icons | lucide-react |
-| Utilities | classnames |
+| Utilities | classnames, date-fns |
 | Background removal | @imgly/background-removal |
 | Linting | ESLint 9, Biome 2 |
 | Component dev | Storybook 10 |
@@ -137,7 +137,12 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/background-remover/page.tsx` | Background Remover route page |
 | `app/developer/image-cropper/_components/image-cropper.tsx` | Image Cropper client component |
 | `app/developer/image-cropper/page.tsx` | Image Cropper route page |
-| `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing client component (sortable/filterable table) |
+| `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
+| `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
+| `app/developer/llm-usage/_components/cost-calculator-dialog.tsx` | Cost calculator modal |
+| `app/developer/llm-usage/_components/types.ts` | Shared types (Model, ProviderGroup, SortKey, etc.) |
+| `app/developer/llm-usage/_components/constants.ts` | Release filter options |
+| `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
 
 Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
@@ -166,6 +171,7 @@ Storybook stories are colocated with their UI components. Representative example
 |---|---|---|
 | `@imgly/background-removal` | ^1.7.0 | Client-side AI background removal |
 | `classnames` | ^2.5.1 | Conditional CSS class joining |
+| `date-fns` | ^4.1.0 | Date formatting utilities |
 | `lucide-react` | ^1.7.0 | Icon library |
 | `next` | 16.2.2 | React framework |
 | `react` | 19.2.4 | UI library |
