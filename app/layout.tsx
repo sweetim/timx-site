@@ -9,7 +9,10 @@ const mali = Mali({
 })
 
 export const metadata: Metadata = {
-  title: { default: "Tim — Developer Tools & Portfolio", template: "%s | timx" },
+  title: {
+    default: "Tim",
+    template: "%s | timx",
+  },
   description:
     "Free browser-based developer tools: JSON viewer, background remover, image cropper, and LLM pricing comparison. By Tim, a developer in Tokyo.",
   alternates: { canonical: "https://timx.co" },
@@ -17,9 +20,9 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://timx.co",
     siteName: "timx",
-    title: "Tim — Developer Tools & Portfolio",
+    title: "Tim — Tokyo",
     description:
-      "Free browser-based developer tools: JSON viewer, background remover, image cropper, and LLM pricing comparison. By Tim, a developer in Tokyo.",
+      "Tim — a developer based in Tokyo building tools for the robotics, AI and blockchain.",
     images: [opengraph.src],
   },
   twitter: { card: "summary_large_image" },
