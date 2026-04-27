@@ -27,10 +27,8 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /privacy                   → Privacy policy
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
-/developer/background-remover → Background Remover tool
-/developer/image-cropper     → Image Cropper tool
+/developer/image-editor    → Image Editor tool
 /developer/llm-usage        → LLM Pricing tool
-/developer/image-resizer    → Image Resizer tool
 /developer/og-preview       → OG Preview tool
 ```
 
@@ -52,14 +50,14 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 4. The LLM Pricing page fetches model data server-side from the OpenRouter API and passes it to a client component for interactive sorting and filtering.
 5. The OG Preview page uses a server action (`fetchOgData`) to fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
 
-### Background Remover flow
+### Image Editor flow
 
-1. User uploads or drops an image into `UploadZone`.
-2. `useBackgroundRemover` hook sends the file to a Web Worker (`background-remover.worker.ts`).
-3. The worker calls `@imgly/background-removal` with progress callbacks.
-4. Progress events (`downloading-model` → `decoding` → `computing-inference` → `computing-mask` → `encoding`) are mapped to UI phases.
-5. On completion, the worker returns a PNG blob; the hook creates an object URL and transitions to the done state.
-6. `ResultView` renders an `ImageComparisonSlider` with download and reset actions.
+1. `/developer/image-editor` renders a Photoshop-style workspace with a tool rail, grid-backed central canvas area, and right properties panel.
+2. Users choose Background Remover, Crop, or Screenshot Stitcher from the tool rail.
+3. Each active tool keeps visual work and previews in the canvas while configuration and output actions live in the right properties panel.
+4. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress.
+5. Crop uploads or drops one image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
+6. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
 
 ### Image Cropper flow
 
@@ -79,13 +77,15 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 3. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
 4. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
 
-### Image Resizer flow
+### Screenshot Stitcher flow
 
 1. User uploads one or more images via drag-and-drop or file picker (multiple files supported).
-2. Thumbnails of uploaded images are shown with dimensions; individual images can be removed.
-3. User configures target width × height (defaults to smallest image dimensions), resize mode (Cover, Contain, or Stretch), and optional background color for Contain mode.
-4. Clicking "Resize" processes each image via the Canvas API using the selected mode.
-5. Resized images are displayed side by side in a preview grid with per-image download buttons and a "Download All" action.
+2. Thumbnails of uploaded screenshots are shown with dimensions; individual images can be removed.
+3. User configures a consistent frame width and height, spacing between frames, stack direction, content alignment, and optional background color from the properties panel.
+4. The center canvas shows a live frame preview on a grid background, plus a separate export preview area after generation.
+5. Individual screenshots can be removed from the live preview via a hover delete button or from the layers list.
+6. Clicking "Stitch Screenshots" uses the Canvas API to fit each image into its frame without cropping or stretching.
+7. The generated PNG stacks all frames horizontally or vertically with the configured spacing and can be downloaded as one image.
 
 ### OG Preview flow
 
@@ -134,17 +134,19 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/page.tsx` | Home page — profile card with Person JSON-LD |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all pages |
-| `app/globals.css` | Tailwind import, theme tokens, animations |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, animations |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
 | `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, WebApplication) |
-| `app/developer/layout.tsx` | Developer section layout with NavBar |
+| `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
 | `app/developer/_components/nav-bar.tsx` | Top navigation bar for developer section |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
+| `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
+| `app/developer/image-editor/page.tsx` | Image Editor route page |
 | `app/developer/_components/background-remover/index.tsx` | Background Remover client component |
 | `app/developer/_components/background-remover/types.ts` | Status and phase types |
 | `app/developer/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions |
@@ -158,9 +160,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/background-remover/_components/error-state.tsx` | Error display with retry |
 | `app/developer/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
 | `app/developer/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
-| `app/developer/background-remover/page.tsx` | Background Remover route page |
 | `app/developer/image-cropper/_components/image-cropper.tsx` | Image Cropper client component |
-| `app/developer/image-cropper/page.tsx` | Image Cropper route page |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
 | `app/developer/llm-usage/_components/cost-calculator-dialog.tsx` | Cost calculator modal |
@@ -168,13 +168,12 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/_components/constants.ts` | Release filter options |
 | `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
-| `app/developer/image-resizer/_components/image-resizer.tsx` | Image Resizer client component (multi-image upload, resize modes, preview grid) |
-| `app/developer/image-resizer/page.tsx` | Image Resizer route page |
+| `app/developer/image-resizer/_components/image-resizer.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 
-Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
+Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
 
 ### `app/` assets
 
@@ -238,6 +237,21 @@ type Tool = {
   name: string
   slug: string
   description: string
+  icon: LucideIcon
+}
+```
+
+### Image Editor types (app/developer/image-editor/_components/image-editor.tsx)
+
+```typescript
+type EditorTool = "background" | "crop" | "stitch"
+
+type ToolItem = {
+  id: EditorTool
+  name: string
+  shortName: string
+  description: string
+  icon: LucideIcon
 }
 ```
 
@@ -300,6 +314,10 @@ type Status =
   | { phase: "processing"; status: ProcessingStatus; progress: number }
   | { phase: "done"; originalUrl: string; resultUrl: string }
   | { phase: "error"; message: string }
+
+type BackgroundRemoverProps = {
+  variant?: "page" | "panel"
+}
 ```
 
 ### Worker types (app/developer/_components/background-remover/_hooks/background-remover.worker.ts)
@@ -344,6 +362,10 @@ type Status =
   | { phase: "idle" }
   | { phase: "editing"; imageUrl: string; imageWidth: number; imageHeight: number }
   | { phase: "cropped"; originalUrl: string; croppedUrl: string }
+
+type ImageCropperProps = {
+  variant?: "page" | "panel"
+}
 ```
 
 ### JSON Viewer types (app/developer/json-viewer/_components/json-viewer.tsx)
@@ -353,7 +375,7 @@ type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
 ```
 
-### Image Resizer types (app/developer/image-resizer/_components/image-resizer.tsx)
+### Screenshot Stitcher types (app/developer/image-resizer/_components/image-resizer.tsx)
 
 ```typescript
 type ImageItem = {
@@ -365,12 +387,19 @@ type ImageItem = {
   naturalHeight: number
 }
 
-type ResizeMode = "cover" | "contain" | "stretch"
+type StackDirection = "horizontal" | "vertical"
 
-type ResizedItem = {
-  id: string
+type ContentAlignment = "start" | "center" | "end"
+
+type StitchedImage = {
   url: string
   fileName: string
+  width: number
+  height: number
+}
+
+type ScreenshotStitcherProps = {
+  variant?: "page" | "panel"
 }
 ```
 

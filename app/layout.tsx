@@ -9,6 +9,7 @@ const mali = Mali({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://timx.co"),
   title: {
     default: "Tim",
     template: "%s | timx",

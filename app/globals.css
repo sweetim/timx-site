@@ -62,6 +62,22 @@
     border: 3px solid #1e293b;
 }
 
+.developer-scrollbar,
+.developer-scrollbar * {
+    scrollbar-color: var(--color-dev-border-muted) var(--color-dev-canvas);
+}
+
+.developer-scrollbar::-webkit-scrollbar-track,
+.developer-scrollbar *::-webkit-scrollbar-track {
+    background: var(--color-dev-canvas);
+}
+
+.developer-scrollbar::-webkit-scrollbar-thumb,
+.developer-scrollbar *::-webkit-scrollbar-thumb {
+    background-color: var(--color-dev-border-muted);
+    border-color: var(--color-dev-canvas);
+}
+
 @keyframes spinner-rotate {
     to {
         transform: rotate(360deg);

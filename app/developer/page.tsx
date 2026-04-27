@@ -6,12 +6,12 @@ import { tools } from "./_lib/tools"
 export const metadata: Metadata = {
   title: "Free Developer Tools",
   description:
-    "A collection of free browser-based developer tools. JSON viewer, AI background remover, image cropper, and LLM pricing comparison — no uploads, no sign-up.",
+    "A collection of free browser-based developer tools. JSON viewer, image editor, LLM pricing comparison, and OG preview — no uploads, no sign-up.",
   alternates: { canonical: "https://timx.co/developer" },
   openGraph: {
     title: "Free Developer Tools",
     description:
-      "A collection of free browser-based developer tools. JSON viewer, AI background remover, image cropper, and LLM pricing comparison.",
+      "A collection of free browser-based developer tools. JSON viewer, image editor, LLM pricing comparison, and OG preview.",
     url: "https://timx.co/developer",
     images: [opengraph.src],
   },

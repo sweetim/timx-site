@@ -50,14 +50,16 @@ export function CostCalculatorDialog({
 
   const sortedResults = useMemo(() => {
     return [...selectedModels].sort((a, b) => {
+      const cacheReadPriceA = Number.parseFloat(a.pricing.input_cache_read)
+      const cacheReadPriceB = Number.parseFloat(b.pricing.input_cache_read)
       const costA =
         Number.parseFloat(a.pricing.prompt) * prompt
         + Number.parseFloat(a.pricing.completion) * completion
-        + Number.parseFloat(a.pricing.input_cache_read || "0") * cacheRead
+        + (Number.isNaN(cacheReadPriceA) ? 0 : cacheReadPriceA) * cacheRead
       const costB =
         Number.parseFloat(b.pricing.prompt) * prompt
         + Number.parseFloat(b.pricing.completion) * completion
-        + Number.parseFloat(b.pricing.input_cache_read || "0") * cacheRead
+        + (Number.isNaN(cacheReadPriceB) ? 0 : cacheReadPriceB) * cacheRead
       return costA - costB
     })
   }, [selectedModels, prompt, completion, cacheRead])
@@ -207,9 +209,12 @@ export function CostCalculatorDialog({
                     {sortedResults.map((model, i) => {
                       const promptCost =
                         Number.parseFloat(model.pricing.prompt) * prompt
-                      const cacheReadCost =
-                        Number.parseFloat(model.pricing.input_cache_read || "0")
-                        * cacheRead
+                      const cacheReadPrice = Number.parseFloat(
+                        model.pricing.input_cache_read,
+                      )
+                      const cacheReadCost = Number.isNaN(cacheReadPrice)
+                        ? 0
+                        : cacheReadPrice * cacheRead
                       const completionCost =
                         Number.parseFloat(model.pricing.completion) * completion
                       const total = promptCost + cacheReadCost + completionCost

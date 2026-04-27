@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Crop, Eraser, Globe, Images, Scale } from "lucide-react"
+import { Braces, Globe, Images, Scale } from "lucide-react"
 
 export type Tool = {
   name: string
@@ -17,31 +17,17 @@ export const tools: Tool[] = [
     icon: Braces,
   },
   {
-    name: "Background Remover",
-    slug: "background-remover",
+    name: "Image Editor",
+    slug: "image-editor",
     description:
-      "Remove the background from any image using AI — entirely in your browser",
-    icon: Eraser,
-  },
-  {
-    name: "Image Cropper",
-    slug: "image-cropper",
-    description:
-      "Crop images from the center by dragging to select your desired area",
-    icon: Crop,
+      "Remove backgrounds, crop images, and stitch mobile screenshots locally",
+    icon: Images,
   },
   {
     name: "LLM Pricing",
     slug: "llm-usage",
     description: "Compare pricing across LLM providers via OpenRouter",
     icon: Scale,
-  },
-  {
-    name: "Image Resizer",
-    slug: "image-resizer",
-    description:
-      "Resize multiple images to the same dimensions for a consistent look",
-    icon: Images,
   },
   {
     name: "OG Preview",

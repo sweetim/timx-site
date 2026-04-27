@@ -18,6 +18,10 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
 
+export const Panel: Story = {
+  args: { variant: "panel" },
+}
+
 type ProcessingState = Extract<Status, { phase: "processing" }>
 
 function ProcessingTransition() {

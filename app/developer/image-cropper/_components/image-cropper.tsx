@@ -46,6 +46,10 @@ type AspectRatioOption = {
   ratio: number | null
 }
 
+type ImageCropperProps = {
+  variant?: "page" | "panel"
+}
+
 const ASPECT_RATIOS: AspectRatioOption[] = [
   { label: "Free", preset: "free", ratio: null },
   { label: "1:1", preset: "1:1", ratio: 1 },
@@ -452,7 +456,8 @@ function CropOverlay({
   )
 }
 
-function ImageCropper() {
+function ImageCropper({ variant = "page" }: ImageCropperProps) {
+  const isPanel = variant === "panel"
   const [status, setStatus] = useState<Status>({ phase: "idle" })
   const [isDragOver, setIsDragOver] = useState(false)
   const [crop, setCrop] = useState<CropRect>({
@@ -470,16 +475,19 @@ function ImageCropper() {
   const [aspectPreset, setAspectPreset] =
     useState<AspectRatioPreset>(DEFAULT_ASPECT_RATIO)
 
-  const _currentRatio =
-    ASPECT_RATIOS.find((r) => r.preset === aspectPreset)?.ratio ?? null
-
   const fileInputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const anchorModeRef = useRef(anchorMode)
-  anchorModeRef.current = anchorMode
   const displayDimensionsRef = useRef(displayDimensions)
-  displayDimensionsRef.current = displayDimensions
   const imageRef = useRef<HTMLImageElement | null>(null)
+
+  useEffect(() => {
+    anchorModeRef.current = anchorMode
+  }, [anchorMode])
+
+  useEffect(() => {
+    displayDimensionsRef.current = displayDimensions
+  }, [displayDimensions])
 
   const loadImage = useCallback((file: File) => {
     const url = URL.createObjectURL(file)
@@ -678,20 +686,288 @@ function ImageCropper() {
     [loadImage],
   )
 
+  if (isPanel) {
+    return (
+      <div className="grid h-full min-h-[620px] bg-dev-canvas lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section
+          ref={wrapperRef}
+          className="min-h-[520px] overflow-auto bg-dev-inset p-4 sm:p-6"
+          style={{
+            backgroundImage:
+              "linear-gradient(#373e47 1px, transparent 1px), linear-gradient(90deg, #373e47 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        >
+          {match(status)
+            .with({ phase: "idle" }, () => (
+              <div className="flex min-h-full items-center justify-center">
+                <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
+                  <UploadZone
+                    isDragOver={isDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setIsDragOver(true)
+                    }}
+                    onDragLeave={() => setIsDragOver(false)}
+                  />
+                </div>
+              </div>
+            ))
+            .with({ phase: "editing" }, ({ imageUrl }) => (
+              <div className="flex min-h-full items-center justify-center">
+                <div className="rounded-lg border border-dev-border bg-dev-canvas/95 p-3 shadow-2xl shadow-black/30">
+                  <div
+                    className="relative overflow-hidden rounded bg-dev-inset select-none"
+                    style={{
+                      width: displayDimensions.width,
+                      height: displayDimensions.height,
+                    }}
+                  >
+                    {/* biome-ignore lint/performance/noImgElement: blob URL from URL.createObjectURL is incompatible with next/image */}
+                    <img
+                      src={imageUrl}
+                      alt="Source"
+                      className="block"
+                      draggable={false}
+                      style={{
+                        width: displayDimensions.width,
+                        height: displayDimensions.height,
+                      }}
+                    />
+                    <CropOverlay
+                      crop={crop}
+                      anchorMode={anchorMode}
+                      onDragStart={handleDragStart}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))
+            .with({ phase: "cropped" }, ({ croppedUrl }) => (
+              <div className="flex min-h-full items-center justify-center">
+                <div className="rounded-lg border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
+                  <p className="mb-3 text-sm font-semibold text-dev-text">
+                    Export Preview
+                  </p>
+                  {/* biome-ignore lint/performance/noImgElement: blob URL from canvas.toBlob is incompatible with next/image */}
+                  <img
+                    src={croppedUrl}
+                    alt="Cropped result"
+                    className="block max-h-[34rem] max-w-full rounded border border-dev-border"
+                  />
+                </div>
+              </div>
+            ))
+            .exhaustive()}
+        </section>
+
+        <aside className="overflow-auto border-t border-dev-border bg-dev-inset p-4 lg:border-l lg:border-t-0">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+              Properties
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-dev-text">Crop</h2>
+            <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
+              Select an area from the canvas, then export the crop as PNG.
+            </p>
+          </div>
+
+          <div className="mt-4 rounded-md border border-dev-border bg-dev-surface p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+              Source
+            </p>
+            {status.phase === "editing" ? (
+              <p className="mt-2 text-xs text-dev-text-secondary">
+                {status.imageWidth}×{status.imageHeight}px image
+              </p>
+            ) : status.phase === "cropped" ? (
+              <p className="mt-2 text-xs text-dev-text-secondary">
+                Crop generated and ready to download.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-dev-text-secondary">
+                No image loaded.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-3 w-full rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
+            >
+              Choose Image
+            </button>
+          </div>
+
+          {status.phase === "editing" && (
+            <>
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                  Aspect Ratio
+                </p>
+                <div className="mt-3 grid grid-cols-3 gap-1">
+                  {ASPECT_RATIOS.map(({ label, preset }) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleAspectRatioChange(preset)}
+                      className={classNames(
+                        "rounded px-2 py-1.5 text-xs font-medium transition-colors",
+                        aspectPreset === preset
+                          ? "bg-dev-accent-blue text-white"
+                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                  Resize Anchor
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAnchorMode("center")
+                      setCrop((prev) => {
+                        const imageCx = displayDimensions.width / 2
+                        const imageCy = displayDimensions.height / 2
+                        const ratio =
+                          ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)
+                            ?.ratio ?? null
+                        return clampCrop(
+                          {
+                            x: imageCx - prev.width / 2,
+                            y: imageCy - prev.height / 2,
+                            width: prev.width,
+                            height: prev.height,
+                          },
+                          displayDimensions.width,
+                          displayDimensions.height,
+                          ratio,
+                        )
+                      })
+                    }}
+                    className={classNames(
+                      "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors",
+                      anchorMode === "center"
+                        ? "bg-dev-accent-blue text-white"
+                        : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+                    )}
+                  >
+                    <Crosshair className="size-4" />
+                    Center
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnchorMode("edge")}
+                    className={classNames(
+                      "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors",
+                      anchorMode === "edge"
+                        ? "bg-dev-accent-blue text-white"
+                        : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+                    )}
+                  >
+                    <Maximize2 className="size-4" />
+                    Edge
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                  Selection
+                </p>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-dev-text-secondary">
+                  <div>
+                    <dt>Width</dt>
+                    <dd className="text-dev-text">
+                      {Math.round(crop.width)}px
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Height</dt>
+                    <dd className="text-dev-text">
+                      {Math.round(crop.height)}px
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </>
+          )}
+
+          <div className="mt-3 grid gap-2">
+            {status.phase === "editing" && (
+              <button
+                type="button"
+                onClick={handleCrop}
+                className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90"
+              >
+                <Crop className="size-4" />
+                Crop Image
+              </button>
+            )}
+            {status.phase === "cropped" && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-green px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-green/90"
+              >
+                <Download className="size-4" />
+                Download PNG
+              </button>
+            )}
+            {status.phase !== "idle" && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
+              >
+                <RotateCcw className="size-4" />
+                New Image
+              </button>
+            )}
+          </div>
+        </aside>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) loadImage(file)
+            e.target.value = ""
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full bg-dev-canvas">
-      <div className="flex-1 overflow-auto">
+    <div className={isPanel ? "h-full" : "flex flex-col h-full bg-dev-canvas"}>
+      <div className={isPanel ? "" : "flex-1 overflow-auto"}>
         <div
-          className="max-w-4xl mx-auto px-6 py-8"
+          className={isPanel ? "p-4 sm:p-6" : "max-w-4xl mx-auto px-6 py-8"}
           ref={wrapperRef}
         >
-          <h1 className="text-2xl font-semibold text-dev-text mb-1">
-            Image Cropper
-          </h1>
-          <p className="text-sm text-dev-text-secondary mb-6">
-            Upload an image, choose an aspect ratio and anchor mode, then crop
-            and download. Everything runs locally in your browser.
-          </p>
+          {!isPanel && (
+            <>
+              <h1 className="text-2xl font-semibold text-dev-text mb-1">
+                Image Cropper
+              </h1>
+              <p className="text-sm text-dev-text-secondary mb-6">
+                Upload an image, choose an aspect ratio and anchor mode, then
+                crop and download. Everything runs locally in your browser.
+              </p>
+            </>
+          )}
 
           {match(status)
             .with({ phase: "idle" }, () => (

@@ -41,13 +41,11 @@ export default function PrivacyPage() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Background Remover
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900">Image Editor</h2>
           <p className="text-slate-700 leading-relaxed">
-            The AI background removal model is downloaded to your browser and
-            runs in a Web Worker. Your images are processed locally and never
-            sent to any external service.
+            Image editing runs in your browser. The AI background removal model
+            is downloaded locally and runs in a Web Worker. Your images are
+            processed locally and never sent to any external service.
           </p>
         </div>
 
@@ -85,7 +83,6 @@ export default function PrivacyPage() {
           >
             Back to home
           </Link>
-
         </div>
       </div>
     </div>

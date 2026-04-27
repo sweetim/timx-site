@@ -8,7 +8,7 @@ export default function DeveloperLayout({
   return (
     <div className="flex flex-col h-full bg-dev-canvas">
       <NavBar />
-      <div className="flex-1 overflow-auto">{children}</div>
+      <div className="developer-scrollbar flex-1 overflow-auto">{children}</div>
     </div>
   )
 }

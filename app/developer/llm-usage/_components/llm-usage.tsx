@@ -121,50 +121,53 @@ export default function LlmUsage({ models }: { models: Model[] }) {
           shown per 1M tokens.
         </p>
         {bannerVisible && (
-        <div className="relative mb-6 p-4 rounded-lg border border-dev-border bg-dev-inset">
-          <button
-            type="button"
-            onClick={() => setBannerVisible(false)}
-            className="absolute top-2 right-2 p-1 text-dev-text-secondary hover:text-dev-text transition-colors"
-            aria-label="Dismiss"
-          >
-            <X size={14} />
-          </button>
-          <p className="text-sm text-dev-text-secondary pr-6 mb-3 sm:mb-0">
-            Track your actual LLM usage and estimated costs automatically with{" "}
-            <a
-              href="https://github.com/sweetim/token-lens"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-semibold text-dev-text hover:text-dev-link transition-colors"
+          <div className="relative mb-6 hidden rounded-lg border border-dev-border bg-dev-inset p-4 sm:block">
+            <button
+              type="button"
+              onClick={() => setBannerVisible(false)}
+              className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-dev-text-secondary hover:text-dev-text transition-colors"
+              aria-label="Dismiss"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="size-3.5"
+              <X size={14} />
+            </button>
+            <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-center sm:justify-between">
+              <p className="min-w-0 text-sm text-dev-text-secondary">
+                Track your actual LLM usage and estimated costs automatically
+                with{" "}
+                <a
+                  href="https://github.com/sweetim/token-lens"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-dev-text hover:text-dev-link transition-colors"
+                >
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="size-3.5"
+                  >
+                    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                    <path d="M9 18c-4.51 2-5-2-7-2" />
+                  </svg>
+                  Token Lens
+                </a>
+              </p>
+              <a
+                href="https://marketplace.visualstudio.com/items?itemName=timx.token-lens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md bg-dev-link px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-dev-link/90 sm:self-center"
               >
-                <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-                <path d="M9 18c-4.51 2-5-2-7-2" />
-              </svg>
-              Token Lens
-            </a>{" "}
-            — a VS Code extension that monitors your consumption in real-time.
-          </p>
-          <a
-            href="https://marketplace.visualstudio.com/items?itemName=timx.token-lens"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-dev-link text-white hover:bg-dev-link/90 transition-colors"
-          >
-            <Download size={12} />
-            VS Code Marketplace
-          </a>
-        </div>
+                <Download size={12} />
+                VS Code Marketplace
+              </a>
+            </div>
+          </div>
         )}
         <input
           type="text"

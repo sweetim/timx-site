@@ -31,11 +31,11 @@ export const ActiveJsonViewer: Story = {
   },
 }
 
-export const ActiveBackgroundRemover: Story = {
+export const ActiveImageEditor: Story = {
   parameters: {
     nextjs: {
       navigation: {
-        pathname: "/developer/background-remover",
+        pathname: "/developer/image-editor",
       },
     },
   },

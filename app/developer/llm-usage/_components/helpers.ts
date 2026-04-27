@@ -6,6 +6,7 @@ export function formatCost(costStr: string): string {
     .with("", () => "—")
     .otherwise(() => {
       const cost = Number.parseFloat(costStr)
+      if (Number.isNaN(cost)) return "—"
       const perMillion = cost * 1_000_000
       return match({ cost, perMillion })
         .with({ cost: 0 }, () => "Free" as string)
