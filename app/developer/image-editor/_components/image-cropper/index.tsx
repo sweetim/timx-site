@@ -14,7 +14,7 @@ import { match } from "ts-pattern"
 import CanvasDropOverlay from "../canvas-drop-overlay"
 import UploadZone from "../upload-zone"
 import { CropOverlay } from "./crop-overlay"
-import { ASPECT_RATIOS, DEFAULT_ASPECT_RATIO } from "./constants"
+import { ASPECT_RATIOS, DEFAULT_ASPECT_RATIO, MAX_DISPLAY_HEIGHT, MAX_DISPLAY_WIDTH } from "./constants"
 import {
   applyAspectRatio,
   clampCrop,
@@ -86,8 +86,11 @@ function ImageCropper({
         imageRef.current = img
         const wrapper = wrapperRef.current
         if (!wrapper) return
-        const containerWidth = wrapper.clientWidth
-        const containerHeight = Math.max(wrapper.clientHeight, 400)
+        const containerWidth = Math.min(wrapper.clientWidth, MAX_DISPLAY_WIDTH)
+        const containerHeight = Math.min(
+          Math.max(wrapper.clientHeight, 400),
+          MAX_DISPLAY_HEIGHT,
+        )
         const { displayWidth, displayHeight, scale } =
           getImageDisplayDimensions(
             img.naturalWidth,

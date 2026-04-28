@@ -50,6 +50,19 @@ export default function DeveloperPage() {
           ))}
         </div>
       </div>
+      <footer className="fixed bottom-0 left-0 w-full border-t border-dev-border bg-dev-canvas">
+        <div className="px-6 py-3 text-sm text-dev-text-secondary flex justify-between">
+          <div className="flex gap-4">
+            <Link href="/privacy" className="hover:text-dev-link">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-dev-link">
+              Terms of Service
+            </Link>
+          </div>
+          <span>&copy; {new Date().getFullYear()}</span>
+        </div>
+      </footer>
     </div>
   )
 }

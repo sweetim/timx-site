@@ -11,6 +11,7 @@ export function getImageDisplayDimensions(
   const scale = Math.min(
     containerWidth / imageWidth,
     containerHeight / imageHeight,
+    1,
   )
   return {
     displayWidth: Math.floor(imageWidth * scale),

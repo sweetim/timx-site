@@ -4,7 +4,6 @@ import { match } from "ts-pattern"
 
 type UploadZoneProps = {
   isDragOver: boolean
-  multiple?: boolean
   onClick: () => void
   onDrop: (event: React.DragEvent) => void
   onDragOver: (event: React.DragEvent) => void
@@ -13,7 +12,6 @@ type UploadZoneProps = {
 
 function UploadZone({
   isDragOver,
-  multiple = false,
   onClick,
   onDrop,
   onDragOver,
@@ -41,12 +39,10 @@ function UploadZone({
     >
       <Upload className="w-12 h-12 text-dev-text-secondary" />
       <p className="mt-3 text-sm font-medium text-dev-text">
-        {multiple
-          ? "Drop images here, paste from clipboard, or click to browse"
-          : "Drop an image here, paste from clipboard, or click to browse"}
+        Drop images here, paste from clipboard, or click to browse
       </p>
       <p className="mt-1 text-xs text-dev-text-secondary">
-        PNG, JPEG, or WebP{multiple ? " — select multiple files" : ""}
+        PNG, JPEG, or WebP
       </p>
     </button>
   )

@@ -3,26 +3,26 @@ import Link from "next/link"
 import opengraph from "@/app/opengraph.jpg"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
+  title: "Terms of Service",
   description:
-    "Privacy policy for timx.co — free browser-based developer tools. No data is collected or sent to any server.",
-  alternates: { canonical: "https://timx.co/privacy" },
+    "Terms of service for timx.co — free browser-based developer tools.",
+  alternates: { canonical: "https://timx.co/terms" },
   openGraph: {
-    title: "Privacy Policy",
+    title: "Terms of Service",
     description:
-      "Privacy policy for timx.co — free browser-based developer tools. No data is collected or sent to any server.",
-    url: "https://timx.co/privacy",
+      "Terms of service for timx.co — free browser-based developer tools.",
+    url: "https://timx.co/terms",
     images: [opengraph.src],
   },
 }
 
-export default function PrivacyPage() {
+export default function TermsPage() {
   return (
     <div className="flex justify-center items-center min-h-full bg-neutral-200 p-6">
       <div className="max-w-2xl w-full space-y-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-semibold text-slate-900">
-            Privacy Policy
+            Terms of Service
           </h1>
           <p className="text-slate-700 leading-relaxed">
             Last updated: April 2026
@@ -31,49 +31,51 @@ export default function PrivacyPage() {
 
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">
-            No data collection
+            Acceptance of terms
           </h2>
           <p className="text-slate-700 leading-relaxed">
-            All tools on timx.co run entirely in your browser. No files, text,
-            or personal data are uploaded to any server. There are no accounts,
-            no cookies for tracking, and no analytics that identify you
-            personally.
+            By using timx.co, you agree to these terms. If you do not agree, do
+            not use the site.
           </p>
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">Image Editor</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Usage</h2>
           <p className="text-slate-700 leading-relaxed">
-            Image editing runs in your browser. The AI background removal model
-            is downloaded locally and runs in a Web Worker. Your images are
-            processed locally and never sent to any external service.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">LLM Pricing</h2>
-          <p className="text-slate-700 leading-relaxed">
-            Model pricing data is fetched from the public OpenRouter API. No
-            personal information is included in these requests.
+            All tools on timx.co are provided free of charge for personal and
+            commercial use. You may use the output of the tools in any project
+            without attribution, though it is appreciated.
           </p>
         </div>
 
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">
-            Third-party services
+            No warranty
           </h2>
           <p className="text-slate-700 leading-relaxed">
-            This site is hosted on a third-party hosting provider that may
-            collect standard server logs (IP address, browser user agent) as
-            part of normal operations. These logs are not controlled by timx.co.
+            The tools are provided &ldquo;as is&rdquo; without warranty of any
+            kind. timx.co makes no guarantees about accuracy, reliability, or
+            fitness for a particular purpose. Use the output at your own
+            discretion.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-slate-900">Liability</h2>
+          <p className="text-slate-700 leading-relaxed">
+            timx.co is not liable for any damages arising from the use of these
+            tools, including but not limited to data loss, incorrect results, or
+            service interruptions.
           </p>
         </div>
 
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-slate-900">Changes</h2>
           <p className="text-slate-700 leading-relaxed">
-            This policy may be updated from time to time. The &ldquo;last
+            These terms may be updated from time to time. The &ldquo;last
             updated&rdquo; date at the top reflects the most recent change.
+            Continued use of the site after changes constitutes acceptance of the
+            updated terms.
           </p>
         </div>
 

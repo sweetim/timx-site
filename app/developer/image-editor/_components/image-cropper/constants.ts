@@ -12,4 +12,6 @@ export const ASPECT_RATIOS: AspectRatioOption[] = [
 export const DEFAULT_ASPECT_RATIO: AspectRatioPreset = "1:1"
 
 export const HANDLE_SIZE = 10
+export const MAX_DISPLAY_WIDTH = 1024
+export const MAX_DISPLAY_HEIGHT = 500
 export const MIN_CROP = 20

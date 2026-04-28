@@ -305,7 +305,6 @@ function ScreenshotStitcher({
                 ) : (
                   <UploadZone
                     isDragOver={isDragOver}
-                    multiple
                     onClick={() => fileInputRef.current?.click()}
                     onDrop={(event) => {
                       event.preventDefault()
@@ -749,7 +748,6 @@ function ScreenshotStitcher({
           {images.length === 0 ? (
             <UploadZone
               isDragOver={isDragOver}
-              multiple
               onClick={() => fileInputRef.current?.click()}
               onDrop={(event) => {
                 event.preventDefault()
