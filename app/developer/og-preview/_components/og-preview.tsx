@@ -79,7 +79,7 @@ const OgPreview: FC = () => {
           <button
             type="submit"
             disabled={status.phase === "loading"}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
           >
             {status.phase === "loading" ? (
               <Loader2 className="size-4 animate-spin" />

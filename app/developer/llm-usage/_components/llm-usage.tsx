@@ -110,7 +110,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
           <button
             type="button"
             onClick={() => setCalculatorOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-dev-link text-white hover:bg-dev-link/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-dev-link text-white hover:bg-dev-link/90 transition-colors cursor-pointer"
           >
             <Calculator size={12} />
             Cost Calculator
@@ -125,7 +125,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
             <button
               type="button"
               onClick={() => setBannerVisible(false)}
-              className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-dev-text-secondary hover:text-dev-text transition-colors"
+              className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-dev-text-secondary hover:text-dev-text transition-colors cursor-pointer"
               aria-label="Dismiss"
             >
               <X size={14} />
@@ -197,7 +197,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
                 key={opt.value}
                 type="button"
                 onClick={() => setReleaseFilter(opt.value)}
-                className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                className={`px-2.5 py-1 text-xs rounded-md border transition-colors cursor-pointer ${
                   releaseFilter === opt.value
                     ? "border-dev-link text-dev-link bg-dev-link/10"
                     : "border-dev-border text-dev-text-secondary hover:text-dev-text"
@@ -221,7 +221,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
           <button
             type="button"
             onClick={toggleAll}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border border-dev-border text-dev-text-secondary hover:text-dev-text transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border border-dev-border text-dev-text-secondary hover:text-dev-text transition-colors cursor-pointer"
           >
             <ChevronsUpDown size={12} />
             {allExpanded ? "Collapse all" : "Expand all"}

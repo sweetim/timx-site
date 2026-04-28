@@ -1,11 +1,19 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { Copy, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { match } from "ts-pattern"
-import type { CanvasDropProps, SharedEditorImage } from "../image-editor"
-import CanvasDropOverlay from "../canvas-drop-overlay"
+import type { DownloadFormat } from "../download-format-selector"
+import { downloadBlob } from "../download-format-selector"
+import type { SourceImage } from "../image-editor"
 import UploadZone from "../upload-zone"
+import SidebarActions from "../shared/sidebar-actions"
+import type { EditorToolProps } from "../shared/types"
+import useClipboardPaste from "../shared/use-clipboard-paste"
+import useDroppedFiles from "../shared/use-dropped-files"
+import useSourceFileInput from "../shared/use-source-file-input"
+import useWorkspaceReset from "../shared/use-workspace-reset"
+import SourceImagePanel from "../shared/source-image-panel"
+import ToolPanelLayout from "../shared/tool-panel-layout"
 import ComputeProgress from "./_components/compute-progress"
 import DownloadProgress from "./_components/download-progress"
 import ErrorState from "./_components/error-state"
@@ -33,21 +41,6 @@ function ProcessingOverlay() {
   )
 }
 
-type BackgroundRemoverProps = {
-  variant?: "page" | "panel"
-  isActive?: boolean
-  initialImage?: SharedEditorImage | null
-  workspaceResetKey?: number
-  onResult?: (blob: Blob) => void
-  onSourceImage?: (blob: Blob, name: string) => void
-  onClearWorkspace?: () => void
-  onCopyToClipboard?: () => void
-  hasClipboard?: boolean
-  droppedFiles?: File[]
-  droppedFilesKey?: number
-  canvasDropProps?: CanvasDropProps
-}
-
 const BackgroundRemover = ({
   variant = "page",
   isActive = true,
@@ -61,81 +54,195 @@ const BackgroundRemover = ({
   droppedFiles,
   droppedFilesKey,
   canvasDropProps,
-}: BackgroundRemoverProps) => {
+  sourceImages = [],
+  onRemoveSourceImage,
+  onAddSourceImages,
+  backgroundRemovalResults = {},
+  onBackgroundRemovalResult,
+}: EditorToolProps) => {
   const isPanel = variant === "panel"
   const importedImageKeyRef = useRef<number | null>(null)
+  const activeSourceIdRef = useRef<string | null>(null)
+  const processingSourceIdRef = useRef<string | null>(null)
+  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
+  const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
+  const { sourceFileInputRef, handleSourceFileInput } = useSourceFileInput({
+    onAddSourceImages,
+  })
+  const handleResult = useCallback(
+    (blob: Blob) => {
+      const sourceId = processingSourceIdRef.current ?? activeSourceIdRef.current
+      if (sourceId) onBackgroundRemovalResult?.(sourceId, blob)
+      processingSourceIdRef.current = null
+      onResult?.(blob)
+    },
+    [onBackgroundRemovalResult, onResult],
+  )
   const {
     status,
     isDragOver,
     fileInputRef,
     handleUploadClick,
-    handleDrop,
     handleDragOver,
     handleDragLeave,
-    handleInputChange,
-    handleDownload,
     handleReset,
     processBlob,
     loadImage,
     startProcessing,
-  } = useBackgroundRemover({ isActive, onResult, onSourceImage })
+  } = useBackgroundRemover({ isActive, onResult: handleResult, onSourceImage })
+
+  const activeSource = activeSourceId
+    ? sourceImages.find((img) => img.id === activeSourceId)
+    : undefined
+  const activeCachedResult = activeSourceId
+    ? backgroundRemovalResults[activeSourceId]
+    : undefined
+  const displayStatus =
+    activeSource && activeCachedResult
+      ? ({
+          phase: "done",
+          originalUrl: activeSource.url,
+          resultUrl: activeCachedResult.url,
+        } as const)
+      : status
+  const displayResultUrl =
+    displayStatus.phase === "done" ? displayStatus.resultUrl : null
+
+  const showSource = useCallback(
+    (source: SourceImage, notifySource: boolean) => {
+      activeSourceIdRef.current = source.id
+      setActiveSourceId(source.id)
+      if (notifySource) onSourceImage?.(source.blob, source.name)
+      if (!backgroundRemovalResults[source.id]) {
+        processBlob(source.blob, source.name)
+      }
+    },
+    [backgroundRemovalResults, onSourceImage, processBlob],
+  )
+
+  const handleFiles = useCallback(
+    async (files: File[] | FileList | null) => {
+      const imageFiles = Array.from(files ?? []).filter((file) =>
+        file.type.startsWith("image/"),
+      )
+      const firstFile = imageFiles[0]
+      if (!firstFile) return
+
+      const addedSources = await onAddSourceImages?.(imageFiles)
+      const firstSource =
+        addedSources?.find((source) => source.blob === firstFile) ??
+        addedSources?.[0]
+
+      if (firstSource) {
+        showSource(firstSource, true)
+        return
+      }
+
+      activeSourceIdRef.current = null
+      setActiveSourceId(null)
+      loadImage(firstFile)
+    },
+    [loadImage, onAddSourceImages, showSource],
+  )
+
+  const handleUploadDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault()
+      handleDragLeave(event)
+      void handleFiles(event.dataTransfer.files)
+    },
+    [handleDragLeave, handleFiles],
+  )
+
+  const handleFileInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      void handleFiles(event.target.files)
+      event.target.value = ""
+    },
+    [handleFiles],
+  )
+
+  const handleStartProcessing = useCallback(() => {
+    processingSourceIdRef.current = activeSourceIdRef.current
+    startProcessing()
+  }, [startProcessing])
+
+  const handleDownload = useCallback(async () => {
+    if (!displayResultUrl) return
+    await downloadBlob(displayResultUrl, "background-removed", downloadFormat)
+  }, [displayResultUrl, downloadFormat])
 
   useEffect(() => {
-    if (!isActive) return
-    if (!droppedFiles || droppedFiles.length === 0) return
-    loadImage(droppedFiles[0])
-  }, [isActive, droppedFiles, droppedFilesKey, loadImage])
+    activeSourceIdRef.current = activeSourceId
+  }, [activeSourceId])
+
+  useDroppedFiles({
+    isActive,
+    droppedFiles,
+    droppedFilesKey,
+    onLoad: (files) => {
+      void handleFiles(files)
+    },
+  })
 
   useEffect(() => {
     if (!isActive || !initialImage) return
     if (initialImage.originTool === "background") return
     if (importedImageKeyRef.current === initialImage.key) return
     importedImageKeyRef.current = initialImage.key
+    activeSourceIdRef.current = null
+    processingSourceIdRef.current = null
+    setActiveSourceId(null)
     processBlob(initialImage.blob, initialImage.name)
   }, [isActive, initialImage, processBlob])
 
-  useEffect(() => {
-    if (workspaceResetKey === 0) return
-    importedImageKeyRef.current = null
-    handleReset()
-  }, [workspaceResetKey, handleReset])
+  useClipboardPaste({
+    isActive,
+    onFiles: (files) => {
+      void handleFiles(files)
+    },
+  })
+
+  useWorkspaceReset({
+    workspaceResetKey,
+    onReset: () => {
+      importedImageKeyRef.current = null
+      activeSourceIdRef.current = null
+      processingSourceIdRef.current = null
+      setActiveSourceId(null)
+      handleReset()
+    },
+  })
+
+  const handleSelectSource = (id: string) => {
+    const source = sourceImages.find((img) => img.id === id)
+    if (!source) return
+    showSource(source, false)
+  }
 
   const handleClear = () => {
     importedImageKeyRef.current = null
+    activeSourceIdRef.current = null
+    processingSourceIdRef.current = null
+    setActiveSourceId(null)
     handleReset()
     onClearWorkspace?.()
   }
 
   if (isPanel) {
     return (
-      <div className="grid h-full min-h-[620px] bg-dev-canvas lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <section
-          className="relative min-h-[520px] overflow-auto bg-dev-inset p-4 sm:p-6"
-          style={{
-            backgroundImage:
-              "linear-gradient(#373e47 1px, transparent 1px), linear-gradient(90deg, #373e47 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-          onDragOver={canvasDropProps?.onDragOver}
-          onDragEnter={canvasDropProps?.onDragEnter}
-          onDragLeave={canvasDropProps?.onDragLeave}
-          onDrop={canvasDropProps?.onDrop}
-        >
-          {canvasDropProps && (
-            <CanvasDropOverlay
-              isDragOver={canvasDropProps.isDragOver}
-              overlayLabel={canvasDropProps.overlayLabel}
-            />
-          )}
+      <ToolPanelLayout
+        canvasDropProps={canvasDropProps}
+        canvasContent={
           <div className="mx-auto flex min-h-full max-w-5xl items-center justify-center">
-            {match(status)
+            {match(displayStatus)
               .with({ phase: "idle" }, () => (
                 <div className="flex min-h-full w-full items-center justify-center">
                   <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
                     <UploadZone
                       isDragOver={isDragOver}
                       onClick={handleUploadClick}
-                      onDrop={handleDrop}
+                      onDrop={handleUploadDrop}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                     />
@@ -180,129 +287,133 @@ const BackgroundRemover = ({
                   <ResultView
                     originalUrl={originalUrl}
                     resultUrl={resultUrl}
+                    downloadFormat={downloadFormat}
                     onDownload={handleDownload}
+                    onFormatChange={setDownloadFormat}
                     onReset={handleClear}
+                    hideActions
                   />
                 </div>
               ))
               .exhaustive()}
           </div>
-        </section>
-
-        <aside className="overflow-auto border-t border-dev-border bg-dev-inset p-4 lg:border-l lg:border-t-0">
-          <div>
-            <h2 className="text-base font-semibold text-dev-text">
-              Background Remover
-            </h2>
-            <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
-              Drop, paste, or browse for one image. Processing runs locally in a
-              browser worker.
-            </p>
-          </div>
-
-          {status.phase === "ready" && (
-            <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-              <button
-                type="button"
-                onClick={startProcessing}
-                className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90"
-              >
-                Remove Background
-              </button>
+        }
+        sidebarContent={
+          <>
+            <div>
+              <h2 className="text-base font-semibold text-dev-text">
+                Background Remover
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
+                Drop, paste, or browse for one image. Processing runs locally in a
+                browser worker.
+              </p>
             </div>
-          )}
 
-          <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-              Status
-            </p>
-            {match(status)
-              .with({ phase: "processing" }, ({ status, progress }) =>
-                status.phase === "downloading-model" ? (
-                  <DownloadProgress
-                    progress={progress}
-                    compact
-                  />
-                ) : (
-                  <ComputeProgress
-                    phase={status.phase}
-                    compact
-                  />
-                ),
-              )
-              .otherwise(() => (
-                <p className="mt-2 text-sm text-dev-text">{status.phase}</p>
-              ))}
-          </div>
+            <SourceImagePanel
+              sourceImages={sourceImages}
+              activeSourceId={activeSourceId}
+              onSelectSource={handleSelectSource}
+              onRemoveSourceImage={onRemoveSourceImage}
+              onRemoveActiveSource={() => {
+                activeSourceIdRef.current = null
+                setActiveSourceId(null)
+                handleReset()
+              }}
+              onAddSourceImages={onAddSourceImages}
+              sourceFileInputRef={sourceFileInputRef}
+            />
 
-          <div className="mt-3 grid gap-2">
-            {status.phase === "done" && (
-              <>
+            {displayStatus.phase === "ready" && (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
                 <button
                   type="button"
-                  onClick={handleDownload}
-                  className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-green px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-green/90"
+                  onClick={handleStartProcessing}
+                  className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
                 >
-                  Download PNG
+                  Remove Background
                 </button>
-                {hasClipboard && (
-                  <button
-                    type="button"
-                    onClick={onCopyToClipboard}
-                    className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
-                  >
-                    <Copy className="size-4" />
-                    Copy to Clipboard
-                  </button>
-                )}
-              </>
+              </div>
             )}
-            {status.phase !== "idle" && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
-              >
-                <Trash2 className="size-4" />
-                Clear
-              </button>
-            )}
-          </div>
-        </aside>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={handleInputChange}
-        />
-      </div>
+            {(displayStatus.phase === "processing" || displayStatus.phase === "error") && (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                  Status
+                </p>
+                {match(displayStatus)
+                  .with({ phase: "processing" }, ({ status, progress }) =>
+                    status.phase === "downloading-model" ? (
+                      <DownloadProgress progress={progress} compact />
+                    ) : (
+                      <ComputeProgress phase={status.phase} compact />
+                    ),
+                  )
+                  .otherwise(() => (
+                    <p className="mt-2 text-sm text-dev-text">{displayStatus.phase}</p>
+                  ))}
+              </div>
+            )}
+
+            <SidebarActions
+              download={
+                displayStatus.phase === "done"
+                  ? {
+                      url: displayStatus.resultUrl,
+                      baseName: "background-removed",
+                      format: downloadFormat,
+                      onFormatChange: setDownloadFormat,
+                    }
+                  : undefined
+              }
+              showCopy={displayStatus.phase === "done" && hasClipboard}
+              onCopyToClipboard={onCopyToClipboard}
+              showClear={displayStatus.phase !== "idle"}
+              onClear={handleClear}
+            />
+          </>
+        }
+        hiddenInputs={
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+            <input
+              ref={sourceFileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              className="hidden"
+              onChange={handleSourceFileInput}
+            />
+          </>
+        }
+      />
     )
   }
 
   return (
-    <div className={isPanel ? "h-full" : "flex flex-col h-full bg-dev-canvas"}>
-      <div className={isPanel ? "" : "flex-1 overflow-auto"}>
-        <div className={isPanel ? "p-4 sm:p-6" : "max-w-4xl mx-auto px-6 py-8"}>
-          {!isPanel && (
-            <>
-              <h1 className="text-2xl font-semibold text-dev-text mb-1">
-                Background Remover
-              </h1>
-              <p className="text-sm text-dev-text-secondary mb-6">
-                Upload an image to remove its background. Everything runs
-                locally in your browser — no data is sent to a server.
-              </p>
-            </>
-          )}
+    <div className="flex flex-col h-full bg-dev-canvas">
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <h1 className="text-2xl font-semibold text-dev-text mb-1">
+            Background Remover
+          </h1>
+          <p className="text-sm text-dev-text-secondary mb-6">
+            Upload an image to remove its background. Everything runs
+            locally in your browser — no data is sent to a server.
+          </p>
 
-          {match(status)
+          {match(displayStatus)
             .with({ phase: "idle" }, () => (
               <UploadZone
                 isDragOver={isDragOver}
                 onClick={handleUploadClick}
-                onDrop={handleDrop}
+                onDrop={handleUploadDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
               />
@@ -317,17 +428,16 @@ const BackgroundRemover = ({
                 <div className="flex justify-center gap-3">
                   <button
                     type="button"
-                    onClick={startProcessing}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-accent-blue hover:brightness-110 text-white transition-all"
+                    onClick={handleStartProcessing}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-accent-blue hover:brightness-110 text-white transition-all cursor-pointer"
                   >
                     Remove Background
                   </button>
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
                     Clear
                   </button>
                 </div>
@@ -341,16 +451,15 @@ const BackgroundRemover = ({
               ),
             )
             .with({ phase: "error" }, ({ message }) => (
-              <ErrorState
-                message={message}
-                onReset={handleClear}
-              />
+              <ErrorState message={message} onReset={handleClear} />
             ))
             .with({ phase: "done" }, ({ originalUrl, resultUrl }) => (
               <ResultView
                 originalUrl={originalUrl}
                 resultUrl={resultUrl}
+                downloadFormat={downloadFormat}
                 onDownload={handleDownload}
+                onFormatChange={setDownloadFormat}
                 onReset={handleClear}
               />
             ))
@@ -363,7 +472,7 @@ const BackgroundRemover = ({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         className="hidden"
-        onChange={handleInputChange}
+        onChange={handleFileInputChange}
       />
     </div>
   )

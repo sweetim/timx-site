@@ -53,13 +53,14 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 
 1. `/developer/image-editor` renders a Photoshop-style workspace with a persistent tool rail, shared canvas area, and right properties panel.
 2. Users choose Background Remover, Crop, or Screenshot Stitcher from the tool rail; switching tools keeps each tool mounted and does not clear the current canvas image.
-3. `ImageEditor` owns a shared current image document. Uploads and tool results update that shared image so single-image modes can import the latest canvas image when selected.
-4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls, Crop shows crop handles and sizing controls, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
-5. Screenshot Stitcher remains a multi-image composition mode. If a single image already exists on the canvas, Stitch offers an "Add as Frame" action before the user adds more screenshots.
-6. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
-7. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress.
-8. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
-9. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
+3. `ImageEditor` owns a shared current image document, a shared `sourceImages` array, and background-removal results cached by source image ID. Uploads and tool results update that shared image so single-image modes can import the latest canvas image when selected. Any image uploaded in any tool is added to `sourceImages`, which is shared across all tools.
+4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls with a Source picker, Crop shows crop handles, sizing controls, and a Source picker, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
+5. Background Remover and Crop each display a "Source" card in the properties panel showing all uploaded images as selectable thumbnails. Users can switch the active image without re-uploading.
+6. Screenshot Stitcher remains a multi-image composition mode. If a single image already exists on the canvas, Stitch offers an "Add as Frame" action before the user adds more screenshots.
+7. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
+8. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress. Completed background-removal outputs are cached per source image so users can select a previously processed source and view its result without reprocessing.
+9. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
+10. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
 
 ### Image Cropper flow
 
@@ -163,16 +164,27 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/background-remover/_components/error-state.tsx` | Error display with retry |
 | `app/developer/image-editor/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
 | `app/developer/image-editor/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
-| `app/developer/image-editor/_components/upload-zone.tsx` | Shared drag-and-drop upload area (used by all image-editor tools) |
+| `app/developer/image-editor/_components/upload-zone.tsx` | Shared drag-and-drop upload area with single/multiple image copy |
+| `app/developer/image-editor/_components/download-format-selector.tsx` | Shared download format selector (PNG, JPEG, WebP) and format conversion utility |
 | `app/developer/image-editor/_components/canvas-drop-overlay.tsx` | Canvas-level drag overlay with label |
+| `app/developer/image-editor/_components/shared/types.ts` | Shared editor tool prop contract used by Background Remover, Crop, and Screenshot Stitcher |
+| `app/developer/image-editor/_components/shared/tool-panel-layout.tsx` | Shared two-column canvas/sidebar layout for image editor tool panels |
+| `app/developer/image-editor/_components/shared/source-image-panel.tsx` | Shared source image picker panel with add/remove controls |
+| `app/developer/image-editor/_components/shared/sidebar-actions.tsx` | Shared panel actions for primary, format/download, copy, and clear controls |
+| `app/developer/image-editor/_components/shared/use-dropped-files.ts` | Shared hook for active-tool canvas drop processing |
+| `app/developer/image-editor/_components/shared/use-clipboard-paste.ts` | Shared hook for active-tool image paste handling |
+| `app/developer/image-editor/_components/shared/use-source-file-input.ts` | Shared hook for source image file input handling |
+| `app/developer/image-editor/_components/shared/use-workspace-reset.ts` | Shared hook for workspace reset key handling |
 | `app/developer/image-editor/_components/image-cropper/index.tsx` | Image Cropper client component |
 | `app/developer/image-editor/_components/image-cropper/types.ts` | Cropper types (CropRect, DragState, Status, AnchorMode, etc.) |
 | `app/developer/image-editor/_components/image-cropper/constants.ts` | Aspect ratio presets and handle constants |
 | `app/developer/image-editor/_components/image-cropper/crop-overlay.tsx` | Draggable crop rectangle with 8 resize handles |
+| `app/developer/image-editor/_components/image-cropper/_hooks/use-image-cropper.ts` | Cropper hook for image loading, crop state, drag math, export, and reset logic |
 | `app/developer/image-editor/_components/image-cropper/_lib/crop-math.ts` | Crop math utilities (clamp, resize, aspect ratio) |
 | `app/developer/image-editor/_components/image-stitch/index.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
 | `app/developer/image-editor/_components/image-stitch/types.ts` | Stitcher types (ImageItem, StackDirection, ContentAlignment, etc.) |
 | `app/developer/image-editor/_components/image-stitch/constants.ts` | Alignment options and checkerboard background style |
+| `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
 | `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
@@ -326,10 +338,10 @@ type Status =
   | { phase: "error"; message: string }
 ```
 
-### Background Remover props (app/developer/image-editor/_components/background-remover/index.tsx)
+### Shared editor tool props (app/developer/image-editor/_components/shared/types.ts)
 
 ```typescript
-type BackgroundRemoverProps = {
+type EditorToolProps = {
   variant?: "page" | "panel"
   isActive?: boolean
   initialImage?: SharedEditorImage | null
@@ -342,8 +354,15 @@ type BackgroundRemoverProps = {
   droppedFiles?: File[]
   droppedFilesKey?: number
   canvasDropProps?: CanvasDropProps
+  sourceImages?: SourceImage[]
+  onRemoveSourceImage?: (id: string) => void
+  onAddSourceImages?: (files: File[]) => Promise<SourceImage[]>
+  backgroundRemovalResults?: Record<string, BackgroundRemovalResult>
+  onBackgroundRemovalResult?: (sourceId: string, blob: Blob) => void
 }
 ```
+
+`BackgroundRemover`, `ImageCropper`, and `ScreenshotStitcher` all consume this shared prop contract. `ImageCropperProps` and `ScreenshotStitcherProps` are aliases of `EditorToolProps` in their tool-specific `types.ts` files.
 
 ### Worker types (app/developer/image-editor/_components/background-remover/_hooks/background-remover.worker.ts)
 
@@ -360,6 +379,20 @@ type WorkerEvent =
 
 ```typescript
 type EditorTool = "background" | "crop" | "stitch"
+
+type SourceImage = {
+  id: string
+  blob: Blob
+  url: string
+  name: string
+  naturalWidth: number
+  naturalHeight: number
+}
+
+type BackgroundRemovalResult = {
+  blob: Blob
+  url: string
+}
 
 type SharedEditorImage = {
   blob: Blob
@@ -384,6 +417,15 @@ type CanvasDropProps = {
   onDragEnter: (e: React.DragEvent) => void
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
+}
+
+type UploadZoneProps = {
+  isDragOver: boolean
+  multiple?: boolean
+  onClick: () => void
+  onDrop: (event: React.DragEvent) => void
+  onDragOver: (event: React.DragEvent) => void
+  onDragLeave: (event: React.DragEvent) => void
 }
 ```
 
@@ -419,20 +461,7 @@ type Status =
   | { phase: "editing"; imageUrl: string; imageWidth: number; imageHeight: number }
   | { phase: "cropped"; originalUrl: string; croppedUrl: string }
 
-type ImageCropperProps = {
-  variant?: "page" | "panel"
-  isActive?: boolean
-  initialImage?: SharedEditorImage | null
-  workspaceResetKey?: number
-  onResult?: (blob: Blob) => void
-  onSourceImage?: (blob: Blob, name: string) => void
-  onClearWorkspace?: () => void
-  onCopyToClipboard?: () => void
-  hasClipboard?: boolean
-  droppedFiles?: File[]
-  droppedFilesKey?: number
-  canvasDropProps?: CanvasDropProps
-}
+type ImageCropperProps = EditorToolProps
 ```
 
 ### JSON Viewer types (app/developer/json-viewer/_components/json-viewer.tsx)
@@ -498,20 +527,7 @@ type StitchedImage = {
   blob: Blob
 }
 
-type ScreenshotStitcherProps = {
-  variant?: "page" | "panel"
-  isActive?: boolean
-  initialImage?: SharedEditorImage | null
-  workspaceResetKey?: number
-  onResult?: (blob: Blob) => void
-  onSourceImage?: (blob: Blob, name: string) => void
-  onClearWorkspace?: () => void
-  onCopyToClipboard?: () => void
-  hasClipboard?: boolean
-  droppedFiles?: File[]
-  droppedFilesKey?: number
-  canvasDropProps?: CanvasDropProps
-}
+type ScreenshotStitcherProps = EditorToolProps
 ```
 
 ### OG Preview types (app/developer/og-preview/_lib/fetch-og.ts)

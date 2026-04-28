@@ -13,7 +13,7 @@ function ErrorState({ message, onReset }: ErrorStateProps) {
       <button
         type="button"
         onClick={onReset}
-        className="mt-4 px-4 py-1.5 text-sm rounded bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors"
+        className="mt-4 px-4 py-1.5 text-sm rounded bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors cursor-pointer"
       >
         Try again
       </button>

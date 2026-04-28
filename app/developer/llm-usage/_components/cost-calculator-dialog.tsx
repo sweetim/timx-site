@@ -81,7 +81,7 @@ export function CostCalculatorDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-dev-text-secondary hover:text-dev-text transition-colors"
+            className="text-dev-text-secondary hover:text-dev-text transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -172,7 +172,7 @@ export function CostCalculatorDialog({
               <button
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
-                className="text-xs text-dev-link hover:underline self-start"
+                className="text-xs text-dev-link hover:underline self-start cursor-pointer"
               >
                 Clear selection ({selectedIds.size})
               </button>

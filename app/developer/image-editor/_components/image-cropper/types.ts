@@ -1,4 +1,4 @@
-import type { CanvasDropProps, SharedEditorImage } from "../image-editor"
+import type { EditorToolProps } from "../shared/types"
 
 export type CropRect = {
   x: number
@@ -34,17 +34,4 @@ export type AspectRatioOption = {
   ratio: number | null
 }
 
-export type ImageCropperProps = {
-  variant?: "page" | "panel"
-  isActive?: boolean
-  initialImage?: SharedEditorImage | null
-  workspaceResetKey?: number
-  onResult?: (blob: Blob) => void
-  onSourceImage?: (blob: Blob, name: string) => void
-  onClearWorkspace?: () => void
-  onCopyToClipboard?: () => void
-  hasClipboard?: boolean
-  droppedFiles?: File[]
-  droppedFilesKey?: number
-  canvasDropProps?: CanvasDropProps
-}
+export type ImageCropperProps = EditorToolProps

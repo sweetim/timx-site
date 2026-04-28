@@ -164,20 +164,6 @@ function useBackgroundRemover(options?: UseBackgroundRemoverOptions) {
     fileInputRef.current?.click()
   }, [])
 
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (!options?.isActive) return
-      if (status.phase !== "idle" && status.phase !== "ready") return
-      const file = e.clipboardData?.files[0]
-      if (file?.type.startsWith("image/")) {
-        e.preventDefault()
-        loadImage(file)
-      }
-    }
-    document.addEventListener("paste", handlePaste)
-    return () => document.removeEventListener("paste", handlePaste)
-  }, [options?.isActive, status.phase, loadImage])
-
   const handleDownload = useCallback(() => {
     if (status.phase !== "done") return
     const link = document.createElement("a")

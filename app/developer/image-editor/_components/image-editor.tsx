@@ -10,6 +10,20 @@ import ScreenshotStitcher from "./image-stitch/"
 
 export type EditorTool = "background" | "crop" | "stitch"
 
+export type SourceImage = {
+  id: string
+  blob: Blob
+  url: string
+  name: string
+  naturalWidth: number
+  naturalHeight: number
+}
+
+export type BackgroundRemovalResult = {
+  blob: Blob
+  url: string
+}
+
 export type SharedEditorImage = {
   blob: Blob
   key: number
@@ -60,26 +74,143 @@ const TOOLS: ToolItem[] = [
 ]
 
 function ImageEditor() {
-  const [activeTool, setActiveTool] = useState<EditorTool>("stitch")
+  const [activeTool, setActiveTool] = useState<EditorTool>("background")
   const [clipboard, setClipboard] = useState<Blob | null>(null)
   const [sharedImage, setSharedImage] = useState<SharedEditorImage | null>(null)
+  const [sourceImages, setSourceImages] = useState<SourceImage[]>([])
+  const [backgroundRemovalResults, setBackgroundRemovalResults] = useState<
+    Record<string, BackgroundRemovalResult>
+  >({})
   const [workspaceResetKey, setWorkspaceResetKey] = useState(0)
   const [isCanvasDragOver, setIsCanvasDragOver] = useState(false)
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
   const [droppedFilesKey, setDroppedFilesKey] = useState(0)
   const sharedImageRef = useRef<SharedEditorImage | null>(null)
   const sharedImageCounterRef = useRef(0)
+  const sourceImagesRef = useRef<SourceImage[]>([])
+  const backgroundRemovalResultsRef = useRef<
+    Record<string, BackgroundRemovalResult>
+  >({})
 
   useEffect(() => {
     sharedImageRef.current = sharedImage
   }, [sharedImage])
 
   useEffect(() => {
+    sourceImagesRef.current = sourceImages
+  }, [sourceImages])
+
+  useEffect(() => {
     return () => {
       if (sharedImageRef.current)
         URL.revokeObjectURL(sharedImageRef.current.url)
+      for (const img of sourceImagesRef.current) URL.revokeObjectURL(img.url)
+      for (const result of Object.values(backgroundRemovalResultsRef.current)) {
+        URL.revokeObjectURL(result.url)
+      }
     }
   }, [])
+
+  const addFilesToSourceImages = useCallback(async (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"))
+    if (imageFiles.length === 0) return []
+
+    const loaded = await Promise.all(
+      imageFiles.map(
+        (file) =>
+          new Promise<SourceImage | null>((resolve) => {
+            const url = URL.createObjectURL(file)
+            const img = new Image()
+            img.onload = () => {
+              resolve({
+                id: `${file.name}-${file.lastModified}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                blob: file,
+                url,
+                name: file.name,
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+              })
+            }
+            img.onerror = () => {
+              URL.revokeObjectURL(url)
+              resolve(null)
+            }
+            img.src = url
+          }),
+      ),
+    )
+
+    const valid = loaded.filter((item): item is SourceImage => item !== null)
+    if (valid.length === 0) return []
+
+    const nextSourceImages = [...sourceImagesRef.current]
+    const added: SourceImage[] = []
+    let didAddSource = false
+
+    for (const item of valid) {
+      const existing = nextSourceImages.find((img) => img.blob === item.blob)
+      if (existing) {
+        URL.revokeObjectURL(item.url)
+        added.push(existing)
+        continue
+      }
+
+      nextSourceImages.push(item)
+      added.push(item)
+      didAddSource = true
+    }
+
+    if (didAddSource) {
+      sourceImagesRef.current = nextSourceImages
+      setSourceImages(nextSourceImages)
+    }
+
+    return added
+  }, [])
+
+  const removeSourceImage = useCallback((id: string) => {
+    const item = sourceImagesRef.current.find((img) => img.id === id)
+    if (item) URL.revokeObjectURL(item.url)
+
+    const nextSourceImages = sourceImagesRef.current.filter(
+      (img) => img.id !== id,
+    )
+    sourceImagesRef.current = nextSourceImages
+    setSourceImages(nextSourceImages)
+
+    setBackgroundRemovalResults((previousResults) => {
+      const previousResult = previousResults[id]
+      if (!previousResult) return previousResults
+
+      URL.revokeObjectURL(previousResult.url)
+      const nextResults = { ...previousResults }
+      delete nextResults[id]
+      backgroundRemovalResultsRef.current = nextResults
+      return nextResults
+    })
+  }, [])
+
+  const rememberBackgroundRemovalResult = useCallback(
+    (sourceId: string, blob: Blob) => {
+      const nextResult = {
+        blob,
+        url: URL.createObjectURL(blob),
+      }
+
+      setBackgroundRemovalResults((previousResults) => {
+        const previousResult = previousResults[sourceId]
+        if (previousResult) URL.revokeObjectURL(previousResult.url)
+
+        const nextResults = {
+          ...previousResults,
+          [sourceId]: nextResult,
+        }
+        backgroundRemovalResultsRef.current = nextResults
+        return nextResults
+      })
+    },
+    [],
+  )
 
   const rememberSharedImage = useCallback(
     (blob: Blob, name: string, originTool: EditorTool) => {
@@ -122,6 +253,18 @@ function ImageEditor() {
       sharedImageRef.current = null
       return null
     })
+    setSourceImages((prev) => {
+      for (const img of prev) URL.revokeObjectURL(img.url)
+      sourceImagesRef.current = []
+      return []
+    })
+    setBackgroundRemovalResults((previousResults) => {
+      for (const result of Object.values(previousResults)) {
+        URL.revokeObjectURL(result.url)
+      }
+      backgroundRemovalResultsRef.current = {}
+      return {}
+    })
     setWorkspaceResetKey((key) => key + 1)
   }, [])
 
@@ -156,16 +299,20 @@ function ImageEditor() {
       if (e.currentTarget.contains(e.relatedTarget as Node)) return
       setIsCanvasDragOver(false)
     }, []),
-    onDrop: useCallback((e: React.DragEvent) => {
-      e.preventDefault()
-      setIsCanvasDragOver(false)
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        f.type.startsWith("image/"),
-      )
-      if (files.length === 0) return
-      setDroppedFilesKey((key) => key + 1)
-      setDroppedFiles(files)
-    }, []),
+    onDrop: useCallback(
+      (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsCanvasDragOver(false)
+        const files = Array.from(e.dataTransfer.files).filter((f) =>
+          f.type.startsWith("image/"),
+        )
+        if (files.length === 0) return
+        setDroppedFilesKey((key) => key + 1)
+        setDroppedFiles(files)
+        void addFilesToSourceImages(files)
+      },
+      [addFilesToSourceImages],
+    ),
   }
 
   return (
@@ -185,7 +332,7 @@ function ImageEditor() {
                 type="button"
                 onClick={() => handleToolSwitch(item.id)}
                 className={clsx(
-                  "flex lg:flex-col items-center justify-center gap-1 rounded-md px-3 py-2 lg:size-14 lg:px-0 text-xs font-medium transition-colors",
+                  "flex lg:flex-col items-center justify-center gap-1 rounded-md px-3 py-2 lg:size-14 lg:px-0 text-xs font-medium transition-colors cursor-pointer",
                   isActive
                     ? "bg-dev-accent-blue text-white"
                     : "text-dev-text-secondary hover:bg-dev-surface hover:text-dev-text",
@@ -218,6 +365,11 @@ function ImageEditor() {
               droppedFiles={droppedFiles}
               droppedFilesKey={droppedFilesKey}
               canvasDropProps={canvasDropProps}
+              sourceImages={sourceImages}
+              onRemoveSourceImage={removeSourceImage}
+              onAddSourceImages={addFilesToSourceImages}
+              backgroundRemovalResults={backgroundRemovalResults}
+              onBackgroundRemovalResult={rememberBackgroundRemovalResult}
             />
           </div>
           <div className={activeTool === "crop" ? "h-full" : "hidden"}>
@@ -236,6 +388,9 @@ function ImageEditor() {
               droppedFiles={droppedFiles}
               droppedFilesKey={droppedFilesKey}
               canvasDropProps={canvasDropProps}
+              sourceImages={sourceImages}
+              onRemoveSourceImage={removeSourceImage}
+              onAddSourceImages={addFilesToSourceImages}
             />
           </div>
           <div className={activeTool === "stitch" ? "h-full" : "hidden"}>
@@ -254,6 +409,9 @@ function ImageEditor() {
               droppedFiles={droppedFiles}
               droppedFilesKey={droppedFilesKey}
               canvasDropProps={canvasDropProps}
+              sourceImages={sourceImages}
+              onRemoveSourceImage={removeSourceImage}
+              onAddSourceImages={addFilesToSourceImages}
             />
           </div>
         </div>

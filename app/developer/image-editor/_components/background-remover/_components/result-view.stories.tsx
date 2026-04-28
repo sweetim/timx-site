@@ -21,7 +21,9 @@ export const Default: Story = {
   args: {
     originalUrl,
     resultUrl,
+    downloadFormat: "png",
     onDownload: () => {},
+    onFormatChange: () => {},
     onReset: () => {},
   },
 }

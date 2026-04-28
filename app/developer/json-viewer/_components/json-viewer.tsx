@@ -230,7 +230,7 @@ const JsonViewer: FC = () => {
           <button
             type="button"
             className={clsx(
-              "p-1.5 sm:px-3 sm:py-1 text-sm rounded transition-colors",
+              "p-1.5 sm:px-3 sm:py-1 text-sm rounded transition-colors cursor-pointer",
               "inline-flex items-center gap-1.5",
               showWhitespace
                 ? "bg-dev-accent-blue text-white"
@@ -243,7 +243,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors cursor-pointer text-dev-text"
             onClick={handleFormat}
             disabled={!parsed}
           >
@@ -252,7 +252,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors cursor-pointer text-dev-text"
             onClick={handleUnescape}
             disabled={!parsed}
           >
@@ -261,7 +261,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors cursor-pointer text-dev-text"
             onClick={handleMinify}
             disabled={!parsed}
           >
@@ -270,7 +270,7 @@ const JsonViewer: FC = () => {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors cursor-pointer text-dev-text"
             onClick={handleClear}
           >
             <Eraser size={14} />
