@@ -25,6 +25,13 @@ export default function JsonViewerPage() {
         description="View, format, validate, and explore JSON data with a collapsible tree view"
         url="https://timx.co/developer/json-viewer"
         applicationCategory="DeveloperApplication"
+        featureList={[
+          "Validate JSON syntax",
+          "Format and minify JSON",
+          "Explore JSON in a collapsible tree",
+          "Reveal whitespace characters",
+          "Unescape nested JSON strings",
+        ]}
       />
       <JsonViewer />
     </>

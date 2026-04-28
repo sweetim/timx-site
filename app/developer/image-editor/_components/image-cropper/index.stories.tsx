@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 
-import ScreenshotStitcher from "./image-resizer"
+import ImageCropper from "./"
 
 const meta = {
-  title: "Developer/ScreenshotStitcher",
-  component: ScreenshotStitcher,
+  title: "Developer/ImageCropper",
+  component: ImageCropper,
   parameters: { layout: "fullscreen" },
   tags: ["autodocs"],
-} satisfies Meta<typeof ScreenshotStitcher>
+} satisfies Meta<typeof ImageCropper>
 
 export default meta
 type Story = StoryObj<typeof meta>

@@ -1,14 +1,22 @@
 "use client"
 
-import classNames from "classnames"
+import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
 import { Crop, Eraser, Images, Layers } from "lucide-react"
-import { useState } from "react"
-import BackgroundRemover from "../../_components/background-remover"
-import ImageCropper from "../../image-cropper/_components/image-cropper"
-import ScreenshotStitcher from "../../image-resizer/_components/image-resizer"
+import { useCallback, useEffect, useRef, useState } from "react"
+import BackgroundRemover from "./background-remover"
+import ImageCropper from "./image-cropper/"
+import ScreenshotStitcher from "./image-stitch/"
 
-type EditorTool = "background" | "crop" | "stitch"
+export type EditorTool = "background" | "crop" | "stitch"
+
+export type SharedEditorImage = {
+  blob: Blob
+  key: number
+  name: string
+  originTool: EditorTool
+  url: string
+}
 
 type ToolItem = {
   id: EditorTool
@@ -16,6 +24,15 @@ type ToolItem = {
   shortName: string
   description: string
   icon: LucideIcon
+}
+
+export type CanvasDropProps = {
+  isDragOver: boolean
+  overlayLabel: string
+  onDragOver: (e: React.DragEvent) => void
+  onDragEnter: (e: React.DragEvent) => void
+  onDragLeave: (e: React.DragEvent) => void
+  onDrop: (e: React.DragEvent) => void
 }
 
 const TOOLS: ToolItem[] = [
@@ -42,16 +59,114 @@ const TOOLS: ToolItem[] = [
   },
 ]
 
-function renderEditorTool(activeTool: EditorTool) {
-  if (activeTool === "background") return <BackgroundRemover variant="panel" />
-  if (activeTool === "crop") return <ImageCropper variant="panel" />
-  return <ScreenshotStitcher variant="panel" />
-}
-
 function ImageEditor() {
   const [activeTool, setActiveTool] = useState<EditorTool>("stitch")
-  const tool = TOOLS.find((item) => item.id === activeTool) ?? TOOLS[0]
-  const ToolIcon = tool.icon
+  const [clipboard, setClipboard] = useState<Blob | null>(null)
+  const [sharedImage, setSharedImage] = useState<SharedEditorImage | null>(null)
+  const [workspaceResetKey, setWorkspaceResetKey] = useState(0)
+  const [isCanvasDragOver, setIsCanvasDragOver] = useState(false)
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
+  const [droppedFilesKey, setDroppedFilesKey] = useState(0)
+  const sharedImageRef = useRef<SharedEditorImage | null>(null)
+  const sharedImageCounterRef = useRef(0)
+
+  useEffect(() => {
+    sharedImageRef.current = sharedImage
+  }, [sharedImage])
+
+  useEffect(() => {
+    return () => {
+      if (sharedImageRef.current)
+        URL.revokeObjectURL(sharedImageRef.current.url)
+    }
+  }, [])
+
+  const rememberSharedImage = useCallback(
+    (blob: Blob, name: string, originTool: EditorTool) => {
+      sharedImageCounterRef.current += 1
+      const nextImage = {
+        blob,
+        key: sharedImageCounterRef.current,
+        name,
+        originTool,
+        url: URL.createObjectURL(blob),
+      }
+
+      setSharedImage((previousImage) => {
+        if (previousImage) URL.revokeObjectURL(previousImage.url)
+        sharedImageRef.current = nextImage
+        return nextImage
+      })
+    },
+    [],
+  )
+
+  const handleSourceImage = useCallback(
+    (originTool: EditorTool, blob: Blob, name: string) => {
+      rememberSharedImage(blob, name, originTool)
+    },
+    [rememberSharedImage],
+  )
+
+  const handleResult = useCallback(
+    (originTool: EditorTool, blob: Blob) => {
+      setClipboard(blob)
+      rememberSharedImage(blob, `${originTool}-result.png`, originTool)
+    },
+    [rememberSharedImage],
+  )
+
+  const handleClearWorkspace = useCallback(() => {
+    setSharedImage((previousImage) => {
+      if (previousImage) URL.revokeObjectURL(previousImage.url)
+      sharedImageRef.current = null
+      return null
+    })
+    setWorkspaceResetKey((key) => key + 1)
+  }, [])
+
+  const handleCopyToClipboard = useCallback(async () => {
+    if (!clipboard) return
+    await navigator.clipboard.write([
+      new ClipboardItem({ "image/png": clipboard }),
+    ])
+  }, [clipboard])
+
+  const handleToolSwitch = useCallback((id: EditorTool) => {
+    setDroppedFiles([])
+    setActiveTool(id)
+  }, [])
+
+  const canvasDropProps: CanvasDropProps = {
+    isDragOver: isCanvasDragOver,
+    overlayLabel:
+      activeTool === "stitch"
+        ? "Drop images to add to canvas"
+        : "Drop an image to get started",
+    onDragOver: useCallback((e: React.DragEvent) => {
+      e.preventDefault()
+      setIsCanvasDragOver(true)
+    }, []),
+    onDragEnter: useCallback((e: React.DragEvent) => {
+      e.preventDefault()
+      setIsCanvasDragOver(true)
+    }, []),
+    onDragLeave: useCallback((e: React.DragEvent) => {
+      e.preventDefault()
+      if (e.currentTarget.contains(e.relatedTarget as Node)) return
+      setIsCanvasDragOver(false)
+    }, []),
+    onDrop: useCallback((e: React.DragEvent) => {
+      e.preventDefault()
+      setIsCanvasDragOver(false)
+      const files = Array.from(e.dataTransfer.files).filter((f) =>
+        f.type.startsWith("image/"),
+      )
+      if (files.length === 0) return
+      setDroppedFilesKey((key) => key + 1)
+      setDroppedFiles(files)
+    }, []),
+  }
 
   return (
     <div className="h-full min-h-full bg-dev-canvas text-dev-text lg:grid lg:grid-cols-[4.5rem_minmax(0,1fr)]">
@@ -68,8 +183,8 @@ function ImageEditor() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setActiveTool(item.id)}
-                className={classNames(
+                onClick={() => handleToolSwitch(item.id)}
+                className={clsx(
                   "flex lg:flex-col items-center justify-center gap-1 rounded-md px-3 py-2 lg:size-14 lg:px-0 text-xs font-medium transition-colors",
                   isActive
                     ? "bg-dev-accent-blue text-white"
@@ -85,26 +200,62 @@ function ImageEditor() {
         </div>
       </aside>
 
-      <main className="min-h-0 bg-[#15191f] lg:flex lg:flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-dev-border bg-dev-surface px-4 py-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <ToolIcon className="size-4 shrink-0 text-dev-accent-blue" />
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold text-dev-text">
-                Image Editor
-              </h1>
-              <p className="truncate text-xs text-dev-text-secondary">
-                {tool.name}
-              </p>
-            </div>
+      <main className="min-h-0 bg-dev-canvas lg:flex lg:flex-col">
+        <div className="min-h-155 lg:min-h-0 lg:flex-1 overflow-hidden">
+          <div className={activeTool === "background" ? "h-full" : "hidden"}>
+            <BackgroundRemover
+              variant="panel"
+              isActive={activeTool === "background"}
+              initialImage={sharedImage}
+              workspaceResetKey={workspaceResetKey}
+              onSourceImage={(blob, name) =>
+                handleSourceImage("background", blob, name)
+              }
+              onClearWorkspace={handleClearWorkspace}
+              onResult={(blob) => handleResult("background", blob)}
+              onCopyToClipboard={handleCopyToClipboard}
+              hasClipboard={clipboard != null}
+              droppedFiles={droppedFiles}
+              droppedFilesKey={droppedFilesKey}
+              canvasDropProps={canvasDropProps}
+            />
           </div>
-          <div className="hidden sm:flex items-center gap-1 rounded border border-dev-border bg-dev-inset px-2 py-1 text-[11px] text-dev-text-secondary">
-            Local canvas workspace
+          <div className={activeTool === "crop" ? "h-full" : "hidden"}>
+            <ImageCropper
+              variant="panel"
+              isActive={activeTool === "crop"}
+              initialImage={sharedImage}
+              workspaceResetKey={workspaceResetKey}
+              onSourceImage={(blob, name) =>
+                handleSourceImage("crop", blob, name)
+              }
+              onClearWorkspace={handleClearWorkspace}
+              onResult={(blob) => handleResult("crop", blob)}
+              onCopyToClipboard={handleCopyToClipboard}
+              hasClipboard={clipboard != null}
+              droppedFiles={droppedFiles}
+              droppedFilesKey={droppedFilesKey}
+              canvasDropProps={canvasDropProps}
+            />
           </div>
-        </div>
-
-        <div className="min-h-[620px] lg:min-h-0 lg:flex-1 overflow-hidden">
-          {renderEditorTool(activeTool)}
+          <div className={activeTool === "stitch" ? "h-full" : "hidden"}>
+            <ScreenshotStitcher
+              variant="panel"
+              isActive={activeTool === "stitch"}
+              initialImage={sharedImage}
+              workspaceResetKey={workspaceResetKey}
+              onSourceImage={(blob, name) =>
+                handleSourceImage("stitch", blob, name)
+              }
+              onClearWorkspace={handleClearWorkspace}
+              onResult={(blob) => handleResult("stitch", blob)}
+              onCopyToClipboard={handleCopyToClipboard}
+              hasClipboard={clipboard != null}
+              droppedFiles={droppedFiles}
+              droppedFilesKey={droppedFilesKey}
+              canvasDropProps={canvasDropProps}
+            />
+          </div>
         </div>
       </main>
     </div>

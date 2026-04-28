@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 
 import { fn } from "storybook/test"
 
-import UploadZone from "./upload-zone"
+import UploadZone from "../../upload-zone"
 
 const meta = {
-  title: "BackgroundRemover/UploadZone",
+  title: "ImageEditor/UploadZone",
   component: UploadZone,
   parameters: { layout: "centered" },
   tags: ["autodocs"],
@@ -22,3 +22,4 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = { args: { isDragOver: false } }
 export const DragOver: Story = { args: { isDragOver: true } }
+export const Multiple: Story = { args: { isDragOver: false, multiple: true } }

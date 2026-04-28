@@ -1,15 +1,32 @@
 "use client"
 
-import classNames from "classnames"
+import clsx from "clsx"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useRef } from "react"
 
 import { tools } from "../_lib/tools"
 
 const NavBar = () => {
   const pathname = usePathname()
   const isHome = pathname === "/developer"
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollLeft += e.deltaY
+        e.preventDefault()
+      }
+    }
+
+    el.addEventListener("wheel", handleWheel, { passive: false })
+    return () => el.removeEventListener("wheel", handleWheel)
+  }, [])
 
   return (
     <nav className="flex items-center gap-6 px-4 py-2.5 border-b border-dev-border bg-dev-canvas">
@@ -27,7 +44,7 @@ const NavBar = () => {
       <div className="w-px h-4 bg-dev-border" />
       <Link
         href="/developer"
-        className={classNames(
+        className={clsx(
           "text-sm font-medium transition-colors shrink-0",
           isHome
             ? "text-dev-text"
@@ -38,15 +55,9 @@ const NavBar = () => {
       </Link>
       <div className="w-px h-4 bg-dev-border shrink-0" />
       <div
+        ref={scrollRef}
         className="no-scrollbar flex items-center gap-1 overflow-x-auto"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        onWheel={(e) => {
-          const target = e.currentTarget
-          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            target.scrollLeft += e.deltaY
-            e.preventDefault()
-          }
-        }}
       >
         {tools.map((tool) => {
           const href = `/developer/${tool.slug}`
@@ -56,7 +67,7 @@ const NavBar = () => {
             <Link
               key={tool.slug}
               href={href}
-              className={classNames(
+              className={clsx(
                 "flex items-center justify-center gap-1.5 text-sm px-2.5 py-1 rounded transition-colors",
                 isActive
                   ? "bg-dev-border text-dev-text"

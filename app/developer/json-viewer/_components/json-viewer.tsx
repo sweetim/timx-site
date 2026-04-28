@@ -1,6 +1,7 @@
 "use client"
 
-import classNames from "classnames"
+import clsx from "clsx"
+import { AlignLeft, Eraser, Minimize2, Pilcrow, Unlink2 } from "lucide-react"
 import { type FC, useCallback, useMemo, useState } from "react"
 import { match, P } from "ts-pattern"
 
@@ -156,22 +157,20 @@ const SAMPLE_JSON = JSON.stringify(
 
 const JsonViewer: FC = () => {
   const [input, setInput] = useState(SAMPLE_JSON)
-  const [error, setError] = useState<string | null>(null)
   const [showWhitespace, setShowWhitespace] = useState(true)
 
-  const parsed = useMemo(() => {
-    if (!input.trim()) return null
+  const { parsed, error } = useMemo(() => {
+    if (!input.trim()) return { parsed: null, error: null }
     try {
       const value = JSON.parse(input) as JsonValue
-      setError(null)
-      return value
+      return { parsed: value, error: null }
     } catch (error) {
-      setError(
-        match(error)
+      return {
+        parsed: null,
+        error: match(error)
           .with(P.instanceOf(Error), (error) => error.message)
           .otherwise(() => "Invalid JSON"),
-      )
-      return null
+      }
     }
   }, [input])
 
@@ -187,7 +186,6 @@ const JsonViewer: FC = () => {
 
   const handleClear = useCallback(() => {
     setInput("")
-    setError(null)
   }, [])
 
   const handleUnescape = useCallback(() => {
@@ -223,50 +221,60 @@ const JsonViewer: FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
-      <div className="flex items-center justify-end px-4 py-2 border-b border-dev-border">
-        <div className="flex gap-2">
+      <div className="flex items-center justify-between gap-4 px-4 py-2 border-b border-dev-border">
+        <h1 className="text-sm font-medium leading-relaxed text-dev-text-secondary truncate min-w-0 shrink">
+          Paste JSON to validate, format, minify, unescape nested strings, and
+          inspect data in a collapsible tree.
+        </h1>
+        <div className="flex gap-2 shrink-0">
           <button
             type="button"
-            className={classNames(
-              "px-3 py-1 text-sm rounded transition-colors",
+            className={clsx(
+              "p-1.5 sm:px-3 sm:py-1 text-sm rounded transition-colors",
+              "inline-flex items-center gap-1.5",
               showWhitespace
                 ? "bg-dev-accent-blue text-white"
                 : "bg-dev-button hover:bg-dev-button-hover text-dev-text",
             )}
             onClick={() => setShowWhitespace((v) => !v)}
           >
-            Whitespace
+            <Pilcrow size={14} />
+            <span className="hidden sm:inline">Whitespace</span>
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleFormat}
             disabled={!parsed}
           >
-            Format
+            <AlignLeft size={14} />
+            <span className="hidden sm:inline">Format</span>
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleUnescape}
             disabled={!parsed}
           >
-            Unescape
+            <Unlink2 size={14} />
+            <span className="hidden sm:inline">Unescape</span>
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleMinify}
             disabled={!parsed}
           >
-            Minify
+            <Minimize2 size={14} />
+            <span className="hidden sm:inline">Minify</span>
           </button>
           <button
             type="button"
-            className="px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
+            className="inline-flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors text-dev-text"
             onClick={handleClear}
           >
-            Clear
+            <Eraser size={14} />
+            <span className="hidden sm:inline">Clear</span>
           </button>
         </div>
       </div>
@@ -277,7 +285,7 @@ const JsonViewer: FC = () => {
           </div>
           <div className="relative flex-1 overflow-hidden">
             <textarea
-              className={classNames(
+              className={clsx(
                 "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full z-10",
                 error
                   ? "text-dev-accent-red"
@@ -292,7 +300,7 @@ const JsonViewer: FC = () => {
             />
             {showWhitespace && (
               <pre
-                className={classNames(
+                className={clsx(
                   "absolute inset-0 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words overflow-auto w-full h-full pointer-events-none",
                   error ? "text-dev-accent-red" : "text-dev-text",
                 )}

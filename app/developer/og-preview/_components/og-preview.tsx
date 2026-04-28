@@ -8,7 +8,7 @@ import {
   SiWhatsapp,
   SiWhatsappHex,
 } from "@icons-pack/react-simple-icons"
-import classNames from "classnames"
+import clsx from "clsx"
 import { AlertCircle, Loader2, Search } from "lucide-react"
 import Image from "next/image"
 import { type FC, useState } from "react"
@@ -181,7 +181,7 @@ const OgResult: FC<OgResultProps> = ({ data }) => (
             >
               <span className="text-sm text-dev-text-secondary">{label}</span>
               <span
-                className={classNames("text-sm text-dev-text break-all", {
+                className={clsx("text-sm text-dev-text break-all", {
                   "text-dev-link": isUrl,
                 })}
               >

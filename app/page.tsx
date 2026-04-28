@@ -46,6 +46,14 @@ export default function Home() {
         url="https://timx.co"
         jobTitle="Software Developer"
         description="Developer based in Tokyo building free browser-based tools"
+        image="https://avatars.githubusercontent.com/u/6851767?v=4"
+        knowsAbout={[
+          "Developer tools",
+          "Robotics",
+          "Artificial intelligence",
+          "Blockchain",
+          "Web development",
+        ]}
         sameAs={[
           "https://github.com/sweetim",
           "https://gitlab.com/users/hosweetim/projects",

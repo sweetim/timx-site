@@ -25,6 +25,12 @@ export default function OgPreviewPage() {
         description="Inspect Open Graph and Twitter Card meta tags for any URL"
         url="https://timx.co/developer/og-preview"
         applicationCategory="DeveloperApplication"
+        featureList={[
+          "Inspect Open Graph tags",
+          "Inspect Twitter Card tags",
+          "Preview social share cards",
+          "Review raw social metadata",
+        ]}
       />
       <OgPreview />
     </>

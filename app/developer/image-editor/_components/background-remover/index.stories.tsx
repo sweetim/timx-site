@@ -29,6 +29,7 @@ function ProcessingTransition() {
     phase: "processing",
     status: { phase: "downloading-model" },
     progress: 0,
+    originalUrl: "https://placehold.co/400x300",
   })
 
   useEffect(() => {
@@ -39,6 +40,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "downloading-model" },
           progress: 0.35,
+          originalUrl: "https://placehold.co/400x300",
         },
       },
       {
@@ -47,6 +49,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "downloading-model" },
           progress: 0.7,
+          originalUrl: "https://placehold.co/400x300",
         },
       },
       {
@@ -55,6 +58,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "downloading-model" },
           progress: 0.95,
+          originalUrl: "https://placehold.co/400x300",
         },
       },
       {
@@ -63,6 +67,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "decoding" },
           progress: 0,
+          originalUrl: "https://placehold.co/400x300",
         },
       },
       {
@@ -71,6 +76,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "computing-inference" },
           progress: 0,
+          originalUrl: "https://placehold.co/400x300",
         },
       },
     ]
@@ -85,6 +91,7 @@ function ProcessingTransition() {
           phase: "processing",
           status: { phase: "downloading-model" },
           progress: 0,
+          originalUrl: "https://placehold.co/400x300",
         }),
       5800,
     )

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Mali } from "next/font/google"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import opengraph from "@/app/opengraph.jpg"
 import "./globals.css"
 
@@ -39,7 +40,12 @@ export default function RootLayout({
       lang="en"
       className={`${mali.className} h-full antialiased`}
     >
-      <body className="h-full">{children}</body>
+      <body className="h-full">
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
+        {children}
+      </body>
     </html>
   )
 }

@@ -13,8 +13,8 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 | Language | TypeScript 5 |
 | Package manager | Bun 1 via mise |
 | Pattern matching | ts-pattern 5 |
-| Icons | lucide-react |
-| Utilities | classnames, date-fns |
+| Icons | lucide-react, @icons-pack/react-simple-icons |
+| Utilities | clsx, date-fns |
 | Background removal | @imgly/background-removal |
 | Linting | ESLint 9, Biome 2 |
 | Component dev | Storybook 10 |
@@ -23,7 +23,6 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 
 ```
 /                          → Profile page (home)
-/about                     → About page
 /privacy                   → Privacy policy
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
@@ -40,7 +39,7 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 
 1. `app/page.tsx` renders a `Profile` component with hardcoded profile data.
 2. The profile avatar links to `/developer`.
-3. Social links open external URLs via `window.open`.
+3. Social links render as crawlable external anchors.
 
 ### Developer tools (`/developer/*`)
 
@@ -52,12 +51,15 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 
 ### Image Editor flow
 
-1. `/developer/image-editor` renders a Photoshop-style workspace with a tool rail, grid-backed central canvas area, and right properties panel.
-2. Users choose Background Remover, Crop, or Screenshot Stitcher from the tool rail.
-3. Each active tool keeps visual work and previews in the canvas while configuration and output actions live in the right properties panel.
-4. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress.
-5. Crop uploads or drops one image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
-6. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
+1. `/developer/image-editor` renders a Photoshop-style workspace with a persistent tool rail, shared canvas area, and right properties panel.
+2. Users choose Background Remover, Crop, or Screenshot Stitcher from the tool rail; switching tools keeps each tool mounted and does not clear the current canvas image.
+3. `ImageEditor` owns a shared current image document. Uploads and tool results update that shared image so single-image modes can import the latest canvas image when selected.
+4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls, Crop shows crop handles and sizing controls, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
+5. Screenshot Stitcher remains a multi-image composition mode. If a single image already exists on the canvas, Stitch offers an "Add as Frame" action before the user adds more screenshots.
+6. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
+7. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress.
+8. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
+9. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
 
 ### Image Cropper flow
 
@@ -72,10 +74,11 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 
 ### JSON Viewer flow
 
-1. User types or pastes JSON into the input textarea.
-2. `useMemo` parses the input; errors are caught and displayed.
-3. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
-4. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
+1. The page renders a visible SEO heading and intro copy above the tool workspace.
+2. User types or pastes JSON into the input textarea.
+3. `useMemo` parses the input; errors are caught and displayed.
+4. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
+5. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
 
 ### Screenshot Stitcher flow
 
@@ -123,6 +126,7 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 | `.storybook/main.ts` | Storybook file discovery and framework configuration |
 | `.storybook/preview.ts` | Storybook global preview configuration |
 | `.kilo/commands/doc-sync.md` | Local Kilo command for syncing architecture docs |
+| `.kilo/commands/seo-audit.md` | Local Kilo command for SEO audits |
 
 Generated or dependency-managed directories such as `.next/`, `node_modules/`, `.git/`, and `tsconfig.tsbuildinfo` are intentionally omitted from the file map.
 
@@ -130,7 +134,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 
 | File | Purpose |
 |---|---|
-| `app/layout.tsx` | Root layout (Mali font, global CSS) |
+| `app/layout.tsx` | Root layout (Mali font, global CSS, Google Analytics) |
 | `app/page.tsx` | Home page — profile card with Person JSON-LD |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all pages |
@@ -147,20 +151,29 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
 | `app/developer/image-editor/page.tsx` | Image Editor route page |
-| `app/developer/_components/background-remover/index.tsx` | Background Remover client component |
-| `app/developer/_components/background-remover/types.ts` | Status and phase types |
-| `app/developer/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions |
-| `app/developer/_components/background-remover/utils.ts` | Progress mapping and formatting utilities |
-| `app/developer/_components/background-remover/checkerboard-pattern.tsx` | SVG checkerboard pattern for transparency |
-| `app/developer/_components/background-remover/image-comparison-slider.tsx` | Drag-to-compare original vs result |
-| `app/developer/_components/background-remover/_hooks/use-background-remover.ts` | Main hook: state management, worker communication |
-| `app/developer/_components/background-remover/_hooks/background-remover.worker.ts` | Web Worker running @imgly/background-removal |
-| `app/developer/_components/background-remover/_components/upload-zone.tsx` | Drag-and-drop upload area |
-| `app/developer/_components/background-remover/_components/result-view.tsx` | Result display with download/reset |
-| `app/developer/_components/background-remover/_components/error-state.tsx` | Error display with retry |
-| `app/developer/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
-| `app/developer/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
-| `app/developer/image-cropper/_components/image-cropper.tsx` | Image Cropper client component |
+| `app/developer/image-editor/_components/background-remover/index.tsx` | Background Remover client component |
+| `app/developer/image-editor/_components/background-remover/types.ts` | Status and phase types |
+| `app/developer/image-editor/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions |
+| `app/developer/image-editor/_components/background-remover/utils.ts` | Progress mapping and formatting utilities |
+| `app/developer/image-editor/_components/background-remover/checkerboard-pattern.tsx` | SVG checkerboard pattern for transparency |
+| `app/developer/image-editor/_components/background-remover/image-comparison-slider.tsx` | Drag-to-compare original vs result |
+| `app/developer/image-editor/_components/background-remover/_hooks/use-background-remover.ts` | Main hook: state management, worker communication |
+| `app/developer/image-editor/_components/background-remover/_hooks/background-remover.worker.ts` | Web Worker running @imgly/background-removal |
+| `app/developer/image-editor/_components/background-remover/_components/result-view.tsx` | Result display with download/reset |
+| `app/developer/image-editor/_components/background-remover/_components/error-state.tsx` | Error display with retry |
+| `app/developer/image-editor/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
+| `app/developer/image-editor/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
+| `app/developer/image-editor/_components/upload-zone.tsx` | Shared drag-and-drop upload area (used by all image-editor tools) |
+| `app/developer/image-editor/_components/canvas-drop-overlay.tsx` | Canvas-level drag overlay with label |
+| `app/developer/image-editor/_components/image-cropper/index.tsx` | Image Cropper client component |
+| `app/developer/image-editor/_components/image-cropper/types.ts` | Cropper types (CropRect, DragState, Status, AnchorMode, etc.) |
+| `app/developer/image-editor/_components/image-cropper/constants.ts` | Aspect ratio presets and handle constants |
+| `app/developer/image-editor/_components/image-cropper/crop-overlay.tsx` | Draggable crop rectangle with 8 resize handles |
+| `app/developer/image-editor/_components/image-cropper/_lib/crop-math.ts` | Crop math utilities (clamp, resize, aspect ratio) |
+| `app/developer/image-editor/_components/image-stitch/index.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
+| `app/developer/image-editor/_components/image-stitch/types.ts` | Stitcher types (ImageItem, StackDirection, ContentAlignment, etc.) |
+| `app/developer/image-editor/_components/image-stitch/constants.ts` | Alignment options and checkerboard background style |
+| `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
 | `app/developer/llm-usage/_components/cost-calculator-dialog.tsx` | Cost calculator modal |
@@ -168,18 +181,18 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/_components/constants.ts` | Release filter options |
 | `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
-| `app/developer/image-resizer/_components/image-resizer.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 
-Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/_components/background-remover/index.stories.tsx`.
+Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/image-editor/_components/background-remover/index.stories.tsx`.
 
 ### `app/` assets
 
 | File | Purpose |
 |---|---|
 | `app/favicon.ico` | Site favicon (Next.js App Router convention) |
+| `app/opengraph.jpg` | Open Graph image for social media previews |
 
 ### `public/` (static assets)
 
@@ -190,6 +203,7 @@ Storybook stories are colocated with their UI components. Representative example
 | `public/docker.svg` | Docker icon |
 | `public/linkedin.svg` | LinkedIn icon |
 | `public/stackoverflow.svg` | Stack Overflow icon |
+| `public/timx-logo.png` | Site logo |
 
 ## Dependencies
 
@@ -197,8 +211,10 @@ Storybook stories are colocated with their UI components. Representative example
 
 | Package | Version | Purpose |
 |---|---|---|
+| `@icons-pack/react-simple-icons` | ^13.13.0 | Brand and social SVG icons |
+| `@next/third-parties` | ^16.2.4 | Google Analytics integration |
 | `@imgly/background-removal` | ^1.7.0 | Client-side AI background removal |
-| `classnames` | ^2.5.1 | Conditional CSS class joining |
+| `clsx` | ^2.1.1 | Conditional CSS class joining |
 | `date-fns` | ^4.1.0 | Date formatting utilities |
 | `lucide-react` | ^1.7.0 | Icon library |
 | `next` | 16.2.2 | React framework |
@@ -226,7 +242,11 @@ Storybook stories are colocated with their UI components. Representative example
 
 ## Environment variables
 
-This application uses no environment variables at runtime or build time. There are no `process.env` or `Bun.env` reads in the codebase.
+This application uses one environment variable:
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`). Optional; if unset, the GA script is not loaded. |
 
 ## Types
 
@@ -236,20 +256,6 @@ This application uses no environment variables at runtime or build time. There a
 type Tool = {
   name: string
   slug: string
-  description: string
-  icon: LucideIcon
-}
-```
-
-### Image Editor types (app/developer/image-editor/_components/image-editor.tsx)
-
-```typescript
-type EditorTool = "background" | "crop" | "stitch"
-
-type ToolItem = {
-  id: EditorTool
-  name: string
-  shortName: string
   description: string
   icon: LucideIcon
 }
@@ -287,6 +293,8 @@ type PersonJsonLdProps = {
   url: string
   jobTitle: string
   description: string
+  image?: string
+  knowsAbout?: string[]
   sameAs: string[]
 }
 
@@ -295,10 +303,11 @@ type WebApplicationJsonLdProps = {
   description: string
   url: string
   applicationCategory: string
+  featureList?: string[]
 }
 ```
 
-### Background Remover types (app/developer/_components/background-remover/types.ts)
+### Background Remover types (app/developer/image-editor/_components/background-remover/types.ts)
 
 ```typescript
 type ComputePhase =
@@ -311,16 +320,32 @@ type ProcessingStatus = { phase: "downloading-model" } | { phase: ComputePhase }
 
 type Status =
   | { phase: "idle" }
-  | { phase: "processing"; status: ProcessingStatus; progress: number }
+  | { phase: "ready"; originalUrl: string }
+  | { phase: "processing"; status: ProcessingStatus; progress: number; originalUrl: string }
   | { phase: "done"; originalUrl: string; resultUrl: string }
   | { phase: "error"; message: string }
+```
 
+### Background Remover props (app/developer/image-editor/_components/background-remover/index.tsx)
+
+```typescript
 type BackgroundRemoverProps = {
   variant?: "page" | "panel"
+  isActive?: boolean
+  initialImage?: SharedEditorImage | null
+  workspaceResetKey?: number
+  onResult?: (blob: Blob) => void
+  onSourceImage?: (blob: Blob, name: string) => void
+  onClearWorkspace?: () => void
+  onCopyToClipboard?: () => void
+  hasClipboard?: boolean
+  droppedFiles?: File[]
+  droppedFilesKey?: number
+  canvasDropProps?: CanvasDropProps
 }
 ```
 
-### Worker types (app/developer/_components/background-remover/_hooks/background-remover.worker.ts)
+### Worker types (app/developer/image-editor/_components/background-remover/_hooks/background-remover.worker.ts)
 
 ```typescript
 type WorkerRequest = { type: "process"; file: File }
@@ -331,7 +356,38 @@ type WorkerEvent =
   | { type: "error"; message: string }
 ```
 
-### Image Cropper types (app/developer/image-cropper/_components/image-cropper.tsx)
+### Image Editor shared types (app/developer/image-editor/_components/image-editor.tsx)
+
+```typescript
+type EditorTool = "background" | "crop" | "stitch"
+
+type SharedEditorImage = {
+  blob: Blob
+  key: number
+  name: string
+  originTool: EditorTool
+  url: string
+}
+
+type ToolItem = {
+  id: EditorTool
+  name: string
+  shortName: string
+  description: string
+  icon: LucideIcon
+}
+
+type CanvasDropProps = {
+  isDragOver: boolean
+  overlayLabel: string
+  onDragOver: (e: React.DragEvent) => void
+  onDragEnter: (e: React.DragEvent) => void
+  onDragLeave: (e: React.DragEvent) => void
+  onDrop: (e: React.DragEvent) => void
+}
+```
+
+### Image Cropper types (app/developer/image-editor/_components/image-cropper/types.ts)
 
 ```typescript
 type CropRect = {
@@ -365,6 +421,17 @@ type Status =
 
 type ImageCropperProps = {
   variant?: "page" | "panel"
+  isActive?: boolean
+  initialImage?: SharedEditorImage | null
+  workspaceResetKey?: number
+  onResult?: (blob: Blob) => void
+  onSourceImage?: (blob: Blob, name: string) => void
+  onClearWorkspace?: () => void
+  onCopyToClipboard?: () => void
+  hasClipboard?: boolean
+  droppedFiles?: File[]
+  droppedFilesKey?: number
+  canvasDropProps?: CanvasDropProps
 }
 ```
 
@@ -375,7 +442,39 @@ type JsonPrimitive = string | number | boolean | null
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
 ```
 
-### Screenshot Stitcher types (app/developer/image-resizer/_components/image-resizer.tsx)
+### LLM Usage types (app/developer/llm-usage/_components/types.ts)
+
+```typescript
+type Model = {
+  id: string
+  name: string
+  created: number
+  context_length: number
+  pricing: {
+    prompt: string
+    completion: string
+    input_cache_read: string
+  }
+  architecture: {
+    input_modalities: string[]
+    output_modalities: string[]
+  }
+  top_provider: {
+    max_completion_tokens: number | null
+  }
+}
+
+type ProviderGroup = {
+  provider: string
+  models: Model[]
+}
+
+type SortKey = "name" | "prompt" | "completion" | "context_length" | "created"
+type SortDirection = "asc" | "desc"
+type ReleaseFilter = "all" | "7d" | "30d" | "90d" | "1y"
+```
+
+### Screenshot Stitcher types (app/developer/image-editor/_components/image-stitch/types.ts)
 
 ```typescript
 type ImageItem = {
@@ -396,10 +495,22 @@ type StitchedImage = {
   fileName: string
   width: number
   height: number
+  blob: Blob
 }
 
 type ScreenshotStitcherProps = {
   variant?: "page" | "panel"
+  isActive?: boolean
+  initialImage?: SharedEditorImage | null
+  workspaceResetKey?: number
+  onResult?: (blob: Blob) => void
+  onSourceImage?: (blob: Blob, name: string) => void
+  onClearWorkspace?: () => void
+  onCopyToClipboard?: () => void
+  hasClipboard?: boolean
+  droppedFiles?: File[]
+  droppedFilesKey?: number
+  canvasDropProps?: CanvasDropProps
 }
 ```
 

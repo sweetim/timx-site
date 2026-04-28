@@ -3,6 +3,8 @@ export type PersonJsonLdProps = {
   url: string
   jobTitle: string
   description: string
+  image?: string
+  knowsAbout?: string[]
   sameAs: string[]
 }
 
@@ -11,9 +13,18 @@ export type WebApplicationJsonLdProps = {
   description: string
   url: string
   applicationCategory: string
+  featureList?: string[]
 }
 
-export function PersonJsonLd({ name, url, jobTitle, description, sameAs }: PersonJsonLdProps) {
+export function PersonJsonLd({
+  name,
+  url,
+  jobTitle,
+  description,
+  image,
+  knowsAbout,
+  sameAs,
+}: PersonJsonLdProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -21,6 +32,8 @@ export function PersonJsonLd({ name, url, jobTitle, description, sameAs }: Perso
     url,
     jobTitle,
     description,
+    image,
+    knowsAbout,
     sameAs,
   }
 
@@ -37,6 +50,7 @@ export function WebApplicationJsonLd({
   description,
   url,
   applicationCategory,
+  featureList,
 }: WebApplicationJsonLdProps) {
   const jsonLd = {
     "@context": "https://schema.org",
@@ -45,6 +59,7 @@ export function WebApplicationJsonLd({
     description,
     url,
     applicationCategory,
+    featureList,
     operatingSystem: "Any",
     browserRequirements: "Requires a modern web browser with JavaScript enabled",
     offers: {

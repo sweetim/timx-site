@@ -1,168 +1,42 @@
 "use client"
 
-import classNames from "classnames"
+import clsx from "clsx"
 import {
   ArrowDown,
   ArrowRight,
+  Copy,
   Download,
   Images,
   Plus,
-  RotateCcw,
   Trash2,
-  Upload,
 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import CanvasDropOverlay from "../canvas-drop-overlay"
+import UploadZone from "../upload-zone"
+import { ALIGNMENT_OPTIONS, CHECKERBOARD_STYLE } from "./constants"
+import { loadImageFile, stitchImages } from "./_lib/stitch-canvas"
+import type {
+  ContentAlignment,
+  ImageItem,
+  ScreenshotStitcherProps,
+  StackDirection,
+  StitchedImage,
+} from "./types"
 
-type ImageItem = {
-  id: string
-  file: File
-  originalUrl: string
-  element: HTMLImageElement
-  naturalWidth: number
-  naturalHeight: number
-}
-
-type StackDirection = "horizontal" | "vertical"
-
-type ContentAlignment = "start" | "center" | "end"
-
-type StitchedImage = {
-  url: string
-  fileName: string
-  width: number
-  height: number
-}
-
-type ScreenshotStitcherProps = {
-  variant?: "page" | "panel"
-}
-
-const CHECKERBOARD_STYLE: React.CSSProperties = {
-  backgroundImage: `repeating-conic-gradient(#373e47 0% 25%, #2d333b 0% 50%)`,
-  backgroundSize: "8px 8px",
-}
-
-const ALIGNMENT_OPTIONS: { value: ContentAlignment; label: string }[] = [
-  { value: "start", label: "Top" },
-  { value: "center", label: "Center" },
-  { value: "end", label: "Bottom" },
-]
-
-function loadImageFile(file: File, index: number): Promise<ImageItem | null> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file)
-    const image = new Image()
-
-    image.onload = () => {
-      resolve({
-        id: `${file.name}-${file.lastModified}-${index}-${Date.now()}`,
-        file,
-        originalUrl: url,
-        element: image,
-        naturalWidth: image.naturalWidth,
-        naturalHeight: image.naturalHeight,
-      })
-    }
-
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-
-    image.src = url
-  })
-}
-
-function getDrawParams(
-  image: HTMLImageElement,
-  frameWidth: number,
-  frameHeight: number,
-  alignment: ContentAlignment,
-) {
-  const scale = Math.min(
-    frameWidth / image.naturalWidth,
-    frameHeight / image.naturalHeight,
-  )
-  const width = image.naturalWidth * scale
-  const height = image.naturalHeight * scale
-  const x = (frameWidth - width) / 2
-  const y =
-    alignment === "start"
-      ? 0
-      : alignment === "end"
-        ? frameHeight - height
-        : (frameHeight - height) / 2
-
-  return { x, y, width, height }
-}
-
-function stitchImages({
-  images,
-  frameWidth,
-  frameHeight,
-  imageSpacing,
-  direction,
-  alignment,
-  backgroundColor,
-}: {
-  images: ImageItem[]
-  frameWidth: number
-  frameHeight: number
-  imageSpacing: number
-  direction: StackDirection
-  alignment: ContentAlignment
-  backgroundColor: string | null
-}): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const totalSpacing = Math.max(0, images.length - 1) * imageSpacing
-    const canvas = document.createElement("canvas")
-    canvas.width =
-      direction === "horizontal"
-        ? frameWidth * images.length + totalSpacing
-        : frameWidth
-    canvas.height =
-      direction === "horizontal"
-        ? frameHeight
-        : frameHeight * images.length + totalSpacing
-    const context = canvas.getContext("2d")
-
-    if (!context) {
-      resolve(null)
-      return
-    }
-
-    if (backgroundColor !== null) {
-      context.fillStyle = backgroundColor
-      context.fillRect(0, 0, canvas.width, canvas.height)
-    }
-
-    for (let index = 0; index < images.length; index++) {
-      const item = images[index]
-      const frameX =
-        direction === "horizontal" ? index * (frameWidth + imageSpacing) : 0
-      const frameY =
-        direction === "horizontal" ? 0 : index * (frameHeight + imageSpacing)
-      const params = getDrawParams(
-        item.element,
-        frameWidth,
-        frameHeight,
-        alignment,
-      )
-
-      context.drawImage(
-        item.element,
-        frameX + params.x,
-        frameY + params.y,
-        params.width,
-        params.height,
-      )
-    }
-
-    canvas.toBlob(resolve, "image/png")
-  })
-}
-
-function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
+function ScreenshotStitcher({
+  variant = "page",
+  isActive = true,
+  initialImage,
+  workspaceResetKey = 0,
+  onResult,
+  onSourceImage,
+  onClearWorkspace,
+  onCopyToClipboard,
+  hasClipboard = false,
+  droppedFiles,
+  droppedFilesKey,
+  canvasDropProps,
+}: ScreenshotStitcherProps) {
   const isPanel = variant === "panel"
   const [images, setImages] = useState<ImageItem[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
@@ -178,6 +52,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imagesRef = useRef(images)
   const stitchedRef = useRef(stitched)
+  const handledWorkspaceResetKeyRef = useRef(workspaceResetKey)
 
   useEffect(() => {
     imagesRef.current = images
@@ -195,38 +70,51 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
     }
   }, [])
 
-  const addFiles = useCallback(async (files: FileList | File[]) => {
-    const imageFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/"),
-    )
-    if (imageFiles.length === 0) return
+  const addFiles = useCallback(
+    async (files: FileList | File[], notifySource = true) => {
+      const imageFiles = Array.from(files).filter((file) =>
+        file.type.startsWith("image/"),
+      )
+      if (imageFiles.length === 0) return
 
-    const loadedImages = (
-      await Promise.all(imageFiles.map(loadImageFile))
-    ).filter((item): item is ImageItem => item !== null)
+      if (notifySource) onSourceImage?.(imageFiles[0], imageFiles[0].name)
 
-    if (loadedImages.length === 0) return
+      const loadedImages = (
+        await Promise.all(imageFiles.map(loadImageFile))
+      ).filter((item): item is ImageItem => item !== null)
 
-    setImages((previousImages) => {
-      const nextImages = [...previousImages, ...loadedImages]
-      if (previousImages.length === 0) {
-        setFrameWidth(
-          Math.max(...nextImages.map((image) => image.naturalWidth)),
-        )
-        setFrameHeight(
-          Math.max(...nextImages.map((image) => image.naturalHeight)),
-        )
-      }
-      return nextImages
-    })
-    setStitched((previousStitched) => {
-      if (previousStitched) URL.revokeObjectURL(previousStitched.url)
-      return null
-    })
-  }, [])
+      if (loadedImages.length === 0) return
+
+      setImages((previousImages) => {
+        const nextImages = [...previousImages, ...loadedImages]
+        if (previousImages.length === 0) {
+          setFrameWidth(
+            Math.max(...nextImages.map((image) => image.naturalWidth)),
+          )
+          setFrameHeight(
+            Math.max(...nextImages.map((image) => image.naturalHeight)),
+          )
+        }
+        return nextImages
+      })
+      setStitched((previousStitched) => {
+        if (previousStitched) URL.revokeObjectURL(previousStitched.url)
+        return null
+      })
+    },
+    [onSourceImage],
+  )
+
+  useEffect(() => {
+    if (!isActive) return
+    if (!droppedFiles || droppedFiles.length === 0) return
+    const files = droppedFiles
+    queueMicrotask(() => void addFiles(files))
+  }, [isActive, droppedFiles, droppedFilesKey, addFiles])
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
+      if (!isActive) return
       const files = event.clipboardData?.files
       if (files && files.length > 0) {
         event.preventDefault()
@@ -236,7 +124,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
 
     document.addEventListener("paste", handlePaste)
     return () => document.removeEventListener("paste", handlePaste)
-  }, [addFiles])
+  }, [isActive, addFiles])
 
   const removeImage = useCallback((id: string) => {
     setImages((previousImages) => {
@@ -280,12 +168,14 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
         fileName: `stitched-screenshots-${direction}.png`,
         width: outputWidth,
         height: outputHeight,
+        blob,
       }
 
       setStitched((previousStitched) => {
         if (previousStitched) URL.revokeObjectURL(previousStitched.url)
         return output
       })
+      onResult?.(blob)
     }
 
     setIsProcessing(false)
@@ -298,6 +188,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
     alignment,
     backgroundColor,
     transparentBackground,
+    onResult,
   ])
 
   const downloadFile = useCallback((item: StitchedImage) => {
@@ -307,7 +198,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
     link.click()
   }, [])
 
-  const handleReset = useCallback(() => {
+  const resetLocal = useCallback(() => {
     for (const image of images) URL.revokeObjectURL(image.originalUrl)
     if (stitched) URL.revokeObjectURL(stitched.url)
     setImages([])
@@ -319,6 +210,25 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
     setAlignment("start")
     setTransparentBackground(true)
   }, [images, stitched])
+
+  useEffect(() => {
+    if (handledWorkspaceResetKeyRef.current === workspaceResetKey) return
+    handledWorkspaceResetKeyRef.current = workspaceResetKey
+    resetLocal()
+  }, [workspaceResetKey, resetLocal])
+
+  const handleClear = useCallback(() => {
+    resetLocal()
+    onClearWorkspace?.()
+  }, [resetLocal, onClearWorkspace])
+
+  const addCurrentImageAsFrame = useCallback(() => {
+    if (!initialImage) return
+    const file = new File([initialImage.blob], initialImage.name, {
+      type: initialImage.blob.type || "image/png",
+    })
+    void addFiles([file], false)
+  }, [initialImage, addFiles])
 
   if (isPanel) {
     const outputWidth =
@@ -339,43 +249,77 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
           : "center"
 
     return (
-      <div className="grid h-full min-h-[620px] bg-dev-canvas lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div
-          className="min-h-[520px] overflow-auto bg-dev-inset p-4 sm:p-6"
+      <div className="grid h-full min-h-[620px] overflow-hidden bg-dev-canvas lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section
+          className="relative min-h-[520px] overflow-auto bg-dev-inset p-4 sm:p-6"
           style={{
             backgroundImage:
               "linear-gradient(#373e47 1px, transparent 1px), linear-gradient(90deg, #373e47 1px, transparent 1px)",
             backgroundSize: "28px 28px",
           }}
+          onDragOver={canvasDropProps?.onDragOver}
+          onDragEnter={canvasDropProps?.onDragEnter}
+          onDragLeave={canvasDropProps?.onDragLeave}
+          onDrop={canvasDropProps?.onDrop}
         >
+          {canvasDropProps && (
+            <CanvasDropOverlay
+              isDragOver={canvasDropProps.isDragOver}
+              overlayLabel={canvasDropProps.overlayLabel}
+            />
+          )}
           {images.length === 0 ? (
             <div className="flex min-h-full items-center justify-center">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={(event) => {
-                  event.preventDefault()
-                  setIsDragOver(false)
-                  void addFiles(event.dataTransfer.files)
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault()
-                  setIsDragOver(true)
-                }}
-                onDragLeave={() => setIsDragOver(false)}
-                className={classNames(
-                  "flex min-h-80 w-full max-w-xl flex-col items-center justify-center rounded-xl border-2 border-dashed bg-dev-canvas/90 p-8 text-center shadow-2xl shadow-black/30 transition-colors hover:border-dev-border-muted hover:bg-dev-canvas",
-                  isDragOver ? "border-dev-accent-blue" : "border-dev-border",
+              <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
+                {initialImage ? (
+                  <div className="grid gap-4">
+                    <div className="rounded-md border border-dev-border bg-dev-inset p-3">
+                      <p className="mb-3 text-sm font-semibold text-dev-text">
+                        Current Canvas Image
+                      </p>
+                      {/* biome-ignore lint/performance/noImgElement: shared blob URL preview is scoped to the browser */}
+                      <img
+                        src={initialImage.url}
+                        alt="Current canvas"
+                        className="mx-auto block max-h-90 max-w-full rounded border border-dev-border object-contain"
+                      />
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={addCurrentImageAsFrame}
+                        className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90"
+                      >
+                        <Plus className="size-4" />
+                        Add as Frame
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
+                      >
+                        Browse Images
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <UploadZone
+                    isDragOver={isDragOver}
+                    multiple
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      setIsDragOver(false)
+                      void addFiles(event.dataTransfer.files)
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault()
+                      setIsDragOver(true)
+                    }}
+                    onDragLeave={() => setIsDragOver(false)}
+                  />
                 )}
-              >
-                <Upload className="size-12 text-dev-text-secondary" />
-                <p className="mt-4 text-sm font-semibold text-dev-text">
-                  Drop screenshots onto the canvas
-                </p>
-                <p className="mt-2 text-sm text-dev-text-secondary">
-                  Paste from clipboard or browse for PNG, JPEG, or WebP files.
-                </p>
-              </button>
+              </div>
             </div>
           ) : (
             <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-4">
@@ -400,7 +344,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   </button>
                 </div>
                 <div
-                  className={classNames(
+                  className={clsx(
                     "flex overflow-auto p-5",
                     direction === "horizontal"
                       ? "items-start"
@@ -430,8 +374,8 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                           aspectRatio: `${frameWidth} / ${frameHeight}`,
                           width:
                             direction === "horizontal"
-                              ? "clamp(8rem, 14vw, 11rem)"
-                              : "clamp(10rem, 24vw, 15rem)",
+                              ? "clamp(6rem, 12vw, 9rem)"
+                              : "clamp(8rem, 20vw, 13rem)",
                         }}
                       >
                         {/* biome-ignore lint/performance/noImgElement: blob URL */}
@@ -492,14 +436,11 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
               </div>
             </div>
           )}
-        </div>
+        </section>
 
         <aside className="overflow-auto border-t border-dev-border bg-dev-inset p-4 lg:border-l lg:border-t-0">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-              Properties
-            </p>
-            <h2 className="mt-1 text-base font-semibold text-dev-text">
+            <h2 className="text-base font-semibold text-dev-text">
               Screenshot Stitcher
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
@@ -508,12 +449,31 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
             </p>
           </div>
 
+          {images.length === 0 && initialImage && (
+            <div className="mt-4 rounded-md border border-dev-border bg-dev-surface p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                Current Image
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-dev-text-secondary">
+                Start a stitched document from the image already on the canvas.
+              </p>
+              <button
+                type="button"
+                onClick={addCurrentImageAsFrame}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90"
+              >
+                <Plus className="size-4" />
+                Add as First Frame
+              </button>
+            </div>
+          )}
+
           <div className="mt-4 rounded-md border border-dev-border bg-dev-surface p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
               Document
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="grid gap-1 text-xs text-dev-text-secondary">
+              <label className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
                 Frame W
                 <input
                   type="number"
@@ -521,11 +481,11 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   onChange={(event) =>
                     setFrameWidth(Math.max(1, Number(event.target.value)))
                   }
-                  className="rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
+                  className="w-full min-w-0 rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
                   min={1}
                 />
               </label>
-              <label className="grid gap-1 text-xs text-dev-text-secondary">
+              <label className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
                 Frame H
                 <input
                   type="number"
@@ -533,7 +493,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   onChange={(event) =>
                     setFrameHeight(Math.max(1, Number(event.target.value)))
                   }
-                  className="rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
+                  className="w-full min-w-0 rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
                   min={1}
                 />
               </label>
@@ -585,7 +545,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
               <button
                 type="button"
                 onClick={() => setDirection("horizontal")}
-                className={classNames(
+                className={clsx(
                   "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors",
                   direction === "horizontal"
                     ? "bg-dev-accent-blue text-white"
@@ -598,7 +558,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
               <button
                 type="button"
                 onClick={() => setDirection("vertical")}
-                className={classNames(
+                className={clsx(
                   "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors",
                   direction === "vertical"
                     ? "bg-dev-accent-blue text-white"
@@ -615,7 +575,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   key={option.value}
                   type="button"
                   onClick={() => setAlignment(option.value)}
-                  className={classNames(
+                  className={clsx(
                     "rounded px-2 py-1.5 text-xs font-medium transition-colors",
                     alignment === option.value
                       ? "bg-dev-accent-blue text-white"
@@ -639,7 +599,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
               <button
                 type="button"
                 onClick={() => setTransparentBackground(!transparentBackground)}
-                className={classNames(
+                className={clsx(
                   "flex-1 rounded px-3 py-2 text-sm font-medium transition-colors",
                   transparentBackground
                     ? "bg-dev-accent-blue text-white"
@@ -721,23 +681,37 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
               {isProcessing ? "Stitching..." : "Stitch Screenshots"}
             </button>
             {stitched && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => downloadFile(stitched)}
+                  className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-green px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-green/90"
+                >
+                  <Download className="size-4" />
+                  Download PNG
+                </button>
+                {hasClipboard && (
+                  <button
+                    type="button"
+                    onClick={onCopyToClipboard}
+                    className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
+                  >
+                    <Copy className="size-4" />
+                    Copy to Clipboard
+                  </button>
+                )}
+              </>
+            )}
+            {images.length > 0 && (
               <button
                 type="button"
-                onClick={() => downloadFile(stitched)}
-                className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-green px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-green/90"
+                onClick={handleClear}
+                className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
               >
-                <Download className="size-4" />
-                Download PNG
+                <Trash2 className="size-4" />
+                Clear
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text transition-colors hover:bg-dev-button-hover"
-            >
-              <RotateCcw className="size-4" />
-              Reset
-            </button>
           </div>
         </aside>
 
@@ -773,8 +747,9 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
           )}
 
           {images.length === 0 ? (
-            <button
-              type="button"
+            <UploadZone
+              isDragOver={isDragOver}
+              multiple
               onClick={() => fileInputRef.current?.click()}
               onDrop={(event) => {
                 event.preventDefault()
@@ -786,21 +761,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                 setIsDragOver(true)
               }}
               onDragLeave={() => setIsDragOver(false)}
-              className={classNames(
-                "flex flex-col items-center justify-center rounded-md border-2 border-dashed cursor-pointer transition-colors w-full min-h-75 p-8",
-                isDragOver
-                  ? "border-dev-accent-blue bg-dev-inset"
-                  : "border-dev-border hover:border-dev-border-muted hover:bg-dev-inset",
-              )}
-            >
-              <Upload className="w-12 h-12 text-dev-text-secondary" />
-              <p className="mt-3 text-sm font-medium text-dev-text">
-                Drop screenshots here, paste from clipboard, or click to browse
-              </p>
-              <p className="mt-1 text-xs text-dev-text-secondary">
-                PNG, JPEG, or WebP — select multiple files
-              </p>
-            </button>
+            />
           ) : (
             <div className="flex flex-col gap-6">
               <div>
@@ -894,7 +855,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   <button
                     type="button"
                     onClick={() => setDirection("horizontal")}
-                    className={classNames(
+                    className={clsx(
                       "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
                       direction === "horizontal"
                         ? "bg-dev-accent-blue text-white"
@@ -907,7 +868,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                   <button
                     type="button"
                     onClick={() => setDirection("vertical")}
-                    className={classNames(
+                    className={clsx(
                       "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors",
                       direction === "vertical"
                         ? "bg-dev-accent-blue text-white"
@@ -924,7 +885,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                       key={option.value}
                       type="button"
                       onClick={() => setAlignment(option.value)}
-                      className={classNames(
+                      className={clsx(
                         "px-2.5 py-1 rounded text-xs font-medium transition-colors",
                         alignment === option.value
                           ? "bg-dev-accent-blue text-white"
@@ -941,7 +902,7 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                     onClick={() =>
                       setTransparentBackground(!transparentBackground)
                     }
-                    className={classNames(
+                    className={clsx(
                       "px-2.5 py-1 rounded text-xs font-medium transition-colors",
                       transparentBackground
                         ? "bg-dev-accent-blue text-white"
@@ -975,11 +936,11 @@ function ScreenshotStitcher({ variant = "page" }: ScreenshotStitcherProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleReset}
+                  onClick={handleClear}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset
+                  <Trash2 className="w-4 h-4" />
+                  Clear
                 </button>
               </div>
 

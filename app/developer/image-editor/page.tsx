@@ -25,6 +25,12 @@ export default function ImageEditorPage() {
         description="Remove backgrounds, crop images, and stitch mobile screenshots in your browser"
         url="https://timx.co/developer/image-editor"
         applicationCategory="MultimediaApplication"
+        featureList={[
+          "Remove image backgrounds locally",
+          "Crop images with aspect ratio presets",
+          "Stitch mobile screenshots",
+          "Export edited images as PNG",
+        ]}
       />
       <ImageEditor />
     </>

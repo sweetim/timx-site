@@ -1,6 +1,6 @@
 "use client"
 
-import classNames from "classnames"
+import clsx from "clsx"
 
 import Image from "next/image"
 import type { FC } from "react"
@@ -31,13 +31,9 @@ const ProfileLink: FC<ProfileLinkProps> = ({
 }) => {
   const rounded = isRounded ?? true
 
-  const clickHandler = (linkUrl: string) => {
-    window.open(linkUrl)
-  }
-
   const hoverRadius = blobShapes[index % blobShapes.length]
 
-  const imageShapeClass = classNames({
+  const imageShapeClass = clsx({
     "text-blue-700 hover:bg-neutral-300 focus:ring-3 focus:outline-none focus:ring-blue-300 font-medium p-2.5 text-center inline-flex items-center": true,
     "rounded-full": rounded,
     "rounded-lg": !rounded,
@@ -45,9 +41,11 @@ const ProfileLink: FC<ProfileLinkProps> = ({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => clickHandler(linkUrl)}
+      <a
+        href={linkUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
         className={imageShapeClass}
         style={
           rounded
@@ -67,7 +65,7 @@ const ProfileLink: FC<ProfileLinkProps> = ({
           width={36}
           alt={label}
         />
-      </button>
+      </a>
     </div>
   )
 }

@@ -86,3 +86,5 @@ The rule: every implementation change must include a corresponding doc change. D
 - Prefer [`ts-pattern@5`](https://github.com/gvergnaud/ts-pattern) for pattern
   matching and exhaustive type handling whenever possible.
 - Don't use abbreviations, always use full names.
+- Prefer canonical Tailwind utility classes (e.g., `min-h-155`) over arbitrary
+  values (e.g., `min-h-[620px]`) when an equivalent canonical class exists.

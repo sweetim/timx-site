@@ -6,13 +6,38 @@ import type { Status } from "../types"
 import { mapProgressKeyToPhase, resolveProgressUpdate } from "../utils"
 import type { WorkerEvent } from "./background-remover.worker"
 
-function useBackgroundRemover() {
+type UseBackgroundRemoverOptions = {
+  isActive?: boolean
+  onResult?: (blob: Blob) => void
+  onSourceImage?: (blob: Blob, name: string) => void
+}
+
+type LoadImageOptions = {
+  notifySource?: boolean
+}
+
+function useBackgroundRemover(options?: UseBackgroundRemoverOptions) {
   const [status, setStatus] = useState<Status>({ phase: "idle" })
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const originalUrlRef = useRef<string | null>(null)
   const resultUrlRef = useRef<string | null>(null)
+  const pendingFileRef = useRef<File | null>(null)
   const workerRef = useRef<Worker | null>(null)
+  const onResultRef = useRef<((blob: Blob) => void) | undefined>(
+    options?.onResult,
+  )
+  const onSourceImageRef = useRef<
+    ((blob: Blob, name: string) => void) | undefined
+  >(options?.onSourceImage)
+
+  useEffect(() => {
+    onResultRef.current = options?.onResult
+  }, [options?.onResult])
+
+  useEffect(() => {
+    onSourceImageRef.current = options?.onSourceImage
+  }, [options?.onSourceImage])
 
   useEffect(() => {
     workerRef.current = new Worker(
@@ -41,6 +66,7 @@ function useBackgroundRemover() {
             originalUrl: originalUrlRef.current,
             resultUrl,
           })
+          onResultRef.current?.(blob)
         })
         .with({ type: "error" }, ({ message }) => {
           setStatus({ phase: "error", message })
@@ -54,30 +80,46 @@ function useBackgroundRemover() {
     }
   }, [])
 
-  const processImage = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setStatus({
-        phase: "error",
-        message: "Please upload a valid image file.",
-      })
-      return
-    }
+  const loadImage = useCallback(
+    (file: File, loadOptions?: LoadImageOptions) => {
+      if (!file.type.startsWith("image/")) {
+        setStatus({
+          phase: "error",
+          message: "Please upload a valid image file.",
+        })
+        return
+      }
 
-    if (originalUrlRef.current) {
-      URL.revokeObjectURL(originalUrlRef.current)
-    }
-    if (resultUrlRef.current) {
-      URL.revokeObjectURL(resultUrlRef.current)
-      resultUrlRef.current = null
-    }
+      if (originalUrlRef.current) {
+        URL.revokeObjectURL(originalUrlRef.current)
+      }
+      if (resultUrlRef.current) {
+        URL.revokeObjectURL(resultUrlRef.current)
+        resultUrlRef.current = null
+      }
 
-    const originalUrl = URL.createObjectURL(file)
-    originalUrlRef.current = originalUrl
+      const originalUrl = URL.createObjectURL(file)
+      originalUrlRef.current = originalUrl
+      pendingFileRef.current = file
+
+      if (loadOptions?.notifySource !== false) {
+        onSourceImageRef.current?.(file, file.name)
+      }
+
+      setStatus({ phase: "ready", originalUrl })
+    },
+    [],
+  )
+
+  const startProcessing = useCallback(() => {
+    const file = pendingFileRef.current
+    if (!file || !originalUrlRef.current) return
 
     setStatus({
       phase: "processing",
       status: { phase: "downloading-model" },
       progress: 0,
+      originalUrl: originalUrlRef.current,
     })
 
     workerRef.current?.postMessage({ type: "process", file })
@@ -86,9 +128,9 @@ function useBackgroundRemover() {
   const handleFiles = useCallback(
     (files: FileList | null) => {
       if (!files || files.length === 0) return
-      processImage(files[0])
+      loadImage(files[0])
     },
-    [processImage],
+    [loadImage],
   )
 
   const handleDrop = useCallback(
@@ -124,16 +166,17 @@ function useBackgroundRemover() {
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (status.phase !== "idle") return
+      if (!options?.isActive) return
+      if (status.phase !== "idle" && status.phase !== "ready") return
       const file = e.clipboardData?.files[0]
       if (file?.type.startsWith("image/")) {
         e.preventDefault()
-        processImage(file)
+        loadImage(file)
       }
     }
     document.addEventListener("paste", handlePaste)
     return () => document.removeEventListener("paste", handlePaste)
-  }, [status.phase, processImage])
+  }, [options?.isActive, status.phase, loadImage])
 
   const handleDownload = useCallback(() => {
     if (status.phase !== "done") return
@@ -152,8 +195,19 @@ function useBackgroundRemover() {
       URL.revokeObjectURL(resultUrlRef.current)
       resultUrlRef.current = null
     }
+    pendingFileRef.current = null
     setStatus({ phase: "idle" })
   }, [])
+
+  const processBlob = useCallback(
+    (blob: Blob, name = "initial-image.png") => {
+      const file = new File([blob], name, {
+        type: blob.type || "image/png",
+      })
+      loadImage(file, { notifySource: false })
+    },
+    [loadImage],
+  )
 
   return {
     status,
@@ -166,6 +220,9 @@ function useBackgroundRemover() {
     handleInputChange,
     handleDownload,
     handleReset,
+    processBlob,
+    loadImage,
+    startProcessing,
   }
 }
 

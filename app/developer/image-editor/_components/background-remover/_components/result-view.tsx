@@ -1,4 +1,4 @@
-import { Download, Upload } from "lucide-react"
+import { Download, Trash2 } from "lucide-react"
 import ImageComparisonSlider from "../image-comparison-slider"
 
 type ResultViewProps = {
@@ -34,8 +34,8 @@ function ResultView({
           onClick={onReset}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-button hover:bg-dev-button-hover text-dev-text transition-colors"
         >
-          <Upload className="w-4 h-4" />
-          Upload image
+          <Trash2 className="w-3.5 h-3.5" />
+          Clear
         </button>
       </div>
     </div>

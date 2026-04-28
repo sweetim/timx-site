@@ -54,6 +54,12 @@ export default async function LlmUsagePage() {
         description="Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more"
         url="https://timx.co/developer/llm-usage"
         applicationCategory="DeveloperApplication"
+        featureList={[
+          "Compare LLM provider pricing",
+          "Filter free and recently released models",
+          "Sort models by pricing and release date",
+          "Estimate token costs with a calculator",
+        ]}
       />
       <LlmUsage models={models} />
     </>
