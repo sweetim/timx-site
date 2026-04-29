@@ -38,7 +38,11 @@ type Status =
   | { phase: "loaded"; data: OgData }
   | { phase: "error"; message: string }
 
-const OgPreview: FC = () => {
+type OgPreviewProps = {
+  descriptionSection?: React.ReactNode
+}
+
+const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
   const [url, setUrl] = useState("")
   const [status, setStatus] = useState<Status>({ phase: "idle" })
 
@@ -112,6 +116,8 @@ const OgPreview: FC = () => {
         .with({ phase: "loaded" }, ({ data }) => <OgResult data={data} />)
         .with({ phase: "idle" }, () => null)
         .exhaustive()}
+
+      {status.phase !== "loaded" && descriptionSection}
     </div>
   )
 }

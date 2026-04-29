@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { ItemListJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import { tools } from "./_lib/tools"
 
@@ -19,7 +20,17 @@ export const metadata: Metadata = {
 
 export default function DeveloperPage() {
   return (
-    <div className="min-h-full bg-dev-canvas flex items-center">
+    <>
+      <ItemListJsonLd
+        name="Free Developer Tools"
+        description="A collection of free browser-based developer tools. JSON viewer, image editor, LLM pricing comparison, and OG preview."
+        items={tools.map((tool) => ({
+          name: tool.name,
+          url: `https://timx.co/developer/${tool.slug}`,
+          description: tool.description,
+        }))}
+      />
+      <div className="min-h-full bg-dev-canvas flex items-center">
       <div className="max-w-3xl mx-auto px-6 py-12 w-full">
         <h1 className="text-2xl font-semibold text-dev-text mb-2">
           Developer Tools
@@ -64,5 +75,6 @@ export default function DeveloperPage() {
         </div>
       </footer>
     </div>
+    </>
   )
 }

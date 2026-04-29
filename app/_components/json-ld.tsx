@@ -45,6 +45,40 @@ export function PersonJsonLd({
   )
 }
 
+export type ItemListJsonLdProps = {
+  name: string
+  description: string
+  items: { name: string; url: string; description: string }[]
+}
+
+export function ItemListJsonLd({
+  name,
+  description,
+  items,
+}: ItemListJsonLdProps) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    description,
+    numberOfItems: items.length,
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      url: item.url,
+      description: item.description,
+    })),
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  )
+}
+
 export function WebApplicationJsonLd({
   name,
   description,
