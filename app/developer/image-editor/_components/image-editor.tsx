@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
-import { Crop, Eraser, Images, Layers } from "lucide-react"
+import { Crop, Eraser, Images, Info, Layers, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import BackgroundRemover from "./background-remover"
 import ImageCropper from "./image-cropper/"
@@ -73,8 +73,13 @@ const TOOLS: ToolItem[] = [
   },
 ]
 
-function ImageEditor() {
+export type ImageEditorProps = {
+  infoContent: React.ReactNode
+}
+
+function ImageEditor({ infoContent }: ImageEditorProps) {
   const [activeTool, setActiveTool] = useState<EditorTool>("background")
+  const [showInfo, setShowInfo] = useState(false)
   const [clipboard, setClipboard] = useState<Blob | null>(null)
   const [sharedImage, setSharedImage] = useState<SharedEditorImage | null>(null)
   const [sourceImages, setSourceImages] = useState<SourceImage[]>([])
@@ -345,9 +350,33 @@ function ImageEditor() {
             )
           })}
         </div>
+        <button
+          type="button"
+          onClick={() => setShowInfo(true)}
+          className="ml-auto lg:ml-0 lg:mt-auto flex items-center justify-center size-14 rounded-md text-dev-text-secondary hover:bg-dev-surface hover:text-dev-text transition-colors cursor-pointer"
+          title="About Image Editor"
+        >
+          <Info className="size-4" />
+        </button>
       </aside>
 
-      <main className="min-h-0 bg-dev-canvas lg:flex lg:flex-col">
+      <main className="min-h-0 bg-dev-canvas lg:flex lg:flex-col relative">
+        {showInfo && (
+          <div className="absolute inset-0 z-50 flex flex-col bg-dev-canvas">
+            <div className="flex justify-end p-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowInfo(false)}
+                className="flex items-center justify-center size-8 rounded-md text-dev-text-secondary hover:bg-dev-surface hover:text-dev-text transition-colors cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {infoContent}
+            </div>
+          </div>
+        )}
         <div className="min-h-155 lg:min-h-0 lg:flex-1 overflow-hidden">
           <div className={activeTool === "background" ? "h-full" : "hidden"}>
             <BackgroundRemover

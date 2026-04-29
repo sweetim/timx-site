@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import ImageEditor from "./_components/image-editor"
+import EditorInfoContent from "./_components/editor-info-content"
 
 export const metadata: Metadata = {
   title: "Image Editor — Free Online Tool",
@@ -32,7 +33,7 @@ export default function ImageEditorPage() {
           "Export edited images as PNG",
         ]}
       />
-      <ImageEditor />
+      <ImageEditor infoContent={<EditorInfoContent />} />
     </>
   )
 }

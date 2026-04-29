@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 
 import ImageEditor from "./image-editor"
+import EditorInfoContent from "./editor-info-content"
 
 const meta = {
   title: "Developer/ImageEditor",
@@ -20,4 +21,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Default: Story = {
+  args: {
+    infoContent: <EditorInfoContent />,
+  },
+}
