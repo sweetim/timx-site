@@ -36,6 +36,7 @@ function SourceImagePanel({
           <button
             type="button"
             onClick={() => sourceFileInputRef.current?.click()}
+            aria-label="Add source images"
             className="rounded bg-dev-button px-2 py-1 text-xs font-medium text-dev-text cursor-pointer transition-colors hover:bg-dev-button-hover"
           >
             <Plus className="size-3" />
@@ -89,6 +90,7 @@ function SourceImagePanel({
                   if (activeSourceId === img.id) onRemoveActiveSource?.()
                   onRemoveSourceImage(img.id)
                 }}
+                aria-label="Remove source image"
                 className="shrink-0 rounded p-1 text-dev-text-secondary cursor-pointer transition-colors hover:bg-dev-button-hover hover:text-dev-accent-red"
               >
                 <Trash2 className="size-3.5" />

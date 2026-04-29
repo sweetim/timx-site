@@ -92,57 +92,57 @@ function extractMeta(html: string): OgData {
 
   const title =
     getMeta([
-      /<meta\s+property="og:title"\s+content="([^"]*)"/i,
-      /<meta\s+content="([^"]*)"\s+property="og:title"/i,
+      /<meta\s+property=['"]og:title['"]\s+content=['"]([^'"]*)['"]/i,
+      /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:title['"]/i,
     ]) ?? getMeta([/<title>([^<]*)<\/title>/i])
 
   const description = getMeta([
-    /<meta\s+property="og:description"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+property="og:description"/i,
-    /<meta\s+name="description"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+name="description"/i,
+    /<meta\s+property=['"]og:description['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:description['"]/i,
+    /<meta\s+name=['"]description['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+name=['"]description['"]/i,
   ])
 
   const image = getMeta([
-    /<meta\s+property="og:image"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+property="og:image"/i,
-    /<meta\s+property="og:image:url"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+property="og:image:url"/i,
+    /<meta\s+property=['"]og:image['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:image['"]/i,
+    /<meta\s+property=['"]og:image:url['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:image:url['"]/i,
   ])
 
   const siteName = getMeta([
-    /<meta\s+property="og:site_name"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+property="og:site_name"/i,
+    /<meta\s+property=['"]og:site_name['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:site_name['"]/i,
   ])
 
   const type = getMeta([
-    /<meta\s+property="og:type"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+property="og:type"/i,
+    /<meta\s+property=['"]og:type['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+property=['"]og:type['"]/i,
   ])
 
   const twitterCard = getMeta([
-    /<meta\s+name="twitter:card"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+name="twitter:card"/i,
+    /<meta\s+name=['"]twitter:card['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+name=['"]twitter:card['"]/i,
   ])
 
   const twitterTitle = getMeta([
-    /<meta\s+name="twitter:title"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+name="twitter:title"/i,
+    /<meta\s+name=['"]twitter:title['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+name=['"]twitter:title['"]/i,
   ])
 
   const twitterDescription = getMeta([
-    /<meta\s+name="twitter:description"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+name="twitter:description"/i,
+    /<meta\s+name=['"]twitter:description['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+name=['"]twitter:description['"]/i,
   ])
 
   const twitterImage = getMeta([
-    /<meta\s+name="twitter:image"\s+content="([^"]*)"/i,
-    /<meta\s+content="([^"]*)"\s+name="twitter:image"/i,
+    /<meta\s+name=['"]twitter:image['"]\s+content=['"]([^'"]*)['"]/i,
+    /<meta\s+content=['"]([^'"]*)['"]\s+name=['"]twitter:image['"]/i,
   ])
 
   const favicon = getMeta([
-    /<link\s+[^>]*rel="(?:icon|shortcut icon)"[^>]*href="([^"]*)"/i,
-    /<link\s+[^>]*href="([^"]*)"[^>]*rel="(?:icon|shortcut icon)"/i,
+    /<link\s+[^>]*rel=['"](?:icon|shortcut icon)['"][^>]*href=['"]([^'"]*)['"]/i,
+    /<link\s+[^>]*href=['"]([^'"]*)['"][^>]*rel=['"](?:icon|shortcut icon)['"]/i,
   ])
 
   return {

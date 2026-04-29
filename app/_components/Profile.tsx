@@ -13,11 +13,11 @@ export type ProfileProps = {
 }
 
 const Profile: FC<ProfileProps> = (props) => {
-  const renderLinkUrl = props.linkUrl.map((props, i) => (
+  const renderLinkUrl = props.linkUrl.map((link, i) => (
     <ProfileLink
-      key={`${props.imageUrl}`}
+      key={`${link.imageUrl}`}
       index={i}
-      {...props}
+      {...link}
     />
   ))
 

@@ -3,10 +3,16 @@
 import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
 import { Crop, Eraser, Images, Info, Layers, X } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
-import BackgroundRemover from "./background-remover"
-import ImageCropper from "./image-cropper/"
-import ScreenshotStitcher from "./image-stitch/"
+
+const BackgroundRemover = dynamic(() => import("./background-remover"), {
+  ssr: false,
+})
+const ImageCropper = dynamic(() => import("./image-cropper/"), { ssr: false })
+const ScreenshotStitcher = dynamic(() => import("./image-stitch/"), {
+  ssr: false,
+})
 
 export type EditorTool = "background" | "crop" | "stitch"
 
@@ -275,9 +281,11 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
 
   const handleCopyToClipboard = useCallback(async () => {
     if (!clipboard) return
-    await navigator.clipboard.write([
-      new ClipboardItem({ "image/png": clipboard }),
-    ])
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": clipboard }),
+      ])
+    } catch {}
   }, [clipboard])
 
   const handleToolSwitch = useCallback((id: EditorTool) => {
@@ -361,22 +369,21 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
       </aside>
 
       <main className="min-h-0 bg-dev-canvas lg:flex lg:flex-col relative">
-        {showInfo && (
+        {showInfo ? (
           <div className="absolute inset-0 z-50 flex flex-col bg-dev-canvas">
             <div className="flex justify-end p-4 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowInfo(false)}
+                aria-label="Close info panel"
                 className="flex items-center justify-center size-8 rounded-md text-dev-text-secondary hover:bg-dev-surface hover:text-dev-text transition-colors cursor-pointer"
               >
                 <X className="size-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {infoContent}
-            </div>
+            <div className="flex-1 overflow-y-auto">{infoContent}</div>
           </div>
-        )}
+        ) : null}
         <div className="min-h-155 lg:min-h-0 lg:flex-1 overflow-hidden">
           <div className={activeTool === "background" ? "h-full" : "hidden"}>
             <BackgroundRemover

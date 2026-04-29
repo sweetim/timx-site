@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-
-import ImageEditor from "./image-editor"
 import EditorInfoContent from "./editor-info-content"
+import ImageEditor from "./image-editor"
 
 const meta = {
   title: "Developer/ImageEditor",

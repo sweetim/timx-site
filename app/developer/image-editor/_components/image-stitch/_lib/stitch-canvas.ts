@@ -1,5 +1,7 @@
 import type { ImageItem } from "../types"
 
+const MAX_CANVAS_DIMENSION = 16384
+
 export function loadImageFile(
   file: File,
   index: number,
@@ -71,6 +73,8 @@ export function stitchImages({
       direction === "horizontal"
         ? frameHeight
         : frameHeight * images.length + totalSpacing
+    canvas.width = Math.min(canvas.width, MAX_CANVAS_DIMENSION)
+    canvas.height = Math.min(canvas.height, MAX_CANVAS_DIMENSION)
     const context = canvas.getContext("2d")
 
     if (!context) {
@@ -89,11 +93,7 @@ export function stitchImages({
         direction === "horizontal" ? index * (frameWidth + imageSpacing) : 0
       const frameY =
         direction === "horizontal" ? 0 : index * (frameHeight + imageSpacing)
-      const params = getDrawParams(
-        item.element,
-        frameWidth,
-        frameHeight,
-      )
+      const params = getDrawParams(item.element, frameWidth, frameHeight)
 
       context.drawImage(
         item.element,

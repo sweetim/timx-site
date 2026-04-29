@@ -20,7 +20,7 @@ export function CostCalculatorDialog({
   const [completionTokens, setCompletionTokens] = useState("")
   const [cacheReadTokens, setCacheReadTokens] = useState("")
   const [modelSearch, setModelSearch] = useState("")
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
 
   const filteredModels = useMemo(() => {
     const q = modelSearch.toLowerCase()
@@ -74,9 +74,17 @@ export function CostCalculatorDialog({
         className="no-bounce absolute inset-0 bg-black/60 cursor-default"
         onClick={onClose}
       />
-      <div className="relative bg-dev-surface border border-dev-border rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cost-calculator-title"
+        className="relative bg-dev-surface border border-dev-border rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl"
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-dev-border">
-          <h2 className="text-lg font-semibold text-dev-text">
+          <h2
+            id="cost-calculator-title"
+            className="text-lg font-semibold text-dev-text"
+          >
             Cost Calculator
           </h2>
           <button
@@ -180,11 +188,11 @@ export function CostCalculatorDialog({
               className="px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary focus:outline-none focus:border-dev-link text-sm"
             />
             <div className="max-h-48 overflow-y-auto rounded-md border border-dev-border bg-dev-inset">
-              {filteredModels.length === 0 && (
+              {filteredModels.length === 0 ? (
                 <p className="px-3 py-2 text-xs text-dev-text-secondary">
                   No models found.
                 </p>
-              )}
+              ) : null}
               {filteredModels.map((model) => (
                 <label
                   key={model.id}
@@ -206,7 +214,7 @@ export function CostCalculatorDialog({
                 </label>
               ))}
             </div>
-            {selectedIds.size > 0 && (
+            {selectedIds.size > 0 ? (
               <button
                 type="button"
                 onClick={() => setSelectedIds(new Set())}
@@ -214,10 +222,10 @@ export function CostCalculatorDialog({
               >
                 Clear selection ({selectedIds.size})
               </button>
-            )}
+            ) : null}
           </div>
 
-          {sortedResults.length > 0 && (
+          {sortedResults.length > 0 ? (
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium text-dev-text-secondary">
                 Estimated cost comparison
@@ -262,11 +270,11 @@ export function CostCalculatorDialog({
                           className={`border-t border-dev-border ${i === 0 ? "bg-dev-accent-green/10" : "hover:bg-dev-surface"}`}
                         >
                           <td className="px-3 py-2 text-dev-text font-medium whitespace-nowrap">
-                            {i === 0 && (
+                            {i === 0 ? (
                               <span className="text-dev-accent-green mr-1">
                                 ★
                               </span>
-                            )}
+                            ) : null}
                             {model.name}
                           </td>
                           <td className="px-3 py-2 text-right text-dev-text-secondary whitespace-nowrap">
@@ -290,7 +298,7 @@ export function CostCalculatorDialog({
                 </table>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

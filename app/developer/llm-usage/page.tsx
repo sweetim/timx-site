@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import LlmUsage from "./_components/llm-usage"
+import type { Model } from "./_components/types"
 
 export const metadata: Metadata = {
   title: "LLM Pricing Comparison",
@@ -19,22 +20,30 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600
 
-type Model = {
-  id: string
-  name: string
-  created: number
-  context_length: number
-  pricing: {
-    prompt: string
-    completion: string
-    input_cache_read: string
-  }
-  architecture: {
-    input_modalities: string[]
-    output_modalities: string[]
-  }
-  top_provider: {
-    max_completion_tokens: number | null
+function serializeModel(m: Record<string, unknown>): Model {
+  return {
+    id: m.id as string,
+    name: m.name as string,
+    created: m.created as number,
+    context_length: m.context_length as number,
+    pricing: {
+      prompt: (m.pricing as Record<string, unknown>)?.prompt as string,
+      completion: (m.pricing as Record<string, unknown>)?.completion as string,
+      input_cache_read: (m.pricing as Record<string, unknown>)
+        ?.input_cache_read as string,
+    },
+    architecture: {
+      input_modalities: (m.architecture as Record<string, unknown>)
+        ?.input_modalities as string[],
+      output_modalities: (m.architecture as Record<string, unknown>)
+        ?.output_modalities as string[],
+    },
+    top_provider: {
+      max_completion_tokens:
+        ((m.top_provider as Record<string, unknown>)?.max_completion_tokens as
+          | number
+          | null) ?? null,
+    },
   }
 }
 
@@ -42,7 +51,7 @@ async function getModels(): Promise<Model[]> {
   const response = await fetch("https://openrouter.ai/api/v1/models")
   if (!response.ok) throw new Error("Failed to fetch models")
   const data = await response.json()
-  return data.data
+  return (data.data as Record<string, unknown>[]).map(serializeModel)
 }
 
 export default async function LlmUsagePage() {

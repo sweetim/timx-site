@@ -11,9 +11,7 @@ function CanvasDropOverlay({
     <div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-dev-canvas/80 backdrop-blur-sm">
       <div className="rounded-xl border-2 border-dashed border-dev-accent-blue p-8">
         <Upload className="mx-auto size-10 text-dev-accent-blue" />
-        <p className="mt-3 text-sm font-medium text-dev-text">
-          {overlayLabel}
-        </p>
+        <p className="mt-3 text-sm font-medium text-dev-text">{overlayLabel}</p>
       </div>
     </div>
   )

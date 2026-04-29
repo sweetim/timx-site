@@ -77,6 +77,7 @@ const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
+            aria-label="Enter URL to preview"
             placeholder="https://example.com"
             className="flex-1 px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary text-sm focus:outline-none focus:border-dev-link"
           />
@@ -247,7 +248,7 @@ const FacebookPreview: FC<{ data: OgData }> = ({ data }) => (
     style={{ fontFamily: FONT.Facebook }}
     className="rounded-lg overflow-hidden border border-[#dadde1] bg-[#f0f2f5] w-full"
   >
-    {data.image && (
+    {data.image ? (
       <div className="bg-[#e4e6eb]">
         <Image
           src={data.image}
@@ -258,7 +259,7 @@ const FacebookPreview: FC<{ data: OgData }> = ({ data }) => (
           className="w-full aspect-[1.91/1] object-cover"
         />
       </div>
-    )}
+    ) : null}
     <div className="p-3 space-y-0.5 bg-white">
       <p className="text-[11px] text-[#65676b] uppercase tracking-wide truncate">
         {getHostname(data)}
@@ -266,11 +267,11 @@ const FacebookPreview: FC<{ data: OgData }> = ({ data }) => (
       <p className="text-[15px] font-semibold text-[#050505] leading-snug line-clamp-2">
         {data.title ?? "No title"}
       </p>
-      {data.description && (
+      {data.description ? (
         <p className="text-[13px] text-[#65676b] line-clamp-2">
           {data.description}
         </p>
-      )}
+      ) : null}
     </div>
   </div>
 )
@@ -280,7 +281,7 @@ const WhatsAppPreview: FC<{ data: OgData }> = ({ data }) => (
     style={{ fontFamily: FONT.WhatsApp }}
     className="rounded-lg overflow-hidden w-full"
   >
-    {data.image && (
+    {data.image ? (
       <div className="bg-[#1a2731]">
         <Image
           src={data.image}
@@ -291,7 +292,7 @@ const WhatsAppPreview: FC<{ data: OgData }> = ({ data }) => (
           className="w-full aspect-[1.91/1] object-cover"
         />
       </div>
-    )}
+    ) : null}
     <div className="p-3 space-y-0.5 bg-[#1a2731] border-t border-[#2a3942]">
       <p className="text-[11px] text-[#8696a0] uppercase tracking-wide truncate">
         {getHostname(data)}
@@ -299,11 +300,11 @@ const WhatsAppPreview: FC<{ data: OgData }> = ({ data }) => (
       <p className="text-[14px] text-[#e9edef] leading-snug line-clamp-2">
         {data.title ?? "No title"}
       </p>
-      {data.description && (
+      {data.description ? (
         <p className="text-[13px] text-[#8696a0] line-clamp-2">
           {data.description}
         </p>
-      )}
+      ) : null}
     </div>
   </div>
 )
@@ -313,7 +314,7 @@ const DiscordPreview: FC<{ data: OgData }> = ({ data }) => (
     style={{ fontFamily: FONT.Discord }}
     className="rounded-lg overflow-hidden w-full bg-[#2b2d31] border-l-4 border-[#5865f2]"
   >
-    {data.image && (
+    {data.image ? (
       <div className="bg-[#1e1f22]">
         <Image
           src={data.image}
@@ -324,19 +325,19 @@ const DiscordPreview: FC<{ data: OgData }> = ({ data }) => (
           className="w-full aspect-[1.91/1] object-cover"
         />
       </div>
-    )}
+    ) : null}
     <div className="p-3 space-y-0.5">
-      {data.siteName && (
+      {data.siteName ? (
         <p className="text-[11px] text-[#b5bac1]">{data.siteName}</p>
-      )}
+      ) : null}
       <p className="text-[15px] font-semibold text-[#00a8fc] leading-snug line-clamp-2">
         {data.title ?? "No title"}
       </p>
-      {data.description && (
+      {data.description ? (
         <p className="text-[13px] text-[#dbdee1] line-clamp-3">
           {data.description}
         </p>
-      )}
+      ) : null}
       <p className="text-[11px] text-[#b5bac1] mt-1">{getHostname(data)}</p>
     </div>
   </div>
@@ -347,7 +348,7 @@ const LinkedInPreview: FC<{ data: OgData }> = ({ data }) => (
     style={{ fontFamily: FONT.LinkedIn }}
     className="rounded-lg overflow-hidden border border-[#e0e0e0] w-full bg-white"
   >
-    {data.image && (
+    {data.image ? (
       <div className="bg-[#f3f2ef]">
         <Image
           src={data.image}
@@ -358,16 +359,16 @@ const LinkedInPreview: FC<{ data: OgData }> = ({ data }) => (
           className="w-full aspect-[1.91/1] object-cover"
         />
       </div>
-    )}
+    ) : null}
     <div className="p-3 space-y-0.5">
       <p className="text-[14px] font-semibold text-[#000000] leading-snug line-clamp-2">
         {data.title ?? "No title"}
       </p>
-      {data.description && (
+      {data.description ? (
         <p className="text-[13px] text-[#666666] line-clamp-2">
           {data.description}
         </p>
-      )}
+      ) : null}
       <p className="text-[11px] text-[#666666] truncate">{getHostname(data)}</p>
     </div>
   </div>

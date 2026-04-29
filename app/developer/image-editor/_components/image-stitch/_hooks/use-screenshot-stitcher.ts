@@ -32,19 +32,26 @@ function useScreenshotStitcher({
   const imagesRef = useRef(images)
   const stitchedRef = useRef(stitched)
 
-  useEffect(() => { imagesRef.current = images }, [images])
-  useEffect(() => { stitchedRef.current = stitched }, [stitched])
+  useEffect(() => {
+    imagesRef.current = images
+  }, [images])
+  useEffect(() => {
+    stitchedRef.current = stitched
+  }, [stitched])
 
   useEffect(() => {
     return () => {
-      for (const item of imagesRef.current) URL.revokeObjectURL(item.originalUrl)
+      for (const item of imagesRef.current)
+        URL.revokeObjectURL(item.originalUrl)
       if (stitchedRef.current) URL.revokeObjectURL(stitchedRef.current.url)
     }
   }, [])
 
   const addFiles = useCallback(
     async (files: FileList | File[], notifySource = true) => {
-      const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"))
+      const imageFiles = Array.from(files).filter((file) =>
+        file.type.startsWith("image/"),
+      )
       if (imageFiles.length === 0) return
 
       if (notifySource) {
@@ -52,17 +59,21 @@ function useScreenshotStitcher({
         if (onAddSourceImages) void onAddSourceImages(imageFiles)
       }
 
-      const loadedImages = (await Promise.all(imageFiles.map(loadImageFile))).filter(
-        (item): item is ImageItem => item !== null,
-      )
+      const loadedImages = (
+        await Promise.all(imageFiles.map(loadImageFile))
+      ).filter((item): item is ImageItem => item !== null)
 
       if (loadedImages.length === 0) return
 
       setImages((previousImages) => {
         const nextImages = [...previousImages, ...loadedImages]
         if (previousImages.length === 0) {
-          setFrameWidth(Math.max(...nextImages.map((image) => image.naturalWidth)))
-          setFrameHeight(Math.max(...nextImages.map((image) => image.naturalHeight)))
+          setFrameWidth(
+            Math.max(...nextImages.map((image) => image.naturalWidth)),
+          )
+          setFrameHeight(
+            Math.max(...nextImages.map((image) => image.naturalHeight)),
+          )
         }
         return nextImages
       })
@@ -102,12 +113,14 @@ function useScreenshotStitcher({
     if (blob) {
       const outputWidth =
         direction === "horizontal"
-          ? frameWidth * images.length + Math.max(0, images.length - 1) * imageSpacing
+          ? frameWidth * images.length
+            + Math.max(0, images.length - 1) * imageSpacing
           : frameWidth
       const outputHeight =
         direction === "horizontal"
           ? frameHeight
-          : frameHeight * images.length + Math.max(0, images.length - 1) * imageSpacing
+          : frameHeight * images.length
+            + Math.max(0, images.length - 1) * imageSpacing
       const output: StitchedImage = {
         url: URL.createObjectURL(blob),
         fileName: `stitched-screenshots-${direction}.png`,

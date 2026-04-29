@@ -1,12 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { DownloadFormat } from "../download-format-selector"
 import { downloadBlob } from "../download-format-selector"
+import type { BackgroundRemovalResult, SourceImage } from "../image-editor"
 import SidebarActions from "../shared/sidebar-actions"
 import SourceImagePanel from "../shared/source-image-panel"
 import ToolPanelLayout from "../shared/tool-panel-layout"
 import type { EditorToolProps } from "../shared/types"
+
+const EMPTY_SOURCE_IMAGES: SourceImage[] = []
+const EMPTY_BACKGROUND_REMOVAL_RESULTS: Record<
+  string,
+  BackgroundRemovalResult
+> = {}
+
 import useClipboardPaste from "../shared/use-clipboard-paste"
 import useDroppedFiles from "../shared/use-dropped-files"
 import useSourceFileInput from "../shared/use-source-file-input"
@@ -51,14 +59,18 @@ const BackgroundRemover = ({
   droppedFiles,
   droppedFilesKey,
   canvasDropProps,
-  sourceImages = [],
+  sourceImages = EMPTY_SOURCE_IMAGES,
   onRemoveSourceImage,
   onAddSourceImages,
-  backgroundRemovalResults = {},
+  backgroundRemovalResults = EMPTY_BACKGROUND_REMOVAL_RESULTS,
   onBackgroundRemovalResult,
 }: EditorToolProps) => {
   const isPanel = variant === "panel"
   const activeSourceIdRef = useRef<string | null>(null)
+  const backgroundRemovalResultsRef = useRef(backgroundRemovalResults)
+  useEffect(() => {
+    backgroundRemovalResultsRef.current = backgroundRemovalResults
+  }, [backgroundRemovalResults])
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const [isDragOver, setIsDragOver] = useState(false)
@@ -93,16 +105,22 @@ const BackgroundRemover = ({
     activeCachedResult?.url
     ?? (activeJobStatus?.phase === "done" ? activeJobStatus.resultUrl : null)
 
-  const imageStatuses: Record<string, "processing" | "done" | "error"> = {}
-  for (const img of sourceImages) {
-    if (backgroundRemovalResults[img.id]) {
-      imageStatuses[img.id] = "done"
-    } else if (jobStatuses[img.id]?.phase === "processing") {
-      imageStatuses[img.id] = "processing"
-    } else if (jobStatuses[img.id]?.phase === "error") {
-      imageStatuses[img.id] = "error"
+  const imageStatuses = useMemo((): Record<
+    string,
+    "processing" | "done" | "error"
+  > => {
+    const statuses: Record<string, "processing" | "done" | "error"> = {}
+    for (const img of sourceImages) {
+      if (backgroundRemovalResults[img.id]) {
+        statuses[img.id] = "done"
+      } else if (jobStatuses[img.id]?.phase === "processing") {
+        statuses[img.id] = "processing"
+      } else if (jobStatuses[img.id]?.phase === "error") {
+        statuses[img.id] = "error"
+      }
     }
-  }
+    return statuses
+  }, [sourceImages, backgroundRemovalResults, jobStatuses])
 
   const handleFiles = useCallback(
     async (files: File[] | FileList | null) => {
@@ -193,13 +211,13 @@ const BackgroundRemover = ({
 
   const handleAddToSource = useCallback(async () => {
     if (!activeSourceId) return
-    const blob = backgroundRemovalResults[activeSourceId]?.blob
+    const blob = backgroundRemovalResultsRef.current[activeSourceId]?.blob
     if (!blob) return
     const file = new File([blob], "background-removed.png", {
       type: blob.type || "image/png",
     })
     await onAddSourceImages?.([file])
-  }, [activeSourceId, backgroundRemovalResults, onAddSourceImages])
+  }, [activeSourceId, onAddSourceImages])
 
   const handleClear = useCallback(() => {
     activeSourceIdRef.current = null
@@ -243,7 +261,7 @@ const BackgroundRemover = ({
         canvasDropProps={canvasDropProps}
         canvasContent={
           <div className="mx-auto flex min-h-full max-w-5xl items-center justify-center">
-            {!activeSource && (
+            {!activeSource ? (
               <div className="flex min-h-full w-full items-center justify-center">
                 <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
                   <UploadZone
@@ -255,11 +273,12 @@ const BackgroundRemover = ({
                   />
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {activeSource && !displayResultUrl && (
+            {activeSource && !displayResultUrl ? (
               <div className="w-full rounded-lg border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30 backdrop-blur">
                 <div className="relative">
+                  {/* biome-ignore lint/performance/noImgElement: blob URL preview */}
                   <img
                     src={activeSource.url}
                     alt="Preview"
@@ -269,16 +288,16 @@ const BackgroundRemover = ({
                         : ""
                     }`}
                   />
-                  {activeJobStatus?.phase === "processing" && (
+                  {activeJobStatus?.phase === "processing" ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <ProcessingOverlay />
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {activeSource && displayResultUrl && (
+            {activeSource && displayResultUrl ? (
               <div className="w-full rounded-lg border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30 backdrop-blur">
                 <ResultView
                   originalUrl={activeSource.url}
@@ -290,18 +309,18 @@ const BackgroundRemover = ({
                   hideActions
                 />
               </div>
-            )}
+            ) : null}
 
             {activeSource
-              && activeJobStatus?.phase === "error"
-              && !displayResultUrl && (
-                <div className="w-full rounded-lg border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30 backdrop-blur">
-                  <ErrorState
-                    message={activeJobStatus.message}
-                    onReset={handleClear}
-                  />
-                </div>
-              )}
+            && activeJobStatus?.phase === "error"
+            && !displayResultUrl ? (
+              <div className="w-full rounded-lg border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30 backdrop-blur">
+                <ErrorState
+                  message={activeJobStatus.message}
+                  onReset={handleClear}
+                />
+              </div>
+            ) : null}
           </div>
         }
         sidebarContent={
@@ -328,21 +347,21 @@ const BackgroundRemover = ({
             />
 
             {activeSource
-              && !displayResultUrl
-              && activeJobStatus?.phase !== "processing"
-              && activeJobStatus?.phase !== "error" && (
-                <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-                  <button
-                    type="button"
-                    onClick={handleStartProcessing}
-                    className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
-                  >
-                    Remove Background
-                  </button>
-                </div>
-              )}
+            && !displayResultUrl
+            && activeJobStatus?.phase !== "processing"
+            && activeJobStatus?.phase !== "error" ? (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <button
+                  type="button"
+                  onClick={handleStartProcessing}
+                  className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
+                >
+                  Remove Background
+                </button>
+              </div>
+            ) : null}
 
-            {activeSource && activeJobStatus?.phase === "processing" && (
+            {activeSource && activeJobStatus?.phase === "processing" ? (
               <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
                   Status
@@ -359,24 +378,24 @@ const BackgroundRemover = ({
                   />
                 )}
               </div>
-            )}
+            ) : null}
 
             {activeSource
-              && activeJobStatus?.phase === "error"
-              && !displayResultUrl && (
-                <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-                  <p className="text-xs font-medium text-dev-accent-red">
-                    {activeJobStatus.message}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleStartProcessing}
-                    className="mt-2 w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
+            && activeJobStatus?.phase === "error"
+            && !displayResultUrl ? (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs text-dev-accent-red">
+                  {activeJobStatus.message}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStartProcessing}
+                  className="mt-2 w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
 
             <SidebarActions
               download={
@@ -433,7 +452,7 @@ const BackgroundRemover = ({
             your browser — no data is sent to a server.
           </p>
 
-          {!activeSource && (
+          {!activeSource ? (
             <UploadZone
               isDragOver={isDragOver}
               onClick={handleUploadClick}
@@ -441,11 +460,12 @@ const BackgroundRemover = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
             />
-          )}
+          ) : null}
 
-          {activeSource && !displayResultUrl && (
+          {activeSource && !displayResultUrl ? (
             <div className="space-y-4">
               <div className="relative">
+                {/* biome-ignore lint/performance/noImgElement: blob URL preview */}
                 <img
                   src={activeSource.url}
                   alt="Preview"
@@ -453,14 +473,14 @@ const BackgroundRemover = ({
                     activeJobStatus?.phase === "processing" ? "opacity-40" : ""
                   }`}
                 />
-                {activeJobStatus?.phase === "processing" && (
+                {activeJobStatus?.phase === "processing" ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <ProcessingOverlay />
                   </div>
-                )}
+                ) : null}
               </div>
               <div className="flex justify-center gap-3">
-                {activeJobStatus?.phase !== "processing" && (
+                {activeJobStatus?.phase !== "processing" ? (
                   <button
                     type="button"
                     onClick={handleStartProcessing}
@@ -468,7 +488,7 @@ const BackgroundRemover = ({
                   >
                     Remove Background
                   </button>
-                )}
+                ) : null}
                 <button
                   type="button"
                   onClick={handleClear}
@@ -478,9 +498,9 @@ const BackgroundRemover = ({
                 </button>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {activeSource && displayResultUrl && (
+          {activeSource && displayResultUrl ? (
             <ResultView
               originalUrl={activeSource.url}
               resultUrl={displayResultUrl}
@@ -489,16 +509,16 @@ const BackgroundRemover = ({
               onFormatChange={setDownloadFormat}
               onReset={handleClear}
             />
-          )}
+          ) : null}
 
           {activeSource
-            && activeJobStatus?.phase === "error"
-            && !displayResultUrl && (
-              <ErrorState
-                message={activeJobStatus.message}
-                onReset={handleClear}
-              />
-            )}
+          && activeJobStatus?.phase === "error"
+          && !displayResultUrl ? (
+            <ErrorState
+              message={activeJobStatus.message}
+              onReset={handleClear}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -513,4 +533,4 @@ const BackgroundRemover = ({
   )
 }
 
-export default BackgroundRemover
+export default memo(BackgroundRemover)

@@ -70,6 +70,7 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
           type="button"
           style={{ paddingLeft: depth * 20 }}
           className="no-bounce cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
+          aria-expanded={!collapsed}
           onClick={() => setCollapsed((c) => !c)}
         >
           <span className="text-dev-text-secondary select-none mr-1 w-3 inline-block">
@@ -285,6 +286,7 @@ const JsonViewer: FC = () => {
           </div>
           <div className="relative flex-1 overflow-hidden">
             <textarea
+              aria-label="JSON input"
               className={clsx(
                 "absolute inset-0 p-4 bg-transparent resize-none outline-none font-mono text-sm leading-relaxed w-full h-full z-10",
                 error

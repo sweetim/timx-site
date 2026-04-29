@@ -63,13 +63,11 @@ const feedbackStyles: FeedbackStyle[] = [
   },
   {
     name: "Scale + brightness",
-    classes:
-      "active:scale-95 active:brightness-90 transition-all duration-100",
+    classes: "active:scale-95 active:brightness-90 transition-all duration-100",
   },
   {
     name: "Scale + opacity",
-    classes:
-      "active:scale-95 active:opacity-90 transition-all duration-100",
+    classes: "active:scale-95 active:opacity-90 transition-all duration-100",
   },
   {
     name: "Pop + lighten",
@@ -88,8 +86,7 @@ const feedbackStyles: FeedbackStyle[] = [
   },
   {
     name: "Border color flash",
-    classes:
-      "active:border-dev-accent-blue transition-colors duration-100",
+    classes: "active:border-dev-accent-blue transition-colors duration-100",
   },
   {
     name: "Inset shadow (pushed in)",
@@ -109,8 +106,7 @@ const feedbackStyles: FeedbackStyle[] = [
   },
   {
     name: "Accent color flash",
-    classes:
-      "active:bg-dev-accent-blue/10 transition-colors duration-100",
+    classes: "active:bg-dev-accent-blue/10 transition-colors duration-100",
   },
   {
     name: "Spring overshoot (keyframe)",
@@ -131,9 +127,7 @@ function FeedbackGrid() {
           key={style.name}
           className="flex flex-col gap-2 rounded-lg border border-dev-border bg-dev-surface p-4"
         >
-          <span className="text-xs text-dev-text-secondary">
-            {style.name}
-          </span>
+          <span className="text-xs text-dev-text-secondary">{style.name}</span>
           <code className="text-[10px] text-dev-text-secondary break-all leading-relaxed">
             {style.classes}
           </code>
@@ -296,7 +290,8 @@ export const LargeAreaUploadZone: Story = {
         Click or drag to upload
       </span>
       <span className="mt-1 text-xs text-dev-text-secondary">
-        hover:border-dev-border-muted hover:bg-dev-inset + active:scale-[0.995] active:brightness-95
+        hover:border-dev-border-muted hover:bg-dev-inset + active:scale-[0.995]
+        active:brightness-95
       </span>
     </button>
   ),

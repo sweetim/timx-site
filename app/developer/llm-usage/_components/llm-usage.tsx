@@ -20,7 +20,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
   const [releaseFilter, setReleaseFilter] = useState<ReleaseFilter>("all")
   const [freeOnly, setFreeOnly] = useState(false)
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(
-    new Set(),
+    () => new Set(),
   )
   const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(true)
@@ -120,7 +120,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
           Compare pricing across {models.length} models from OpenRouter. Costs
           shown per 1M tokens.
         </p>
-        {bannerVisible && (
+        {bannerVisible ? (
           <div className="relative mb-6 hidden rounded-lg border border-dev-border bg-dev-inset p-4 sm:block">
             <button
               type="button"
@@ -179,10 +179,11 @@ export default function LlmUsage({ models }: { models: Model[] }) {
               </a>
             </div>
           </div>
-        )}
+        ) : null}
         <input
           type="text"
           placeholder="Search models..."
+          aria-label="Search models"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full mb-4 px-4 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary focus:outline-none focus:border-dev-link"
@@ -240,11 +241,11 @@ export default function LlmUsage({ models }: { models: Model[] }) {
             />
           ))}
         </div>
-        {groups.length === 0 && (
+        {groups.length === 0 ? (
           <p className="text-center text-dev-text-secondary py-12">
             No models match your search.
           </p>
-        )}
+        ) : null}
       </div>
       <CostCalculatorDialog
         models={models}

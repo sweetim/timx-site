@@ -22,6 +22,11 @@ export type ProviderGroup = {
   models: Model[]
 }
 
-export type SortKey = "name" | "prompt" | "completion" | "context_length" | "created"
+export type SortKey =
+  | "name"
+  | "prompt"
+  | "completion"
+  | "context_length"
+  | "created"
 export type SortDirection = "asc" | "desc"
 export type ReleaseFilter = "all" | "7d" | "30d" | "90d" | "1y"

@@ -1,25 +1,22 @@
 "use client"
 
 import clsx from "clsx"
-import {
-  Columns3,
-  Download,
-  Images,
-  Plus,
-  Rows3,
-  Trash2,
-} from "lucide-react"
-import { useCallback, useRef, useState } from "react"
+import { Columns3, Download, Images, Plus, Rows3, Trash2 } from "lucide-react"
+import { memo, useCallback, useRef, useState } from "react"
 import StepperInput from "../../../_components/stepper-input"
 import type { DownloadFormat } from "../download-format-selector"
 import {
   DownloadFormatSelector,
   downloadBlob,
 } from "../download-format-selector"
+import type { SourceImage } from "../image-editor"
 import SidebarActions from "../shared/sidebar-actions"
 import SourceImagePanel from "../shared/source-image-panel"
 import ToolPanelLayout from "../shared/tool-panel-layout"
 import type { EditorToolProps } from "../shared/types"
+
+const EMPTY_SOURCE_IMAGES: SourceImage[] = []
+
 import useClipboardPaste from "../shared/use-clipboard-paste"
 import useDroppedFiles from "../shared/use-dropped-files"
 import useWorkspaceReset from "../shared/use-workspace-reset"
@@ -39,7 +36,7 @@ function ScreenshotStitcher({
   droppedFiles,
   droppedFilesKey,
   canvasDropProps,
-  sourceImages = [],
+  sourceImages = EMPTY_SOURCE_IMAGES,
   onRemoveSourceImage,
   onAddSourceImages,
 }: EditorToolProps) {
@@ -147,11 +144,13 @@ function ScreenshotStitcher({
 
   const handleDownload = useCallback(
     async (url: string) => {
-      await downloadBlob(
-        url,
-        `stitched-screenshots-${direction}`,
-        downloadFormat,
-      )
+      try {
+        await downloadBlob(
+          url,
+          `stitched-screenshots-${direction}`,
+          downloadFormat,
+        )
+      } catch {}
     },
     [direction, downloadFormat],
   )
@@ -279,11 +278,11 @@ function ScreenshotStitcher({
                       Generated image appears here after stitching.
                     </p>
                   </div>
-                  {stitched && (
+                  {stitched ? (
                     <span className="rounded bg-dev-inset px-2 py-1 text-xs font-medium text-dev-text-secondary">
                       {stitched.width}×{stitched.height}
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <div className="min-h-52 overflow-auto p-5">
                   {stitched ? (
@@ -462,6 +461,7 @@ function ScreenshotStitcher({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
+                    aria-label="Add images"
                     className="h-24 w-16 border-2 border-dashed border-dev-border rounded flex items-center justify-center cursor-pointer hover:border-dev-border-muted transition-colors"
                   >
                     <Plus className="w-5 h-5 text-dev-text-secondary" />
@@ -565,16 +565,17 @@ function ScreenshotStitcher({
                   >
                     Transparent
                   </button>
-                  {!transparentBackground && (
+                  {!transparentBackground ? (
                     <input
                       type="color"
+                      aria-label="Background color"
                       value={backgroundColor}
                       onChange={(event) =>
                         setBackgroundColor(event.target.value)
                       }
-                      className="w-7 h-7 rounded cursor-pointer border border-dev-border"
+                      className="h-9 w-10 cursor-pointer rounded border border-dev-border"
                     />
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -598,7 +599,7 @@ function ScreenshotStitcher({
                 </button>
               </div>
 
-              {stitched && (
+              {stitched ? (
                 <div>
                   <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                     <h3 className="text-sm font-medium text-dev-text">
@@ -633,7 +634,7 @@ function ScreenshotStitcher({
                     />
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
@@ -820,17 +821,18 @@ function BackgroundSettings({
         >
           Transparent
         </button>
-        {!transparentBackground && (
+        {!transparentBackground ? (
           <input
             type="color"
+            aria-label="Background color"
             value={backgroundColor}
             onChange={(event) => onBackgroundColorChange(event.target.value)}
             className="h-9 w-10 cursor-pointer rounded border border-dev-border"
           />
-        )}
+        ) : null}
       </div>
     </div>
   )
 }
 
-export default ScreenshotStitcher
+export default memo(ScreenshotStitcher)

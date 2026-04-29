@@ -1,6 +1,6 @@
+import { GoogleAnalytics } from "@next/third-parties/google"
 import type { Metadata } from "next"
 import { Mali } from "next/font/google"
-import { GoogleAnalytics } from "@next/third-parties/google"
 import opengraph from "@/app/opengraph.jpg"
 import "./globals.css"
 

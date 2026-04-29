@@ -1,5 +1,5 @@
-import { HANDLE_SIZE } from "./constants"
 import { getCursorForHandle } from "./_lib/crop-math"
+import { HANDLE_SIZE } from "./constants"
 import type { AnchorMode, CropRect, DragState } from "./types"
 
 export function CropOverlay({

@@ -1,16 +1,15 @@
 "use client"
 
 import { ArrowUpDown, ChevronDown } from "lucide-react"
-import { useMemo } from "react"
+import { memo, useMemo } from "react"
 import { match } from "ts-pattern"
-
-import type { ProviderGroup, SortDirection, SortKey } from "./types"
 import {
   formatCost,
   formatModalities,
   formatRelativeTime,
   formatTokens,
 } from "./helpers"
+import type { ProviderGroup, SortDirection, SortKey } from "./types"
 
 function SortHeader({
   label,
@@ -41,7 +40,7 @@ function SortHeader({
   )
 }
 
-export function ProviderSection({
+export const ProviderSection = memo(function ProviderSection({
   group,
   sortKey,
   sortDirection,
@@ -80,11 +79,15 @@ export function ProviderSection({
     })
   }, [group.models, sortKey, sortDirection])
 
-  const cheapestPrompt = formatCost(
-    group.models.reduce((min, m) => {
-      const v = Number.parseFloat(m.pricing.prompt)
-      return v < Number.parseFloat(min) ? m.pricing.prompt : min
-    }, group.models[0]?.pricing.prompt ?? "0"),
+  const cheapestPrompt = useMemo(
+    () =>
+      formatCost(
+        group.models.reduce((min, m) => {
+          const v = Number.parseFloat(m.pricing.prompt)
+          return v < Number.parseFloat(min) ? m.pricing.prompt : min
+        }, group.models[0]?.pricing.prompt ?? "0"),
+      ),
+    [group.models],
   )
 
   return (
@@ -110,7 +113,7 @@ export function ProviderSection({
           from {cheapestPrompt} / 1M prompt tokens
         </span>
       </button>
-      {isExpanded && (
+      {isExpanded ? (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-dev-inset">
@@ -196,7 +199,7 @@ export function ProviderSection({
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
     </div>
   )
-}
+})

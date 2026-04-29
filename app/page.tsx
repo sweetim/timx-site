@@ -1,5 +1,12 @@
+import type { Metadata } from "next"
 import { PersonJsonLd } from "@/app/_components/json-ld"
 import Profile, { type ProfileProps } from "@/app/_components/Profile"
+
+export const metadata: Metadata = {
+  title: "Tim — Software Developer",
+  description: "Robotics, AI, and blockchain developer based in Tokyo",
+  alternates: { canonical: "https://timx.co" },
+}
 
 function getProfile(): ProfileProps {
   return {

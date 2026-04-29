@@ -49,9 +49,7 @@ export default function TermsPage() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">
-            No warranty
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900">No warranty</h2>
           <p className="text-slate-700 leading-relaxed">
             The tools are provided &ldquo;as is&rdquo; without warranty of any
             kind. timx.co makes no guarantees about accuracy, reliability, or
@@ -74,8 +72,8 @@ export default function TermsPage() {
           <p className="text-slate-700 leading-relaxed">
             These terms may be updated from time to time. The &ldquo;last
             updated&rdquo; date at the top reflects the most recent change.
-            Continued use of the site after changes constitutes acceptance of the
-            updated terms.
+            Continued use of the site after changes constitutes acceptance of
+            the updated terms.
           </p>
         </div>
 

@@ -95,7 +95,8 @@ export function WebApplicationJsonLd({
     applicationCategory,
     featureList,
     operatingSystem: "Any",
-    browserRequirements: "Requires a modern web browser with JavaScript enabled",
+    browserRequirements:
+      "Requires a modern web browser with JavaScript enabled",
     offers: {
       "@type": "Offer",
       price: "0",

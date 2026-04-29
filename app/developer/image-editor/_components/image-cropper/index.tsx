@@ -2,15 +2,19 @@
 
 import clsx from "clsx"
 import { Crop, Crosshair, Download, Maximize2, Trash2 } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { match } from "ts-pattern"
 import StepperInput from "../../../_components/stepper-input"
 import type { DownloadFormat } from "../download-format-selector"
 import { downloadBlob } from "../download-format-selector"
+import type { SourceImage } from "../image-editor"
 import SidebarActions from "../shared/sidebar-actions"
 import SourceImagePanel from "../shared/source-image-panel"
 import ToolPanelLayout from "../shared/tool-panel-layout"
 import type { EditorToolProps } from "../shared/types"
+
+const EMPTY_SOURCE_IMAGES: SourceImage[] = []
+
 import useClipboardPaste from "../shared/use-clipboard-paste"
 import useDroppedFiles from "../shared/use-dropped-files"
 import useSourceFileInput from "../shared/use-source-file-input"
@@ -20,6 +24,7 @@ import useImageCropper from "./_hooks/use-image-cropper"
 import { clampCrop } from "./_lib/crop-math"
 import { ASPECT_RATIOS } from "./constants"
 import { CropOverlay } from "./crop-overlay"
+import type { AspectRatioPreset } from "./types"
 
 function ImageCropper({
   variant = "page",
@@ -33,13 +38,17 @@ function ImageCropper({
   droppedFiles,
   droppedFilesKey,
   canvasDropProps,
-  sourceImages = [],
+  sourceImages = EMPTY_SOURCE_IMAGES,
   onRemoveSourceImage,
   onAddSourceImages,
 }: EditorToolProps) {
   const isPanel = variant === "panel"
   const droppedFileRef = useRef<File | null>(null)
   const loadedSourceIdRef = useRef<string | null>(null)
+  const sourceImagesRef = useRef(sourceImages)
+  useEffect(() => {
+    sourceImagesRef.current = sourceImages
+  }, [sourceImages])
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const { sourceFileInputRef, handleSourceFileInput } = useSourceFileInput({
@@ -102,7 +111,7 @@ function ImageCropper({
 
   useEffect(() => {
     if (!droppedFileRef.current || !isActive) return
-    const match = sourceImages.find(
+    const match = sourceImagesRef.current.find(
       (img) => img.blob === droppedFileRef.current,
     )
     if (match) {
@@ -110,7 +119,7 @@ function ImageCropper({
       setActiveSourceId(match.id)
       droppedFileRef.current = null
     }
-  }, [isActive, sourceImages])
+  }, [isActive])
 
   useClipboardPaste({
     isActive,
@@ -131,17 +140,22 @@ function ImageCropper({
 
   useEffect(() => {
     if (!isActive || !activeSourceId) return
-    if (loadedSourceIdRef.current === activeSourceId && status.phase !== "idle") {
+    if (
+      loadedSourceIdRef.current === activeSourceId
+      && status.phase !== "idle"
+    ) {
       return
     }
-    const source = sourceImages.find((img) => img.id === activeSourceId)
+    const source = sourceImagesRef.current.find(
+      (img) => img.id === activeSourceId,
+    )
     if (!source) return
     const file = new File([source.blob], source.name, {
       type: source.blob.type || "image/png",
     })
     loadedSourceIdRef.current = source.id
     loadImage(file, false)
-  }, [isActive, activeSourceId, sourceImages, status.phase, loadImage])
+  }, [isActive, activeSourceId, status.phase, loadImage])
 
   const handleSelectSource = (id: string) => {
     droppedFileRef.current = null
@@ -158,7 +172,9 @@ function ImageCropper({
 
   const handleDownload = useCallback(async () => {
     if (status.phase !== "cropped") return
-    await downloadBlob(status.croppedUrl, "cropped-image", downloadFormat)
+    try {
+      await downloadBlob(status.croppedUrl, "cropped-image", downloadFormat)
+    } catch {}
   }, [status, downloadFormat])
 
   const handleAddToSource = useCallback(async () => {
@@ -169,6 +185,49 @@ function ImageCropper({
     })
     await onAddSourceImages?.([file])
   }, [status, onAddSourceImages])
+
+  const handleSetCenter = useCallback(() => {
+    setAnchorMode("center")
+    setCrop((prev) => {
+      const imageCx = displayDimensions.width / 2
+      const imageCy = displayDimensions.height / 2
+      const ratio =
+        ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio ?? null
+      return clampCrop(
+        {
+          x: imageCx - prev.width / 2,
+          y: imageCy - prev.height / 2,
+          width: prev.width,
+          height: prev.height,
+        },
+        displayDimensions.width,
+        displayDimensions.height,
+        ratio,
+      )
+    })
+  }, [setAnchorMode, setCrop, displayDimensions, aspectPreset])
+
+  const handleUploadClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleUploadDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
+
+  const handleUploadDragLeave = useCallback(() => {
+    setIsDragOver(false)
+  }, [])
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) loadImage(file)
+      e.target.value = ""
+    },
+    [loadImage],
+  )
 
   if (isPanel) {
     return (
@@ -185,13 +244,10 @@ function ImageCropper({
                   <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
                     <UploadZone
                       isDragOver={isDragOver}
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={handleUploadClick}
                       onDrop={handleDrop}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setIsDragOver(true)
-                      }}
-                      onDragLeave={() => setIsDragOver(false)}
+                      onDragOver={handleUploadDragOver}
+                      onDragLeave={handleUploadDragLeave}
                     />
                   </div>
                 </div>
@@ -296,172 +352,27 @@ function ImageCropper({
               sourceFileInputRef={sourceFileInputRef}
             />
 
-            {(status.phase === "editing" || status.phase === "cropped") && (
+            {status.phase === "editing" || status.phase === "cropped" ? (
               <>
-                <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-                    Aspect Ratio
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-1">
-                    {ASPECT_RATIOS.map(({ label, preset }) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => handleAspectRatioChange(preset)}
-                        className={clsx(
-                          "rounded px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer",
-                          aspectPreset === preset
-                            ? "bg-dev-accent-blue text-white"
-                            : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-                    Resize Anchor
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAnchorMode("center")
-                        setCrop((prev) => {
-                          const imageCx = displayDimensions.width / 2
-                          const imageCy = displayDimensions.height / 2
-                          const ratio =
-                            ASPECT_RATIOS.find(
-                              (ar) => ar.preset === aspectPreset,
-                            )?.ratio ?? null
-                          return clampCrop(
-                            {
-                              x: imageCx - prev.width / 2,
-                              y: imageCy - prev.height / 2,
-                              width: prev.width,
-                              height: prev.height,
-                            },
-                            displayDimensions.width,
-                            displayDimensions.height,
-                            ratio,
-                          )
-                        })
-                      }}
-                      className={clsx(
-                        "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-                        anchorMode === "center"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Crosshair className="size-4" />
-                      Center
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAnchorMode("edge")}
-                      className={clsx(
-                        "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
-                        anchorMode === "edge"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Maximize2 className="size-4" />
-                      Edge
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-                    Output Size
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div>
-                      <label
-                        htmlFor="crop-output-width"
-                        className="text-xs text-dev-text-secondary"
-                      >
-                        Width
-                      </label>
-                      <StepperInput
-                        id="crop-output-width"
-                        key={`w-${Math.round(crop.width / displayDimensions.scale)}`}
-                        value={Math.round(crop.width / displayDimensions.scale)}
-                        onChange={() => {}}
-                        onIncrement={() =>
-                          handleDimensionChange(
-                            "width",
-                            String(
-                              Math.round(crop.width / displayDimensions.scale)
-                                + 1,
-                            ),
-                          )
-                        }
-                        onDecrement={() =>
-                          handleDimensionChange(
-                            "width",
-                            String(
-                              Math.max(
-                                1,
-                                Math.round(crop.width / displayDimensions.scale)
-                                  - 1,
-                              ),
-                            ),
-                          )
-                        }
-                        min={1}
-                        className="mt-1 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="crop-output-height"
-                        className="text-xs text-dev-text-secondary"
-                      >
-                        Height
-                      </label>
-                      <StepperInput
-                        id="crop-output-height"
-                        key={`h-${Math.round(crop.height / displayDimensions.scale)}`}
-                        value={Math.round(
-                          crop.height / displayDimensions.scale,
-                        )}
-                        onChange={() => {}}
-                        onIncrement={() =>
-                          handleDimensionChange(
-                            "height",
-                            String(
-                              Math.round(crop.height / displayDimensions.scale)
-                                + 1,
-                            ),
-                          )
-                        }
-                        onDecrement={() =>
-                          handleDimensionChange(
-                            "height",
-                            String(
-                              Math.max(
-                                1,
-                                Math.round(
-                                  crop.height / displayDimensions.scale,
-                                ) - 1,
-                              ),
-                            ),
-                          )
-                        }
-                        min={1}
-                        className="mt-1 w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <AspectRatioToolbar
+                  aspectPreset={aspectPreset}
+                  onChange={handleAspectRatioChange}
+                  variant="panel"
+                />
+                <AnchorModeToolbar
+                  anchorMode={anchorMode}
+                  onChange={setAnchorMode}
+                  onSetCenter={handleSetCenter}
+                  variant="panel"
+                />
+                <OutputSizeInputs
+                  crop={crop}
+                  displayDimensions={displayDimensions}
+                  onDimensionChange={handleDimensionChange}
+                  variant="panel"
+                />
               </>
-            )}
+            ) : null}
 
             <SidebarActions
               primaryAction={
@@ -499,11 +410,7 @@ function ImageCropper({
               type="file"
               accept="image/png,image/jpeg,image/webp"
               className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) loadImage(file)
-                e.target.value = ""
-              }}
+              onChange={handleFileInputChange}
             />
             <input
               ref={sourceFileInputRef}
@@ -538,144 +445,32 @@ function ImageCropper({
             .with({ phase: "idle" }, () => (
               <UploadZone
                 isDragOver={isDragOver}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleUploadClick}
                 onDrop={handleDrop}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  setIsDragOver(true)
-                }}
-                onDragLeave={() => setIsDragOver(false)}
+                onDragOver={handleUploadDragOver}
+                onDragLeave={handleUploadDragLeave}
               />
             ))
             .with({ phase: "editing" }, ({ imageUrl }) => (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    {ASPECT_RATIOS.map(({ label, preset }) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => handleAspectRatioChange(preset)}
-                        className={clsx(
-                          "px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
-                          aspectPreset === preset
-                            ? "bg-dev-accent-blue text-white"
-                            : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1 border-l border-dev-border pl-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAnchorMode("center")
-                        setCrop((prev) => {
-                          const imageCx = displayDimensions.width / 2
-                          const imageCy = displayDimensions.height / 2
-                          const r =
-                            ASPECT_RATIOS.find(
-                              (ar) => ar.preset === aspectPreset,
-                            )?.ratio ?? null
-                          return clampCrop(
-                            {
-                              x: imageCx - prev.width / 2,
-                              y: imageCy - prev.height / 2,
-                              width: prev.width,
-                              height: prev.height,
-                            },
-                            displayDimensions.width,
-                            displayDimensions.height,
-                            r,
-                          )
-                        })
-                      }}
-                      title="Expand from center"
-                      className={clsx(
-                        "p-1.5 rounded transition-colors cursor-pointer",
-                        anchorMode === "center"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Crosshair className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAnchorMode("edge")}
-                      title="Fixed opposite edge"
-                      className={clsx(
-                        "p-1.5 rounded transition-colors cursor-pointer",
-                        anchorMode === "edge"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 border-l border-dev-border pl-4">
-                    <StepperInput
-                      key={`pw-${Math.round(crop.width / displayDimensions.scale)}`}
-                      value={Math.round(crop.width / displayDimensions.scale)}
-                      onChange={() => {}}
-                      onIncrement={() =>
-                        handleDimensionChange(
-                          "width",
-                          String(
-                            Math.round(crop.width / displayDimensions.scale)
-                              + 1,
-                          ),
-                        )
-                      }
-                      onDecrement={() =>
-                        handleDimensionChange(
-                          "width",
-                          String(
-                            Math.max(
-                              1,
-                              Math.round(crop.width / displayDimensions.scale)
-                                - 1,
-                            ),
-                          ),
-                        )
-                      }
-                      min={1}
-                      className="w-24"
-                    />
-                    <span className="text-xs text-dev-text-secondary">×</span>
-                    <StepperInput
-                      key={`ph-${Math.round(crop.height / displayDimensions.scale)}`}
-                      value={Math.round(crop.height / displayDimensions.scale)}
-                      onChange={() => {}}
-                      onIncrement={() =>
-                        handleDimensionChange(
-                          "height",
-                          String(
-                            Math.round(crop.height / displayDimensions.scale)
-                              + 1,
-                          ),
-                        )
-                      }
-                      onDecrement={() =>
-                        handleDimensionChange(
-                          "height",
-                          String(
-                            Math.max(
-                              1,
-                              Math.round(crop.height / displayDimensions.scale)
-                                - 1,
-                            ),
-                          ),
-                        )
-                      }
-                      min={1}
-                      className="w-24"
-                    />
-                    <span className="text-xs text-dev-text-secondary">px</span>
-                  </div>
+                  <AspectRatioToolbar
+                    aspectPreset={aspectPreset}
+                    onChange={handleAspectRatioChange}
+                    variant="page"
+                  />
+                  <AnchorModeToolbar
+                    anchorMode={anchorMode}
+                    onChange={setAnchorMode}
+                    onSetCenter={handleSetCenter}
+                    variant="page"
+                  />
+                  <OutputSizeInputs
+                    crop={crop}
+                    displayDimensions={displayDimensions}
+                    onDimensionChange={handleDimensionChange}
+                    variant="page"
+                  />
                 </div>
                 <div
                   className="relative bg-dev-inset rounded-md overflow-hidden select-none"
@@ -701,155 +496,33 @@ function ImageCropper({
                     onDragStart={handleDragStart}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCrop}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-accent-blue text-white hover:bg-dev-accent-blue/90 transition-colors cursor-pointer"
-                  >
-                    <Crop className="w-4 h-4" />
-                    Crop
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Clear
-                  </button>
-                </div>
+                <CropActionBar
+                  onCrop={handleCrop}
+                  onClear={handleClear}
+                  isCropped={false}
+                />
               </div>
             ))
             .with({ phase: "cropped" }, ({ originalUrl, croppedUrl }) => (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    {ASPECT_RATIOS.map(({ label, preset }) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => handleAspectRatioChange(preset)}
-                        className={clsx(
-                          "px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
-                          aspectPreset === preset
-                            ? "bg-dev-accent-blue text-white"
-                            : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1 border-l border-dev-border pl-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAnchorMode("center")
-                        setCrop((prev) => {
-                          const imageCx = displayDimensions.width / 2
-                          const imageCy = displayDimensions.height / 2
-                          const r =
-                            ASPECT_RATIOS.find(
-                              (ar) => ar.preset === aspectPreset,
-                            )?.ratio ?? null
-                          return clampCrop(
-                            {
-                              x: imageCx - prev.width / 2,
-                              y: imageCy - prev.height / 2,
-                              width: prev.width,
-                              height: prev.height,
-                            },
-                            displayDimensions.width,
-                            displayDimensions.height,
-                            r,
-                          )
-                        })
-                      }}
-                      title="Expand from center"
-                      className={clsx(
-                        "p-1.5 rounded transition-colors cursor-pointer",
-                        anchorMode === "center"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Crosshair className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAnchorMode("edge")}
-                      title="Fixed opposite edge"
-                      className={clsx(
-                        "p-1.5 rounded transition-colors cursor-pointer",
-                        anchorMode === "edge"
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 border-l border-dev-border pl-4">
-                    <StepperInput
-                      key={`pw-${Math.round(crop.width / displayDimensions.scale)}`}
-                      value={Math.round(crop.width / displayDimensions.scale)}
-                      onChange={() => {}}
-                      onIncrement={() =>
-                        handleDimensionChange(
-                          "width",
-                          String(
-                            Math.round(crop.width / displayDimensions.scale)
-                              + 1,
-                          ),
-                        )
-                      }
-                      onDecrement={() =>
-                        handleDimensionChange(
-                          "width",
-                          String(
-                            Math.max(
-                              1,
-                              Math.round(crop.width / displayDimensions.scale)
-                                - 1,
-                            ),
-                          ),
-                        )
-                      }
-                      min={1}
-                      className="w-24"
-                    />
-                    <span className="text-xs text-dev-text-secondary">×</span>
-                    <StepperInput
-                      key={`ph-${Math.round(crop.height / displayDimensions.scale)}`}
-                      value={Math.round(crop.height / displayDimensions.scale)}
-                      onChange={() => {}}
-                      onIncrement={() =>
-                        handleDimensionChange(
-                          "height",
-                          String(
-                            Math.round(crop.height / displayDimensions.scale)
-                              + 1,
-                          ),
-                        )
-                      }
-                      onDecrement={() =>
-                        handleDimensionChange(
-                          "height",
-                          String(
-                            Math.max(
-                              1,
-                              Math.round(crop.height / displayDimensions.scale)
-                                - 1,
-                            ),
-                          ),
-                        )
-                      }
-                      min={1}
-                      className="w-24"
-                    />
-                    <span className="text-xs text-dev-text-secondary">px</span>
-                  </div>
+                  <AspectRatioToolbar
+                    aspectPreset={aspectPreset}
+                    onChange={handleAspectRatioChange}
+                    variant="page"
+                  />
+                  <AnchorModeToolbar
+                    anchorMode={anchorMode}
+                    onChange={setAnchorMode}
+                    onSetCenter={handleSetCenter}
+                    variant="page"
+                  />
+                  <OutputSizeInputs
+                    crop={crop}
+                    displayDimensions={displayDimensions}
+                    onDimensionChange={handleDimensionChange}
+                    variant="page"
+                  />
                 </div>
                 <div
                   className="relative bg-dev-inset rounded-md overflow-hidden select-none"
@@ -875,24 +548,11 @@ function ImageCropper({
                     onDragStart={handleDragStart}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCrop}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-accent-blue text-white hover:bg-dev-accent-blue/90 transition-colors cursor-pointer"
-                  >
-                    <Crop className="w-4 h-4" />
-                    Re-crop
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Clear
-                  </button>
-                </div>
+                <CropActionBar
+                  onCrop={handleCrop}
+                  onClear={handleClear}
+                  isCropped={true}
+                />
                 <div>
                   <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                     <h3 className="text-sm font-medium text-dev-text">
@@ -927,14 +587,279 @@ function ImageCropper({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) loadImage(file)
-          e.target.value = ""
-        }}
+        onChange={handleFileInputChange}
       />
     </div>
   )
 }
 
-export default ImageCropper
+type AspectRatioToolbarProps = {
+  aspectPreset: AspectRatioPreset
+  onChange: (preset: AspectRatioPreset) => void
+  variant: "panel" | "page"
+}
+
+function AspectRatioToolbar({
+  aspectPreset,
+  onChange,
+  variant,
+}: AspectRatioToolbarProps) {
+  if (variant === "page") {
+    return (
+      <div className="flex items-center gap-1">
+        {ASPECT_RATIOS.map(({ label, preset }) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => onChange(preset)}
+            className={clsx(
+              "px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
+              aspectPreset === preset
+                ? "bg-dev-accent-blue text-white"
+                : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+        Aspect Ratio
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-1">
+        {ASPECT_RATIOS.map(({ label, preset }) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => onChange(preset)}
+            className={clsx(
+              "rounded px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+              aspectPreset === preset
+                ? "bg-dev-accent-blue text-white"
+                : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+type AnchorModeToolbarProps = {
+  anchorMode: "center" | "edge"
+  onChange: (mode: "center" | "edge") => void
+  onSetCenter: () => void
+  variant: "panel" | "page"
+}
+
+function AnchorModeToolbar({
+  anchorMode,
+  onChange,
+  onSetCenter,
+  variant,
+}: AnchorModeToolbarProps) {
+  if (variant === "page") {
+    return (
+      <div className="flex items-center gap-1 border-l border-dev-border pl-4">
+        <button
+          type="button"
+          onClick={onSetCenter}
+          title="Expand from center"
+          className={clsx(
+            "p-1.5 rounded transition-colors cursor-pointer",
+            anchorMode === "center"
+              ? "bg-dev-accent-blue text-white"
+              : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+          )}
+        >
+          <Crosshair className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange("edge")}
+          title="Fixed opposite edge"
+          className={clsx(
+            "p-1.5 rounded transition-colors cursor-pointer",
+            anchorMode === "edge"
+              ? "bg-dev-accent-blue text-white"
+              : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+          )}
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+        Resize Anchor
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={onSetCenter}
+          className={clsx(
+            "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+            anchorMode === "center"
+              ? "bg-dev-accent-blue text-white"
+              : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+          )}
+        >
+          <Crosshair className="size-4" />
+          Center
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange("edge")}
+          className={clsx(
+            "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+            anchorMode === "edge"
+              ? "bg-dev-accent-blue text-white"
+              : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+          )}
+        >
+          <Maximize2 className="size-4" />
+          Edge
+        </button>
+      </div>
+    </div>
+  )
+}
+
+type OutputSizeInputsProps = {
+  crop: { width: number; height: number }
+  displayDimensions: { scale: number }
+  onDimensionChange: (dimension: "width" | "height", value: string) => void
+  variant: "panel" | "page"
+}
+
+function OutputSizeInputs({
+  crop,
+  displayDimensions,
+  onDimensionChange,
+  variant,
+}: OutputSizeInputsProps) {
+  const width = Math.round(crop.width / displayDimensions.scale)
+  const height = Math.round(crop.height / displayDimensions.scale)
+
+  if (variant === "page") {
+    return (
+      <div className="flex items-center gap-1 border-l border-dev-border pl-4">
+        <StepperInput
+          key={`pw-${width}`}
+          value={width}
+          onChange={() => {}}
+          onIncrement={() => onDimensionChange("width", String(width + 1))}
+          onDecrement={() =>
+            onDimensionChange("width", String(Math.max(1, width - 1)))
+          }
+          min={1}
+          className="w-24"
+        />
+        <span className="text-xs text-dev-text-secondary">×</span>
+        <StepperInput
+          key={`ph-${height}`}
+          value={height}
+          onChange={() => {}}
+          onIncrement={() => onDimensionChange("height", String(height + 1))}
+          onDecrement={() =>
+            onDimensionChange("height", String(Math.max(1, height - 1)))
+          }
+          min={1}
+          className="w-24"
+        />
+        <span className="text-xs text-dev-text-secondary">px</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+        Output Size
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div>
+          <label
+            htmlFor="crop-output-width"
+            className="text-xs text-dev-text-secondary"
+          >
+            Width
+          </label>
+          <StepperInput
+            id="crop-output-width"
+            key={`w-${width}`}
+            value={width}
+            onChange={() => {}}
+            onIncrement={() => onDimensionChange("width", String(width + 1))}
+            onDecrement={() =>
+              onDimensionChange("width", String(Math.max(1, width - 1)))
+            }
+            min={1}
+            className="mt-1 w-full"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="crop-output-height"
+            className="text-xs text-dev-text-secondary"
+          >
+            Height
+          </label>
+          <StepperInput
+            id="crop-output-height"
+            key={`h-${height}`}
+            value={height}
+            onChange={() => {}}
+            onIncrement={() => onDimensionChange("height", String(height + 1))}
+            onDecrement={() =>
+              onDimensionChange("height", String(Math.max(1, height - 1)))
+            }
+            min={1}
+            className="mt-1 w-full"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type CropActionBarProps = {
+  onCrop: () => void
+  onClear: () => void
+  isCropped: boolean
+}
+
+function CropActionBar({ onCrop, onClear, isCropped }: CropActionBarProps) {
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={onCrop}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-accent-blue text-white hover:bg-dev-accent-blue/90 transition-colors cursor-pointer"
+      >
+        <Crop className="w-4 h-4" />
+        {isCropped ? "Re-crop" : "Crop"}
+      </button>
+      <button
+        type="button"
+        onClick={onClear}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors cursor-pointer"
+      >
+        <Trash2 className="w-4 h-4" />
+        Clear
+      </button>
+    </div>
+  )
+}
+
+export default memo(ImageCropper)

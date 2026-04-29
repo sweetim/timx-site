@@ -49,6 +49,8 @@ function useImageCropper({
   const imageRef = useRef<HTMLImageElement | null>(null)
   const resultBlobRef = useRef<Blob | null>(null)
   const onSourceImageRef = useRef(onSourceImage)
+  const statusRef = useRef<Status>(status)
+  const dragCleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     anchorModeRef.current = anchorMode
@@ -59,9 +61,22 @@ function useImageCropper({
   useEffect(() => {
     onSourceImageRef.current = onSourceImage
   }, [onSourceImage])
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
+  useEffect(() => {
+    return () => {
+      dragCleanupRef.current?.()
+      dragCleanupRef.current = null
+    }
+  }, [])
 
   const loadImage = useCallback((file: File, notifySource = true) => {
     if (notifySource) onSourceImageRef.current?.(file, file.name)
+
+    const prev = statusRef.current
+    if (prev.phase === "editing") URL.revokeObjectURL(prev.imageUrl)
+    else if (prev.phase === "cropped") URL.revokeObjectURL(prev.originalUrl)
 
     const url = URL.createObjectURL(file)
     const img = new Image()
@@ -196,6 +211,7 @@ function useImageCropper({
       const handleUp = () => {
         window.removeEventListener("mousemove", handleMove)
         window.removeEventListener("mouseup", handleUp)
+        dragCleanupRef.current = null
         if (anchorModeRef.current === "center" && newDrag.type !== "move") {
           const dims = displayDimensionsRef.current
           const r =
@@ -217,6 +233,10 @@ function useImageCropper({
       }
       window.addEventListener("mousemove", handleMove)
       window.addEventListener("mouseup", handleUp)
+      dragCleanupRef.current = () => {
+        window.removeEventListener("mousemove", handleMove)
+        window.removeEventListener("mouseup", handleUp)
+      }
     },
     [displayDimensions, anchorMode, aspectPreset],
   )

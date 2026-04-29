@@ -44,9 +44,7 @@ function UploadZone({
         Drop {multiple ? "images" : "an image"} here, paste from clipboard, or
         click to browse
       </p>
-      <p className="mt-1 text-xs text-dev-text-secondary">
-        PNG, JPEG, or WebP
-      </p>
+      <p className="mt-1 text-xs text-dev-text-secondary">PNG, JPEG, or WebP</p>
     </button>
   )
 }

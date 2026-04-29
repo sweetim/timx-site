@@ -31,50 +31,56 @@ export default function DeveloperPage() {
         }))}
       />
       <div className="min-h-full bg-dev-canvas flex items-center">
-      <div className="max-w-3xl mx-auto px-6 py-12 w-full">
-        <h1 className="text-2xl font-semibold text-dev-text mb-2">
-          Developer Tools
-        </h1>
-        <p className="text-dev-text-secondary mb-8">
-          A collection of handy utilities for everyday development tasks.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {tools.map((tool) => (
-            <Link
-              key={tool.slug}
-              href={`/developer/${tool.slug}`}
-              className="group block p-5 rounded-md border border-dev-border bg-dev-inset hover:border-dev-border-muted hover:bg-dev-surface transition-colors"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <tool.icon
-                  size={16}
-                  className="text-dev-text-secondary"
-                />
-                <h2 className="text-base font-medium text-dev-text group-hover:text-dev-link">
-                  {tool.name}
-                </h2>
-              </div>
-              <p className="text-sm text-dev-text-secondary">
-                {tool.description}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </div>
-      <footer className="fixed bottom-0 left-0 w-full border-t border-dev-border bg-dev-canvas">
-        <div className="px-6 py-3 text-sm text-dev-text-secondary flex justify-between">
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-dev-link">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-dev-link">
-              Terms of Service
-            </Link>
+        <div className="max-w-3xl mx-auto px-6 py-12 w-full">
+          <h1 className="text-2xl font-semibold text-dev-text mb-2">
+            Developer Tools
+          </h1>
+          <p className="text-dev-text-secondary mb-8">
+            A collection of handy utilities for everyday development tasks.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {tools.map((tool) => (
+              <Link
+                key={tool.slug}
+                href={`/developer/${tool.slug}`}
+                className="group block p-5 rounded-md border border-dev-border bg-dev-inset hover:border-dev-border-muted hover:bg-dev-surface transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <tool.icon
+                    size={16}
+                    className="text-dev-text-secondary"
+                  />
+                  <h2 className="text-base font-medium text-dev-text group-hover:text-dev-link">
+                    {tool.name}
+                  </h2>
+                </div>
+                <p className="text-sm text-dev-text-secondary">
+                  {tool.description}
+                </p>
+              </Link>
+            ))}
           </div>
-          <span>&copy; {new Date().getFullYear()}</span>
         </div>
-      </footer>
-    </div>
+        <footer className="fixed bottom-0 left-0 w-full border-t border-dev-border bg-dev-canvas">
+          <div className="px-6 py-3 text-sm text-dev-text-secondary flex justify-between">
+            <div className="flex gap-4">
+              <Link
+                href="/privacy"
+                className="hover:text-dev-link"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="hover:text-dev-link"
+              >
+                Terms of Service
+              </Link>
+            </div>
+            <span>&copy; {new Date().getFullYear()}</span>
+          </div>
+        </footer>
+      </div>
     </>
   )
 }
