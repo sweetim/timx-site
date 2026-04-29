@@ -2,7 +2,7 @@
 
 ## Overview
 
-timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no API routes and no database. Most processing runs client-side in the browser; the LLM Pricing page fetches OpenRouter model data server-side, and the OG Preview tool uses a server action for server-side URL fetching.
+timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no API routes and no database. Most processing runs client-side in the browser; the LLM Pricing tool fetches OpenRouter model data client-side, and the OG Preview tool uses a server action for server-side URL fetching.
 
 ## Tech stack
 
@@ -32,7 +32,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/og-preview       → OG Preview tool
 ```
 
-All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRouter data server-side, and the OG Preview tool uses a server action for server-side URL fetching.
+All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, and the OG Preview tool uses a server action for server-side URL fetching.
 
 ## Execution flow
 
@@ -47,8 +47,8 @@ All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRo
 1. `app/developer/layout.tsx` wraps all developer routes with a `NavBar`.
 2. `app/developer/page.tsx` reads the tool registry from `app/developer/_lib/tools.ts` and renders a card grid linking to each tool.
 3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
-4. The LLM Pricing page fetches model data server-side from the OpenRouter API and passes it to a client component for interactive sorting and filtering.
-5. The OG Preview page uses a server action (`fetchOgData`) to fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
+4. The LLM Pricing page renders the `LlmUsage` client component, which fetches model data from the OpenRouter API and provides interactive sorting and filtering.
+5. The OG Preview page uses a server action (`fetchOgData`) to validate and fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
 
 ### Image Editor flow
 
@@ -57,11 +57,11 @@ All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRo
 3. `ImageEditor` owns a shared current image document, a shared `sourceImages` array, and background-removal results cached by source image ID. Uploads and tool results update that shared image so single-image modes can import the latest canvas image when selected. Any image uploaded in any tool is added to `sourceImages`, which is shared across all tools.
 4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls with a Source picker, Crop shows crop handles, sizing controls, and a Source picker, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
 5. Background Remover and Crop each display a "Source" card in the properties panel showing all uploaded images as selectable thumbnails. Users can switch the active image without re-uploading.
-6. Screenshot Stitcher remains a multi-image composition mode. If a single image already exists on the canvas, Stitch offers an "Add as Frame" action before the user adds more screenshots.
+6. Screenshot Stitcher remains a multi-image composition mode. Users add frames by uploading, dropping, pasting, or selecting shared Source thumbnails.
 7. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
 8. Background Remover uploads or drops images into `UploadZone`; images are added to `sourceImages` and shown in the Source picker. Users click "Remove Background" per image to start processing via `useBackgroundRemoverPool`, which creates one Web Worker per image for concurrent processing. Each worker calls `@imgly/background-removal` and reports progress independently. Users can browse between images while they process. Completed results are cached per source image ID so users can view previously processed results without reprocessing. The Source picker shows status badges (spinner for processing, checkmark for done, error icon for failures).
 9. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
-10. Screenshot Stitcher uploads multiple images, places each centered inside a consistent frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
+10. Screenshot Stitcher uploads multiple images, places each centered inside a consistent frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined image in the selected format.
 
 ### Image Cropper flow
 
@@ -72,7 +72,7 @@ All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRo
 5. In center anchor mode, handles expand/shrink the crop symmetrically from the center. In edge anchor mode, the opposite edge stays fixed.
 6. User drags handles to resize or the rectangle body to reposition the crop area.
 7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
-8. The result is displayed with download and reset actions.
+8. The result is displayed with download format and reset actions.
 
 ### JSON Viewer flow
 
@@ -90,18 +90,19 @@ All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRo
 4. The center canvas shows a live frame preview on a grid background, plus a separate export preview area after generation.
 5. Individual screenshots can be removed from the live preview via a hover delete button or from the layers list.
 6. Clicking "Stitch Screenshots" uses the Canvas API to fit each image into its frame without cropping or stretching.
-7. The generated PNG stacks all frames horizontally or vertically with the configured spacing and can be downloaded as one image.
+7. The generated image stacks all frames horizontally or vertically with the configured spacing and can be downloaded as PNG, JPEG, or WebP.
 
 ### OG Preview flow
 
 1. User enters a URL in the input field and submits.
 2. The client component calls the `fetchOgData` server action with the URL.
-3. The server action fetches the HTML, parses `<meta property="og:*">` and `<meta name="twitter:*">` tags via regex, resolves relative URLs, and returns structured data.
-4. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn) in a grid, plus a raw tags table showing all discovered meta values.
+3. The server action accepts only HTTPS URLs, blocks private or reserved hosts, follows redirects only after validating the final host, and limits the fetch to 10 seconds and 512 KB of HTML.
+4. The server action parses `<meta property="og:*">`, `<meta name="twitter:*">`, description, title, and favicon tags via regex, resolves relative URLs, and returns structured data.
+5. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn) in a grid, plus a raw tags table showing all discovered meta values.
 
 ## Key design decisions
 
-- **No API routes**: browser tools run client-side; LLM Pricing fetches OpenRouter data server-side, and OG Preview uses a server action for server-side URL fetching.
+- **No API routes**: browser tools run client-side; LLM Pricing fetches OpenRouter data from the client, and OG Preview uses a server action for server-side URL fetching.
 - **Web Worker for AI inference**: background removal runs off the main thread to keep the UI responsive.
 - **Tool registry pattern**: tools are defined centrally in `app/developer/_lib/tools.ts` and referenced by both the index page and the navbar.
 - **ts-pattern for exhaustive matching**: used throughout for state machine transitions and conditional rendering.
@@ -152,10 +153,12 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
 | `app/developer/_components/nav-bar.tsx` | Top navigation bar for developer section |
 | `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
+| `app/developer/_components/button-click-feedback.stories.tsx` | Storybook showcase of global button click feedback styles |
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
+| `app/developer/image-editor/_components/editor-info-content.tsx` | SEO/help content shown from the Image Editor info panel |
 | `app/developer/image-editor/page.tsx` | Image Editor route page |
 | `app/developer/image-editor/_components/background-remover/index.tsx` | Background Remover client component |
 | `app/developer/image-editor/_components/background-remover/types.ts` | Status, phase, and per-image processing types |
@@ -202,7 +205,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 
-Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/image-editor/_components/background-remover/index.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
 
 ### `app/` assets
 

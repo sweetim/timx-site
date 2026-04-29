@@ -1,7 +1,7 @@
 "use client"
 
 import { Calculator, ChevronsUpDown, Download, X } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { RELEASE_OPTIONS } from "./constants"
 import { CostCalculatorDialog } from "./cost-calculator-dialog"
 import { serializeModel } from "./helpers"
@@ -92,6 +92,35 @@ export default function LlmUsage() {
       .map(([provider, models]): ProviderGroup => ({ provider, models }))
   }, [models, search, releaseFilter, freeOnly, now])
 
+  const toggleProvider = useCallback((provider: string) => {
+    setExpandedProviders((prev) => {
+      const next = new Set(prev)
+      if (next.has(provider)) next.delete(provider)
+      else next.add(provider)
+      return next
+    })
+  }, [])
+
+  const toggleSort = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDirection("asc")
+    }
+  }, [sortKey])
+
+  const allExpanded =
+    groups.length > 0 && groups.every((g) => expandedProviders.has(g.provider))
+
+  const toggleAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedProviders(new Set())
+    } else {
+      setExpandedProviders(new Set(groups.map((g) => g.provider)))
+    }
+  }, [groups, allExpanded])
+
   if (loading) {
     return (
       <div className="h-full overflow-auto bg-dev-canvas">
@@ -112,35 +141,6 @@ export default function LlmUsage() {
         </div>
       </div>
     )
-  }
-
-  const toggleProvider = (provider: string) => {
-    setExpandedProviders((prev) => {
-      const next = new Set(prev)
-      if (next.has(provider)) next.delete(provider)
-      else next.add(provider)
-      return next
-    })
-  }
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"))
-    } else {
-      setSortKey(key)
-      setSortDirection("asc")
-    }
-  }
-
-  const allExpanded =
-    groups.length > 0 && groups.every((g) => expandedProviders.has(g.provider))
-
-  const toggleAll = () => {
-    if (allExpanded) {
-      setExpandedProviders(new Set())
-    } else {
-      setExpandedProviders(new Set(groups.map((g) => g.provider)))
-    }
   }
 
   return (

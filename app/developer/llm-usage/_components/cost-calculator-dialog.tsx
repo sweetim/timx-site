@@ -1,11 +1,19 @@
 "use client"
 
 import { X } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import StepperInput from "../../_components/stepper-input"
 import { formatCost } from "./helpers"
 import type { Model } from "./types"
+
+type CostResult = {
+  model: Model
+  promptCost: number
+  cacheReadCost: number
+  completionCost: number
+  total: number
+}
 
 export function CostCalculatorDialog({
   models,
@@ -50,34 +58,72 @@ export function CostCalculatorDialog({
   const cacheRead = Number(cacheReadTokens) || 0
 
   const sortedResults = useMemo(() => {
-    return [...selectedModels].sort((a, b) => {
-      const cacheReadPriceA = Number.parseFloat(a.pricing.input_cache_read)
-      const cacheReadPriceB = Number.parseFloat(b.pricing.input_cache_read)
-      const costA =
-        Number.parseFloat(a.pricing.prompt) * prompt
-        + Number.parseFloat(a.pricing.completion) * completion
-        + (Number.isNaN(cacheReadPriceA) ? 0 : cacheReadPriceA) * cacheRead
-      const costB =
-        Number.parseFloat(b.pricing.prompt) * prompt
-        + Number.parseFloat(b.pricing.completion) * completion
-        + (Number.isNaN(cacheReadPriceB) ? 0 : cacheReadPriceB) * cacheRead
-      return costA - costB
-    })
+    return [...selectedModels]
+      .map((model) => {
+        const cacheReadPrice = Number.parseFloat(model.pricing.input_cache_read)
+        const promptCost = Number.parseFloat(model.pricing.prompt) * prompt
+        const cacheReadCost = Number.isNaN(cacheReadPrice) ? 0 : cacheReadPrice * cacheRead
+        const completionCost = Number.parseFloat(model.pricing.completion) * completion
+        const total = promptCost + cacheReadCost + completionCost
+        return { model, promptCost, cacheReadCost, completionCost, total }
+      })
+      .sort((a, b) => a.total - b.total)
   }, [selectedModels, prompt, completion, cacheRead])
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    document.body.style.overflow = "hidden"
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose()
+        return
+      }
+      if (e.key === "Tab") {
+        const dialog = dialogRef.current
+        if (!dialog) return
+        const focusable = dialog.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    dialogRef.current?.focus()
+    return () => {
+      document.body.style.overflow = ""
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open, onClose])
 
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="no-bounce absolute inset-0 bg-black/60 cursor-default"
+      <div
+        className="absolute inset-0 bg-black/60 cursor-default"
         onClick={onClose}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cost-calculator-title"
+        tabIndex={-1}
         className="relative bg-dev-surface border border-dev-border rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-dev-border">
@@ -252,18 +298,8 @@ export function CostCalculatorDialog({
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedResults.map((model, i) => {
-                      const promptCost =
-                        Number.parseFloat(model.pricing.prompt) * prompt
-                      const cacheReadPrice = Number.parseFloat(
-                        model.pricing.input_cache_read,
-                      )
-                      const cacheReadCost = Number.isNaN(cacheReadPrice)
-                        ? 0
-                        : cacheReadPrice * cacheRead
-                      const completionCost =
-                        Number.parseFloat(model.pricing.completion) * completion
-                      const total = promptCost + cacheReadCost + completionCost
+                    {sortedResults.map((result, i) => {
+                      const { model, promptCost, cacheReadCost, completionCost, total } = result
                       return (
                         <tr
                           key={model.id}
