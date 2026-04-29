@@ -69,7 +69,7 @@ const JsonTreeNode: FC<JsonTreeNodeProps> = ({ label, value, depth }) => {
         <button
           type="button"
           style={{ paddingLeft: depth * 20 }}
-          className="cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
+          className="no-bounce cursor-pointer hover:bg-dev-inset inline-flex w-full text-left"
           onClick={() => setCollapsed((c) => !c)}
         >
           <span className="text-dev-text-secondary select-none mr-1 w-3 inline-block">

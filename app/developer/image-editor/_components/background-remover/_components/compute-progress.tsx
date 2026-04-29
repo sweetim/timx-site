@@ -21,7 +21,10 @@ function ComputeProgress({ phase, compact }: ComputeProgressProps) {
             const isCompleted = index < currentStepIndex
             const isCurrent = index === currentStepIndex
             return (
-              <li key={step.phase} className="flex items-center gap-2">
+              <li
+                key={step.phase}
+                className="flex items-center gap-2"
+              >
                 <div
                   className={clsx(
                     "flex items-center justify-center size-5 rounded-full border-2 shrink-0 transition-colors",

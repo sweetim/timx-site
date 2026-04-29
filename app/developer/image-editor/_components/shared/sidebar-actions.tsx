@@ -1,4 +1,4 @@
-import { Copy, Download, Trash2 } from "lucide-react"
+import { Copy, Download, Plus, Trash2 } from "lucide-react"
 import type { DownloadFormat } from "../download-format-selector"
 import {
   DownloadFormatSelector,
@@ -18,6 +18,8 @@ type SidebarActionsProps = {
     format: DownloadFormat
     onFormatChange: (format: DownloadFormat) => void
   }
+  showAddToSource?: boolean
+  onAddToSource?: () => void
   showCopy?: boolean
   onCopyToClipboard?: () => void
   showClear?: boolean
@@ -27,6 +29,8 @@ type SidebarActionsProps = {
 function SidebarActions({
   primaryAction,
   download,
+  showAddToSource,
+  onAddToSource,
   showCopy,
   onCopyToClipboard,
   showClear,
@@ -64,6 +68,16 @@ function SidebarActions({
             format={download.format}
           />
         </>
+      )}
+      {showAddToSource && onAddToSource && (
+        <button
+          type="button"
+          onClick={onAddToSource}
+          className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text cursor-pointer transition-colors hover:bg-dev-button-hover"
+        >
+          <Plus className="size-4" />
+          Add to Source
+        </button>
       )}
       {showCopy && onCopyToClipboard && (
         <button

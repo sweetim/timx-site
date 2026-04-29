@@ -3,8 +3,9 @@
 import { X } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
 
-import type { Model } from "./types"
+import StepperInput from "../../_components/stepper-input"
 import { formatCost } from "./helpers"
+import type { Model } from "./types"
 
 export function CostCalculatorDialog({
   models,
@@ -70,7 +71,7 @@ export function CostCalculatorDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 cursor-default"
+        className="no-bounce absolute inset-0 bg-black/60 cursor-default"
         onClick={onClose}
       />
       <div className="relative bg-dev-surface border border-dev-border rounded-lg w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
@@ -89,45 +90,82 @@ export function CostCalculatorDialog({
 
         <div className="overflow-y-auto p-5 flex flex-col gap-5">
           <div className="grid grid-cols-3 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-dev-text-secondary">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="prompt-tokens"
+                className="text-xs font-medium text-dev-text-secondary"
+              >
                 Prompt tokens
-              </span>
-              <input
-                type="number"
-                min="0"
-                placeholder="e.g. 10000"
+              </label>
+              <StepperInput
+                id="prompt-tokens"
                 value={promptTokens}
                 onChange={(e) => setPromptTokens(e.target.value)}
-                className="px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary focus:outline-none focus:border-dev-link text-sm"
+                onIncrement={() =>
+                  setPromptTokens(String((Number(promptTokens) || 0) + 1000))
+                }
+                onDecrement={() =>
+                  setPromptTokens(
+                    String(Math.max(0, (Number(promptTokens) || 0) - 1000)),
+                  )
+                }
+                min={0}
+                step={1000}
+                placeholder="e.g. 10000"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-dev-text-secondary">
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="completion-tokens"
+                className="text-xs font-medium text-dev-text-secondary"
+              >
                 Completion tokens
-              </span>
-              <input
-                type="number"
-                min="0"
-                placeholder="e.g. 2000"
+              </label>
+              <StepperInput
+                id="completion-tokens"
                 value={completionTokens}
                 onChange={(e) => setCompletionTokens(e.target.value)}
-                className="px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary focus:outline-none focus:border-dev-link text-sm"
+                onIncrement={() =>
+                  setCompletionTokens(
+                    String((Number(completionTokens) || 0) + 1000),
+                  )
+                }
+                onDecrement={() =>
+                  setCompletionTokens(
+                    String(Math.max(0, (Number(completionTokens) || 0) - 1000)),
+                  )
+                }
+                min={0}
+                step={1000}
+                placeholder="e.g. 2000"
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-dev-text-secondary">
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="cache-read-tokens"
+                className="text-xs font-medium text-dev-text-secondary"
+              >
                 Cache read tokens
-              </span>
-              <input
-                type="number"
-                min="0"
-                placeholder="e.g. 8000"
+              </label>
+              <StepperInput
+                id="cache-read-tokens"
                 value={cacheReadTokens}
                 onChange={(e) => setCacheReadTokens(e.target.value)}
-                className="px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary focus:outline-none focus:border-dev-link text-sm"
+                onIncrement={() =>
+                  setCacheReadTokens(
+                    String((Number(cacheReadTokens) || 0) + 1000),
+                  )
+                }
+                onDecrement={() =>
+                  setCacheReadTokens(
+                    String(Math.max(0, (Number(cacheReadTokens) || 0) - 1000)),
+                  )
+                }
+                min={0}
+                step={1000}
+                placeholder="e.g. 8000"
               />
-            </label>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

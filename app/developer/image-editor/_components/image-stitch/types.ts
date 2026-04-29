@@ -11,8 +11,6 @@ export type ImageItem = {
 
 export type StackDirection = "horizontal" | "vertical"
 
-export type ContentAlignment = "start" | "center" | "end"
-
 export type StitchedImage = {
   url: string
   fileName: string

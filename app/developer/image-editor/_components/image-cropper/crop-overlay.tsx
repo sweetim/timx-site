@@ -102,7 +102,7 @@ export function CropOverlay({
       <button
         type="button"
         aria-label="Move crop area"
-        className="absolute border-2 border-white/70 bg-transparent"
+        className="no-bounce absolute border-2 border-white/70 bg-transparent"
         style={{
           left: crop.x,
           top: crop.y,
@@ -127,7 +127,7 @@ export function CropOverlay({
           key={type}
           type="button"
           aria-label={`Resize ${type}`}
-          className="absolute bg-white border border-dev-border rounded-sm"
+          className="no-bounce absolute bg-white border border-dev-border rounded-sm"
           style={{
             ...style,
             width: HANDLE_SIZE,

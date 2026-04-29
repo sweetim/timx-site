@@ -1,4 +1,4 @@
-import type { ContentAlignment, ImageItem } from "../types"
+import type { ImageItem } from "../types"
 
 export function loadImageFile(
   file: File,
@@ -32,7 +32,6 @@ export function getDrawParams(
   image: HTMLImageElement,
   frameWidth: number,
   frameHeight: number,
-  alignment: ContentAlignment,
 ) {
   const scale = Math.min(
     frameWidth / image.naturalWidth,
@@ -41,12 +40,7 @@ export function getDrawParams(
   const width = image.naturalWidth * scale
   const height = image.naturalHeight * scale
   const x = (frameWidth - width) / 2
-  const y =
-    alignment === "start"
-      ? 0
-      : alignment === "end"
-        ? frameHeight - height
-        : (frameHeight - height) / 2
+  const y = (frameHeight - height) / 2
 
   return { x, y, width, height }
 }
@@ -57,7 +51,6 @@ export function stitchImages({
   frameHeight,
   imageSpacing,
   direction,
-  alignment,
   backgroundColor,
 }: {
   images: ImageItem[]
@@ -65,7 +58,6 @@ export function stitchImages({
   frameHeight: number
   imageSpacing: number
   direction: "horizontal" | "vertical"
-  alignment: ContentAlignment
   backgroundColor: string | null
 }): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -101,7 +93,6 @@ export function stitchImages({
         item.element,
         frameWidth,
         frameHeight,
-        alignment,
       )
 
       context.drawImage(

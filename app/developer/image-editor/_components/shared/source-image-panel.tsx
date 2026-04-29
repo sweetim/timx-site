@@ -1,5 +1,7 @@
-import { Plus, Trash2 } from "lucide-react"
+import { Check, CircleX, LoaderCircle, Plus, Trash2 } from "lucide-react"
 import type { SourceImage } from "../image-editor"
+
+type ImageStatus = "processing" | "done" | "error"
 
 type SourceImagePanelProps = {
   sourceImages: SourceImage[]
@@ -9,6 +11,7 @@ type SourceImagePanelProps = {
   onRemoveActiveSource?: (() => void) | undefined
   onAddSourceImages?: ((files: File[]) => Promise<SourceImage[]>) | undefined
   sourceFileInputRef: React.RefObject<HTMLInputElement | null>
+  imageStatuses?: Record<string, ImageStatus>
 }
 
 function SourceImagePanel({
@@ -19,6 +22,7 @@ function SourceImagePanel({
   onRemoveActiveSource,
   onAddSourceImages,
   sourceFileInputRef,
+  imageStatuses,
 }: SourceImagePanelProps) {
   if (sourceImages.length === 0) return null
 
@@ -38,13 +42,13 @@ function SourceImagePanel({
           </button>
         )}
       </div>
-      <div className="mt-3 grid max-h-52 gap-2 overflow-auto">
+      <div className="mt-3 grid max-h-52 gap-2 overflow-y-auto">
         {sourceImages.map((img) => (
           <button
             key={img.id}
             type="button"
             onClick={() => onSelectSource(img.id)}
-            className={`flex items-center gap-2 rounded border p-2 text-left cursor-pointer transition-colors ${
+            className={`no-bounce flex min-w-0 items-center gap-2 overflow-hidden rounded border p-2 text-left cursor-pointer transition-colors ${
               activeSourceId === img.id
                 ? "border-dev-accent-blue bg-dev-accent-blue/10"
                 : "border-dev-border bg-dev-inset hover:bg-dev-button-hover/50"
@@ -64,6 +68,19 @@ function SourceImagePanel({
                 {img.naturalWidth}×{img.naturalHeight}
               </p>
             </div>
+            {imageStatuses?.[img.id] && (
+              <span className="shrink-0">
+                {imageStatuses[img.id] === "processing" && (
+                  <LoaderCircle className="size-3.5 text-dev-accent-blue animate-spin" />
+                )}
+                {imageStatuses[img.id] === "done" && (
+                  <Check className="size-3.5 text-dev-accent-green" />
+                )}
+                {imageStatuses[img.id] === "error" && (
+                  <CircleX className="size-3.5 text-dev-accent-red" />
+                )}
+              </span>
+            )}
             {onRemoveSourceImage && (
               <button
                 type="button"

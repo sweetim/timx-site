@@ -2,7 +2,7 @@
 
 ## Overview
 
-timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no API routes, no database, and no server-side logic beyond static metadata generation. All processing runs client-side in the browser.
+timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no API routes and no database. Most processing runs client-side in the browser; the LLM Pricing page fetches OpenRouter model data server-side, and the OG Preview tool uses a server action for server-side URL fetching.
 
 ## Tech stack
 
@@ -24,6 +24,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 ```
 /                          → Profile page (home)
 /privacy                   → Privacy policy
+/terms                     → Terms of service
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
@@ -31,7 +32,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/og-preview       → OG Preview tool
 ```
 
-All routes are static (no dynamic segments). The OG Preview tool uses a server action for server-side URL fetching.
+All routes are static (no dynamic segments). The LLM Pricing page fetches OpenRouter data server-side, and the OG Preview tool uses a server action for server-side URL fetching.
 
 ## Execution flow
 
@@ -58,9 +59,9 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 5. Background Remover and Crop each display a "Source" card in the properties panel showing all uploaded images as selectable thumbnails. Users can switch the active image without re-uploading.
 6. Screenshot Stitcher remains a multi-image composition mode. If a single image already exists on the canvas, Stitch offers an "Add as Frame" action before the user adds more screenshots.
 7. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
-8. Background Remover uploads or drops an image into `UploadZone`; `useBackgroundRemover` sends it to `background-remover.worker.ts`, which calls `@imgly/background-removal` and reports progress. Completed background-removal outputs are cached per source image so users can select a previously processed source and view its result without reprocessing.
+8. Background Remover uploads or drops images into `UploadZone`; images are added to `sourceImages` and shown in the Source picker. Users click "Remove Background" per image to start processing via `useBackgroundRemoverPool`, which creates one Web Worker per image for concurrent processing. Each worker calls `@imgly/background-removal` and reports progress independently. Users can browse between images while they process. Completed results are cached per source image ID so users can view previously processed results without reprocessing. The Source picker shows status badges (spinner for processing, checkmark for done, error icon for failures).
 9. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
-10. Screenshot Stitcher uploads multiple images, places each into a consistent frame, aligns content inside each frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
+10. Screenshot Stitcher uploads multiple images, places each centered inside a consistent frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined PNG.
 
 ### Image Cropper flow
 
@@ -85,7 +86,7 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 
 1. User uploads one or more images via drag-and-drop or file picker (multiple files supported).
 2. Thumbnails of uploaded screenshots are shown with dimensions; individual images can be removed.
-3. User configures a consistent frame width and height, spacing between frames, stack direction, content alignment, and optional background color from the properties panel.
+3. User configures a consistent frame width and height, spacing between frames, stack direction, and optional background color from the properties panel.
 4. The center canvas shows a live frame preview on a grid background, plus a separate export preview area after generation.
 5. Individual screenshots can be removed from the live preview via a hover delete button or from the layers list.
 6. Clicking "Stitch Screenshots" uses the Canvas API to fit each image into its frame without cropping or stretching.
@@ -96,11 +97,11 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 1. User enters a URL in the input field and submits.
 2. The client component calls the `fetchOgData` server action with the URL.
 3. The server action fetches the HTML, parses `<meta property="og:*">` and `<meta name="twitter:*">` tags via regex, resolves relative URLs, and returns structured data.
-4. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn, Pinterest) via a tabbed interface, plus a raw tags table showing all discovered meta values.
+4. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn) in a grid, plus a raw tags table showing all discovered meta values.
 
 ## Key design decisions
 
-- **No API routes**: all tools run entirely in the browser, except OG Preview which uses a server action for server-side URL fetching.
+- **No API routes**: browser tools run client-side; LLM Pricing fetches OpenRouter data server-side, and OG Preview uses a server action for server-side URL fetching.
 - **Web Worker for AI inference**: background removal runs off the main thread to keep the UI responsive.
 - **Tool registry pattern**: tools are defined centrally in `app/developer/_lib/tools.ts` and referenced by both the index page and the navbar.
 - **ts-pattern for exhaustive matching**: used throughout for state machine transitions and conditional rendering.
@@ -115,6 +116,7 @@ All routes are static (no dynamic segments). The OG Preview tool uses a server a
 |---|---|
 | `README.md` | Project overview and local development instructions |
 | `AGENTS.md` | Repository-specific engineering instructions and workflow constraints |
+| `.gitignore` | Git ignore rules for dependencies, build outputs, local env files, and generated artifacts |
 | `mise.toml` | Pins Bun 1 for local development via mise |
 | `bun.lock` | Bun dependency lockfile for the main application |
 | `next-env.d.ts` | Next.js generated type declarations |
@@ -139,8 +141,9 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/page.tsx` | Home page — profile card with Person JSON-LD |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all pages |
-| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, animations |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, animations, global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
+| `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
 | `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, WebApplication) |
@@ -148,17 +151,19 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
 | `app/developer/_components/nav-bar.tsx` | Top navigation bar for developer section |
+| `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
+| `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
 | `app/developer/image-editor/page.tsx` | Image Editor route page |
 | `app/developer/image-editor/_components/background-remover/index.tsx` | Background Remover client component |
-| `app/developer/image-editor/_components/background-remover/types.ts` | Status and phase types |
+| `app/developer/image-editor/_components/background-remover/types.ts` | Status, phase, and per-image processing types |
 | `app/developer/image-editor/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions |
 | `app/developer/image-editor/_components/background-remover/utils.ts` | Progress mapping and formatting utilities |
 | `app/developer/image-editor/_components/background-remover/checkerboard-pattern.tsx` | SVG checkerboard pattern for transparency |
 | `app/developer/image-editor/_components/background-remover/image-comparison-slider.tsx` | Drag-to-compare original vs result |
-| `app/developer/image-editor/_components/background-remover/_hooks/use-background-remover.ts` | Main hook: state management, worker communication |
+| `app/developer/image-editor/_components/background-remover/_hooks/use-background-remover-pool.ts` | Pool hook: per-image worker management, concurrent processing |
 | `app/developer/image-editor/_components/background-remover/_hooks/background-remover.worker.ts` | Web Worker running @imgly/background-removal |
 | `app/developer/image-editor/_components/background-remover/_components/result-view.tsx` | Result display with download/reset |
 | `app/developer/image-editor/_components/background-remover/_components/error-state.tsx` | Error display with retry |
@@ -169,7 +174,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/canvas-drop-overlay.tsx` | Canvas-level drag overlay with label |
 | `app/developer/image-editor/_components/shared/types.ts` | Shared editor tool prop contract used by Background Remover, Crop, and Screenshot Stitcher |
 | `app/developer/image-editor/_components/shared/tool-panel-layout.tsx` | Shared two-column canvas/sidebar layout for image editor tool panels |
-| `app/developer/image-editor/_components/shared/source-image-panel.tsx` | Shared source image picker panel with add/remove controls |
+| `app/developer/image-editor/_components/shared/source-image-panel.tsx` | Shared source image picker panel with add/remove controls and status badges |
 | `app/developer/image-editor/_components/shared/sidebar-actions.tsx` | Shared panel actions for primary, format/download, copy, and clear controls |
 | `app/developer/image-editor/_components/shared/use-dropped-files.ts` | Shared hook for active-tool canvas drop processing |
 | `app/developer/image-editor/_components/shared/use-clipboard-paste.ts` | Shared hook for active-tool image paste handling |
@@ -182,8 +187,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/image-cropper/_hooks/use-image-cropper.ts` | Cropper hook for image loading, crop state, drag math, export, and reset logic |
 | `app/developer/image-editor/_components/image-cropper/_lib/crop-math.ts` | Crop math utilities (clamp, resize, aspect ratio) |
 | `app/developer/image-editor/_components/image-stitch/index.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
-| `app/developer/image-editor/_components/image-stitch/types.ts` | Stitcher types (ImageItem, StackDirection, ContentAlignment, etc.) |
-| `app/developer/image-editor/_components/image-stitch/constants.ts` | Alignment options and checkerboard background style |
+| `app/developer/image-editor/_components/image-stitch/types.ts` | Stitcher types (ImageItem, StackDirection, StitchedImage, etc.) |
+| `app/developer/image-editor/_components/image-stitch/constants.ts` | Checkerboard background style |
 | `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
 | `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
@@ -197,7 +202,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 
-Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/image-editor/_components/background-remover/index.stories.tsx`.
+Storybook stories are colocated with their UI components. Representative examples include `app/_components/Profile.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, and `app/developer/image-editor/_components/background-remover/index.stories.tsx`.
 
 ### `app/` assets
 
@@ -336,6 +341,11 @@ type Status =
   | { phase: "processing"; status: ProcessingStatus; progress: number; originalUrl: string }
   | { phase: "done"; originalUrl: string; resultUrl: string }
   | { phase: "error"; message: string }
+
+type PerImageStatus =
+  | { phase: "processing"; status: ProcessingStatus; progress: number }
+  | { phase: "done"; resultUrl: string }
+  | { phase: "error"; message: string }
 ```
 
 ### Shared editor tool props (app/developer/image-editor/_components/shared/types.ts)
@@ -418,7 +428,11 @@ type CanvasDropProps = {
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
 }
+```
 
+### Upload Zone types (app/developer/image-editor/_components/upload-zone.tsx)
+
+```typescript
 type UploadZoneProps = {
   isDragOver: boolean
   multiple?: boolean
@@ -516,8 +530,6 @@ type ImageItem = {
 }
 
 type StackDirection = "horizontal" | "vertical"
-
-type ContentAlignment = "start" | "center" | "end"
 
 type StitchedImage = {
   url: string

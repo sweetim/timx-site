@@ -5,7 +5,10 @@ import "../app/globals.css"
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      default: "dark",
+      default: "dev-canvas",
+      values: [
+        { name: "dev-canvas", value: "#22272e" },
+      ],
     },
     controls: {
       matchers: {

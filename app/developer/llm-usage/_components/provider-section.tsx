@@ -92,7 +92,7 @@ export function ProviderSection({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 bg-dev-surface hover:bg-dev-button transition-colors text-left cursor-pointer"
+        className="no-bounce w-full flex items-center justify-between px-5 py-4 bg-dev-surface hover:bg-dev-button transition-colors text-left cursor-pointer"
       >
         <div className="flex items-center gap-3">
           <ChevronDown

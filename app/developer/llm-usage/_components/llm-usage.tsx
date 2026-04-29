@@ -172,7 +172,7 @@ export default function LlmUsage({ models }: { models: Model[] }) {
                 href="https://marketplace.visualstudio.com/items?itemName=timx.token-lens"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md bg-dev-link px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-dev-link/90 sm:self-center"
+                className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md bg-dev-link px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-dev-link/90 hover:scale-105 active:scale-95 duration-150 sm:self-center"
               >
                 <Download size={12} />
                 VS Code Marketplace

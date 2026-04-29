@@ -1,8 +1,16 @@
 "use client"
 
 import clsx from "clsx"
-import { ArrowDown, ArrowRight, Download, Images, Plus, Trash2 } from "lucide-react"
+import {
+  Columns3,
+  Download,
+  Images,
+  Plus,
+  Rows3,
+  Trash2,
+} from "lucide-react"
 import { useCallback, useRef, useState } from "react"
+import StepperInput from "../../../_components/stepper-input"
 import type { DownloadFormat } from "../download-format-selector"
 import {
   DownloadFormatSelector,
@@ -10,19 +18,18 @@ import {
 } from "../download-format-selector"
 import SidebarActions from "../shared/sidebar-actions"
 import SourceImagePanel from "../shared/source-image-panel"
+import ToolPanelLayout from "../shared/tool-panel-layout"
 import type { EditorToolProps } from "../shared/types"
 import useClipboardPaste from "../shared/use-clipboard-paste"
 import useDroppedFiles from "../shared/use-dropped-files"
 import useWorkspaceReset from "../shared/use-workspace-reset"
-import ToolPanelLayout from "../shared/tool-panel-layout"
 import UploadZone from "../upload-zone"
 import useScreenshotStitcher from "./_hooks/use-screenshot-stitcher"
-import { ALIGNMENT_OPTIONS, CHECKERBOARD_STYLE } from "./constants"
+import { CHECKERBOARD_STYLE } from "./constants"
 
 function ScreenshotStitcher({
   variant = "page",
   isActive = true,
-  initialImage,
   workspaceResetKey = 0,
   onResult,
   onSourceImage,
@@ -46,7 +53,6 @@ function ScreenshotStitcher({
     frameHeight,
     imageSpacing,
     direction,
-    alignment,
     backgroundColor,
     transparentBackground,
     isProcessing,
@@ -56,7 +62,6 @@ function ScreenshotStitcher({
     setFrameHeight,
     setImageSpacing,
     setDirection,
-    setAlignment,
     setBackgroundColor,
     setTransparentBackground,
     setIsDragOver,
@@ -94,13 +99,13 @@ function ScreenshotStitcher({
     onClearWorkspace?.()
   }, [resetLocal, onClearWorkspace])
 
-  const addCurrentImageAsFrame = useCallback(() => {
-    if (!initialImage) return
-    const file = new File([initialImage.blob], initialImage.name, {
-      type: initialImage.blob.type || "image/png",
+  const handleAddToSource = useCallback(async () => {
+    if (!stitched?.blob) return
+    const file = new File([stitched.blob], stitched.fileName, {
+      type: stitched.blob.type || "image/png",
     })
-    void addFiles([file], false)
-  }, [initialImage, addFiles])
+    await onAddSourceImages?.([file])
+  }, [stitched, onAddSourceImages])
 
   const handleSelectSource = useCallback(
     (id: string) => {
@@ -142,26 +147,25 @@ function ScreenshotStitcher({
 
   const handleDownload = useCallback(
     async (url: string) => {
-      await downloadBlob(url, `stitched-screenshots-${direction}`, downloadFormat)
+      await downloadBlob(
+        url,
+        `stitched-screenshots-${direction}`,
+        downloadFormat,
+      )
     },
     [direction, downloadFormat],
   )
 
   const outputWidth =
     direction === "horizontal"
-      ? frameWidth * images.length + Math.max(0, images.length - 1) * imageSpacing
+      ? frameWidth * images.length
+        + Math.max(0, images.length - 1) * imageSpacing
       : frameWidth
   const outputHeight =
     direction === "horizontal"
       ? frameHeight
-      : frameHeight * images.length + Math.max(0, images.length - 1) * imageSpacing
-  const objectPosition =
-    alignment === "start"
-      ? "top center"
-      : alignment === "end"
-        ? "bottom center"
-        : "center"
-
+      : frameHeight * images.length
+        + Math.max(0, images.length - 1) * imageSpacing
   const uploadZone = (
     <UploadZone
       isDragOver={isDragOver}
@@ -181,115 +185,88 @@ function ScreenshotStitcher({
       <ToolPanelLayout
         canvasDropProps={canvasDropProps}
         canvasContent={
-          images.length === 0 ? (
+          images.length === 0 && sourceImages.length === 0 ? (
             <div className="flex min-h-full items-center justify-center">
               <div className="w-full max-w-xl rounded-xl border border-dev-border bg-dev-canvas/95 p-4 shadow-2xl shadow-black/30">
-                {initialImage ? (
-                  <div className="grid gap-4">
-                    <div className="rounded-md border border-dev-border bg-dev-inset p-3">
-                      <p className="mb-3 text-sm font-semibold text-dev-text">
-                        Current Canvas Image
-                      </p>
-                      {/* biome-ignore lint/performance/noImgElement: shared blob URL preview is scoped to the browser */}
-                      <img
-                        src={initialImage.url}
-                        alt="Current canvas"
-                        className="mx-auto block max-h-90 max-w-full rounded border border-dev-border object-contain"
-                      />
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={addCurrentImageAsFrame}
-                        className="flex items-center justify-center gap-1.5 rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white cursor-pointer transition-colors hover:bg-dev-accent-blue/90"
-                      >
-                        <Plus className="size-4" />
-                        Add as Frame
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1.5 rounded bg-dev-button px-3 py-2 text-sm font-medium text-dev-text cursor-pointer transition-colors hover:bg-dev-button-hover"
-                      >
-                        Browse Images
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  uploadZone
-                )}
+                {uploadZone}
               </div>
             </div>
           ) : (
             <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-4">
               <div className="rounded-lg border border-dev-border bg-dev-canvas/95 shadow-2xl shadow-black/30 backdrop-blur">
                 <div className="flex items-center justify-between gap-3 border-b border-dev-border px-4 py-2">
-                  <div>
-                    <h2 className="text-sm font-semibold text-dev-text">
-                      Canvas Preview
-                    </h2>
-                    <p className="text-xs text-dev-text-secondary">
-                      {images.length} frame{images.length === 1 ? "" : "s"} - {outputWidth}×{outputHeight}px output
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 rounded bg-dev-button px-2.5 py-1.5 text-xs font-medium text-dev-text cursor-pointer transition-colors hover:bg-dev-button-hover"
-                  >
-                    <Plus className="size-3.5" />
-                    Add
-                  </button>
-                </div>
-                <div
-                  className={clsx(
-                    "flex overflow-auto p-5",
-                    direction === "horizontal"
-                      ? "items-start"
-                      : "flex-col items-center",
-                  )}
-                  style={{
-                    ...(transparentBackground ? CHECKERBOARD_STYLE : {}),
-                    gap: imageSpacing,
-                  }}
-                >
-                  {images.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="group relative shrink-0 rounded-md border border-dev-border bg-dev-inset p-2 shadow-lg shadow-black/20"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => removeImage(item.id)}
-                        className="absolute right-1 top-1 z-10 flex size-6 items-center justify-center rounded-full bg-dev-accent-red text-white opacity-0 shadow cursor-pointer transition-opacity hover:bg-dev-accent-red/90 group-hover:opacity-100"
-                        aria-label={`Remove ${item.file.name}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                      <div
-                        className="relative overflow-hidden rounded bg-black/20"
-                        style={{
-                          aspectRatio: `${frameWidth} / ${frameHeight}`,
-                          width:
-                            direction === "horizontal"
-                              ? "clamp(6rem, 12vw, 9rem)"
-                              : "clamp(8rem, 20vw, 13rem)",
-                        }}
-                      >
-                        {/* biome-ignore lint/performance/noImgElement: blob URL */}
-                        <img
-                          src={item.originalUrl}
-                          alt={item.file.name}
-                          className="size-full object-contain"
-                          style={{ objectPosition }}
-                        />
-                      </div>
-                      <p className="mt-2 truncate text-center text-[11px] text-dev-text-secondary">
-                        {index + 1}. {item.naturalWidth}×{item.naturalHeight}
-                      </p>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <h2 className="text-sm font-semibold text-dev-text">
+                        Canvas Input
+                      </h2>
+                      {images.length > 0 ? (
+                        <p className="text-xs text-dev-text-secondary">
+                          {images.length} frame{images.length === 1 ? "" : "s"}{" "}
+                          - {outputWidth}×{outputHeight}px output
+                        </p>
+                      ) : (
+                        <p className="text-xs text-dev-text-secondary">
+                          No frames added
+                        </p>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
+                {images.length > 0 ? (
+                  <div
+                    className={clsx(
+                      "flex overflow-auto p-5",
+                      direction === "horizontal"
+                        ? "items-start"
+                        : "flex-col items-center",
+                    )}
+                    style={{
+                      ...(transparentBackground ? CHECKERBOARD_STYLE : {}),
+                      gap: imageSpacing,
+                    }}
+                  >
+                    {images.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="group relative shrink-0 rounded-md border border-dev-border bg-dev-inset p-2 shadow-lg shadow-black/20"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeImage(item.id)}
+                          className="absolute right-1 top-1 z-10 flex size-6 items-center justify-center rounded-full bg-dev-accent-red text-white opacity-0 shadow cursor-pointer transition-opacity hover:bg-dev-accent-red/90 group-hover:opacity-100"
+                          aria-label={`Remove ${item.file.name}`}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                        <div
+                          className="relative overflow-hidden rounded bg-black/20"
+                          style={{
+                            aspectRatio: `${frameWidth} / ${frameHeight}`,
+                            width:
+                              direction === "horizontal"
+                                ? "clamp(6rem, 12vw, 9rem)"
+                                : "clamp(8rem, 20vw, 13rem)",
+                          }}
+                        >
+                          {/* biome-ignore lint/performance/noImgElement: blob URL */}
+                          <img
+                            src={item.originalUrl}
+                            alt={item.file.name}
+                            className="size-full object-contain"
+                          />
+                        </div>
+                        <p className="mt-2 truncate text-center text-[11px] text-dev-text-secondary">
+                          {index + 1}. {item.naturalWidth}×{item.naturalHeight}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-32 items-center justify-center p-5 text-sm text-dev-text-secondary">
+                    Click images from the Source panel to add frames
+                  </div>
+                )}
               </div>
 
               <div className="rounded-lg border border-dev-border bg-dev-canvas/95 shadow-xl shadow-black/20">
@@ -303,36 +280,30 @@ function ScreenshotStitcher({
                     </p>
                   </div>
                   {stitched && (
-                    <div className="flex items-center gap-2">
-                      <DownloadFormatSelector
-                        value={downloadFormat}
-                        onChange={setDownloadFormat}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => void handleDownload(stitched.url)}
-                        className="flex items-center gap-1.5 rounded bg-dev-accent-green px-2.5 py-1.5 text-xs font-medium text-white transition-colors cursor-pointer hover:bg-dev-accent-green/90"
-                      >
-                        <Download className="size-3.5" />
-                        Download
-                      </button>
-                    </div>
+                    <span className="rounded bg-dev-inset px-2 py-1 text-xs font-medium text-dev-text-secondary">
+                      {stitched.width}×{stitched.height}
+                    </span>
                   )}
                 </div>
-                <div
-                  className="min-h-52 overflow-auto p-5"
-                  style={transparentBackground ? CHECKERBOARD_STYLE : undefined}
-                >
+                <div className="min-h-52 overflow-auto p-5">
                   {stitched ? (
-                    /* biome-ignore lint/performance/noImgElement: blob URL */
-                    <img
-                      src={stitched.url}
-                      alt="Stitched screenshots"
-                      className="mx-auto block max-h-[28rem] max-w-full rounded border border-dev-border"
-                    />
+                    <div
+                      className="mx-auto inline-block rounded border border-dev-border"
+                      style={
+                        transparentBackground ? CHECKERBOARD_STYLE : undefined
+                      }
+                    >
+                      {/* biome-ignore lint/performance/noImgElement: blob URL */}
+                      <img
+                        src={stitched.url}
+                        alt="Stitched screenshots"
+                        className="block max-h-[28rem] max-w-full"
+                      />
+                    </div>
                   ) : (
                     <div className="flex min-h-42 items-center justify-center rounded border border-dashed border-dev-border bg-dev-inset/80 text-sm text-dev-text-secondary">
-                      Configure the frames, then stitch to preview the final PNG.
+                      Configure the frames, then stitch to preview the final
+                      PNG.
                     </div>
                   )}
                 </div>
@@ -344,32 +315,22 @@ function ScreenshotStitcher({
           <>
             <div>
               <h2 className="text-base font-semibold text-dev-text">
-                Screenshot Stitcher
+                Stitcher
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
-                Stack screenshots into equal frames without cropping or stretching
+                Stack images into equal frames without cropping or stretching
                 the content.
               </p>
             </div>
 
-            {images.length === 0 && initialImage && (
-              <div className="mt-4 rounded-md border border-dev-border bg-dev-surface p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
-                  Current Image
-                </p>
-                <p className="mt-2 text-xs leading-relaxed text-dev-text-secondary">
-                  Start a stitched document from the image already on the canvas.
-                </p>
-                <button
-                  type="button"
-                  onClick={addCurrentImageAsFrame}
-                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors cursor-pointer hover:bg-dev-accent-blue/90"
-                >
-                  <Plus className="size-4" />
-                  Add as First Frame
-                </button>
-              </div>
-            )}
+            <SourceImagePanel
+              sourceImages={sourceImages}
+              activeSourceId={null}
+              onSelectSource={handleSelectSource}
+              onRemoveSourceImage={onRemoveSourceImage}
+              onAddSourceImages={onAddSourceImages}
+              sourceFileInputRef={sourceFileInputRef}
+            />
 
             <DocumentSettings
               imagesLength={images.length}
@@ -383,16 +344,18 @@ function ScreenshotStitcher({
               onImageSpacingChange={setImageSpacing}
               onMatchLargest={() => {
                 if (images.length === 0) return
-                setFrameWidth(Math.max(...images.map((image) => image.naturalWidth)))
-                setFrameHeight(Math.max(...images.map((image) => image.naturalHeight)))
+                setFrameWidth(
+                  Math.max(...images.map((image) => image.naturalWidth)),
+                )
+                setFrameHeight(
+                  Math.max(...images.map((image) => image.naturalHeight)),
+                )
               }}
             />
 
             <LayoutSettings
               direction={direction}
-              alignment={alignment}
               onDirectionChange={setDirection}
-              onAlignmentChange={setAlignment}
             />
 
             <BackgroundSettings
@@ -400,15 +363,6 @@ function ScreenshotStitcher({
               transparentBackground={transparentBackground}
               onBackgroundColorChange={setBackgroundColor}
               onTransparentBackgroundChange={setTransparentBackground}
-            />
-
-            <SourceImagePanel
-              sourceImages={sourceImages}
-              activeSourceId={null}
-              onSelectSource={handleSelectSource}
-              onRemoveSourceImage={onRemoveSourceImage}
-              onAddSourceImages={onAddSourceImages}
-              sourceFileInputRef={sourceFileInputRef}
             />
 
             <SidebarActions
@@ -428,6 +382,8 @@ function ScreenshotStitcher({
                     }
                   : undefined
               }
+              showAddToSource={!!stitched}
+              onAddToSource={handleAddToSource}
               showCopy={stitched != null && hasClipboard}
               onCopyToClipboard={onCopyToClipboard}
               showClear={images.length > 0}
@@ -481,7 +437,10 @@ function ScreenshotStitcher({
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   {images.map((item) => (
-                    <div key={item.id} className="relative group">
+                    <div
+                      key={item.id}
+                      className="relative group"
+                    >
                       {/* biome-ignore lint/performance/noImgElement: blob URL */}
                       <img
                         src={item.originalUrl}
@@ -511,33 +470,41 @@ function ScreenshotStitcher({
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
-                <label className="flex items-center gap-2 text-xs text-dev-text-secondary">
-                  Frame W
-                  <input
-                    type="number"
+                <div className="flex items-center gap-2 text-xs text-dev-text-secondary">
+                  <label htmlFor="stitch-frame-w">Frame W</label>
+                  <StepperInput
+                    id="stitch-frame-w"
                     value={frameWidth}
                     onChange={(event) =>
                       setFrameWidth(Math.max(1, Number(event.target.value)))
                     }
-                    className="w-24 px-2 py-1 rounded text-sm bg-dev-inset border border-dev-border text-dev-text"
+                    onIncrement={() => setFrameWidth(frameWidth + 1)}
+                    onDecrement={() =>
+                      setFrameWidth(Math.max(1, frameWidth - 1))
+                    }
                     min={1}
+                    className="w-28"
                   />
                   px
-                </label>
+                </div>
                 <span className="text-dev-text-secondary">×</span>
-                <label className="flex items-center gap-2 text-xs text-dev-text-secondary">
-                  Frame H
-                  <input
-                    type="number"
+                <div className="flex items-center gap-2 text-xs text-dev-text-secondary">
+                  <label htmlFor="stitch-frame-h">Frame H</label>
+                  <StepperInput
+                    id="stitch-frame-h"
                     value={frameHeight}
                     onChange={(event) =>
                       setFrameHeight(Math.max(1, Number(event.target.value)))
                     }
-                    className="w-24 px-2 py-1 rounded text-sm bg-dev-inset border border-dev-border text-dev-text"
+                    onIncrement={() => setFrameHeight(frameHeight + 1)}
+                    onDecrement={() =>
+                      setFrameHeight(Math.max(1, frameHeight - 1))
+                    }
                     min={1}
+                    className="w-28"
                   />
                   px
-                </label>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -566,7 +533,7 @@ function ScreenshotStitcher({
                         : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
                     )}
                   >
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <Columns3 className="w-3.5 h-3.5" />
                     Horizontal
                   </button>
                   <button
@@ -579,26 +546,9 @@ function ScreenshotStitcher({
                         : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
                     )}
                   >
-                    <ArrowDown className="w-3.5 h-3.5" />
+                    <Rows3 className="w-3.5 h-3.5" />
                     Vertical
                   </button>
-                </div>
-                <div className="flex items-center gap-1 border-l border-dev-border pl-4">
-                  {ALIGNMENT_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setAlignment(option.value)}
-                      className={clsx(
-                        "px-2.5 py-1 rounded text-xs font-medium cursor-pointer transition-colors",
-                        alignment === option.value
-                          ? "bg-dev-accent-blue text-white"
-                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
                 </div>
                 <div className="flex items-center gap-2 border-l border-dev-border pl-4">
                   <button
@@ -619,7 +569,9 @@ function ScreenshotStitcher({
                     <input
                       type="color"
                       value={backgroundColor}
-                      onChange={(event) => setBackgroundColor(event.target.value)}
+                      onChange={(event) =>
+                        setBackgroundColor(event.target.value)
+                      }
                       className="w-7 h-7 rounded cursor-pointer border border-dev-border"
                     />
                   )}
@@ -669,7 +621,9 @@ function ScreenshotStitcher({
                   </div>
                   <div
                     className="bg-dev-inset rounded-md p-3 overflow-auto border border-dev-border"
-                    style={transparentBackground ? CHECKERBOARD_STYLE : undefined}
+                    style={
+                      transparentBackground ? CHECKERBOARD_STYLE : undefined
+                    }
                   >
                     {/* biome-ignore lint/performance/noImgElement: blob URL */}
                     <img
@@ -728,30 +682,34 @@ function DocumentSettings({
         Document
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
-          Frame W
-          <input
-            type="number"
+        <div className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
+          <label htmlFor="doc-frame-w">Frame W</label>
+          <StepperInput
+            id="doc-frame-w"
             value={frameWidth}
             onChange={(event) =>
               onFrameWidthChange(Math.max(1, Number(event.target.value)))
             }
-            className="w-full min-w-0 rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
+            onIncrement={() => onFrameWidthChange(frameWidth + 1)}
+            onDecrement={() => onFrameWidthChange(Math.max(1, frameWidth - 1))}
             min={1}
           />
-        </label>
-        <label className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
-          Frame H
-          <input
-            type="number"
+        </div>
+        <div className="grid min-w-0 gap-1 text-xs text-dev-text-secondary">
+          <label htmlFor="doc-frame-h">Frame H</label>
+          <StepperInput
+            id="doc-frame-h"
             value={frameHeight}
             onChange={(event) =>
               onFrameHeightChange(Math.max(1, Number(event.target.value)))
             }
-            className="w-full min-w-0 rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
+            onIncrement={() => onFrameHeightChange(frameHeight + 1)}
+            onDecrement={() =>
+              onFrameHeightChange(Math.max(1, frameHeight - 1))
+            }
             min={1}
           />
-        </label>
+        </div>
       </div>
       <button
         type="button"
@@ -762,40 +720,38 @@ function DocumentSettings({
         Match Largest Screenshot
       </button>
       <p className="mt-2 text-xs text-dev-text-secondary">
-        Output: {imagesLength > 0 ? `${outputWidth}×${outputHeight}px` : "add images"}
+        Output:{" "}
+        {imagesLength > 0 ? `${outputWidth}×${outputHeight}px` : "add images"}
       </p>
-      <label className="mt-3 grid gap-1 text-xs text-dev-text-secondary">
-        Spacing
+      <div className="mt-3 grid gap-1 text-xs text-dev-text-secondary">
+        <label htmlFor="doc-spacing">Spacing</label>
         <div className="flex items-center gap-2">
-          <input
-            type="number"
+          <StepperInput
+            id="doc-spacing"
             value={imageSpacing}
             onChange={(event) =>
               onImageSpacingChange(Math.max(0, Number(event.target.value)))
             }
-            className="min-w-0 flex-1 rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-sm text-dev-text"
+            onIncrement={() => onImageSpacingChange(imageSpacing + 1)}
+            onDecrement={() =>
+              onImageSpacingChange(Math.max(0, imageSpacing - 1))
+            }
             min={0}
+            className="flex-1"
           />
           <span>px</span>
         </div>
-      </label>
+      </div>
     </div>
   )
 }
 
 type LayoutSettingsProps = {
   direction: "horizontal" | "vertical"
-  alignment: "start" | "center" | "end"
   onDirectionChange: (direction: "horizontal" | "vertical") => void
-  onAlignmentChange: (alignment: "start" | "center" | "end") => void
 }
 
-function LayoutSettings({
-  direction,
-  alignment,
-  onDirectionChange,
-  onAlignmentChange,
-}: LayoutSettingsProps) {
+function LayoutSettings({ direction, onDirectionChange }: LayoutSettingsProps) {
   return (
     <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
@@ -812,7 +768,7 @@ function LayoutSettings({
               : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
           )}
         >
-          <ArrowRight className="size-4" />
+          <Columns3 className="size-4" />
           Row
         </button>
         <button
@@ -825,30 +781,10 @@ function LayoutSettings({
               : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
           )}
         >
-          <ArrowDown className="size-4" />
+          <Rows3 className="size-4" />
           Column
         </button>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-1">
-        {ALIGNMENT_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onAlignmentChange(option.value)}
-            className={clsx(
-              "rounded px-2 py-1.5 text-xs font-medium cursor-pointer transition-colors",
-              alignment === option.value
-                ? "bg-dev-accent-blue text-white"
-                : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-2 text-xs leading-relaxed text-dev-text-secondary">
-        Top alignment keeps repeated mobile nav bars in the same position.
-      </p>
     </div>
   )
 }

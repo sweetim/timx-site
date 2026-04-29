@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { SourceImage } from "../../image-editor"
 import { loadImageFile, stitchImages } from "../_lib/stitch-canvas"
-import type { ContentAlignment, ImageItem, StackDirection, StitchedImage } from "../types"
+import type { ImageItem, StackDirection, StitchedImage } from "../types"
 
 type UseScreenshotStitcherOptions = {
   isActive?: boolean
@@ -23,7 +23,6 @@ function useScreenshotStitcher({
   const [frameHeight, setFrameHeight] = useState(844)
   const [imageSpacing, setImageSpacing] = useState(0)
   const [direction, setDirection] = useState<StackDirection>("horizontal")
-  const [alignment, setAlignment] = useState<ContentAlignment>("start")
   const [backgroundColor, setBackgroundColor] = useState("#000000")
   const [transparentBackground, setTransparentBackground] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -48,8 +47,10 @@ function useScreenshotStitcher({
       const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"))
       if (imageFiles.length === 0) return
 
-      if (notifySource) onSourceImage?.(imageFiles[0], imageFiles[0].name)
-      if (onAddSourceImages) void onAddSourceImages(imageFiles)
+      if (notifySource) {
+        onSourceImage?.(imageFiles[0], imageFiles[0].name)
+        if (onAddSourceImages) void onAddSourceImages(imageFiles)
+      }
 
       const loadedImages = (await Promise.all(imageFiles.map(loadImageFile))).filter(
         (item): item is ImageItem => item !== null,
@@ -95,7 +96,6 @@ function useScreenshotStitcher({
       frameHeight,
       imageSpacing,
       direction,
-      alignment,
       backgroundColor: transparentBackground ? null : backgroundColor,
     })
 
@@ -130,7 +130,6 @@ function useScreenshotStitcher({
     frameHeight,
     imageSpacing,
     direction,
-    alignment,
     backgroundColor,
     transparentBackground,
     onResult,
@@ -145,7 +144,6 @@ function useScreenshotStitcher({
     setFrameHeight(844)
     setImageSpacing(0)
     setDirection("horizontal")
-    setAlignment("start")
     setTransparentBackground(true)
   }, [images, stitched])
 
@@ -156,7 +154,6 @@ function useScreenshotStitcher({
     frameHeight,
     imageSpacing,
     direction,
-    alignment,
     backgroundColor,
     transparentBackground,
     isProcessing,
@@ -166,7 +163,6 @@ function useScreenshotStitcher({
     setFrameHeight,
     setImageSpacing,
     setDirection,
-    setAlignment,
     setBackgroundColor,
     setTransparentBackground,
     setIsDragOver,
