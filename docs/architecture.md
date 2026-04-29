@@ -58,7 +58,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls with a Source picker, Crop shows crop handles, sizing controls, and a Source picker, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
 5. Background Remover and Crop each display a "Source" card in the properties panel showing all uploaded images as selectable thumbnails. Users can switch the active image without re-uploading.
 6. Screenshot Stitcher remains a multi-image composition mode. Users add frames by uploading, dropping, pasting, or selecting shared Source thumbnails.
-7. A shared clipboard in `ImageEditor` stores the latest generated PNG so result actions can copy the latest output.
+7. A shared clipboard in `ImageEditor` stores the latest generated image so result actions can copy the latest output.
 8. Background Remover uploads or drops images into `UploadZone`; images are added to `sourceImages` and shown in the Source picker. Users click "Remove Background" per image to start processing via `useBackgroundRemoverPool`, which creates one Web Worker per image for concurrent processing. Each worker calls `@imgly/background-removal` and reports progress independently. Users can browse between images while they process. Completed results are cached per source image ID so users can view previously processed results without reprocessing. The Source picker shows status badges (spinner for processing, checkmark for done, error icon for failures).
 9. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
 10. Screenshot Stitcher uploads multiple images, places each centered inside a consistent frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined image in the selected format.
@@ -147,7 +147,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
-| `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, WebApplication) |
+| `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
@@ -189,7 +189,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/image-cropper/crop-overlay.tsx` | Draggable crop rectangle with 8 resize handles |
 | `app/developer/image-editor/_components/image-cropper/_hooks/use-image-cropper.ts` | Cropper hook for image loading, crop state, drag math, export, and reset logic |
 | `app/developer/image-editor/_components/image-cropper/_lib/crop-math.ts` | Crop math utilities (clamp, resize, aspect ratio) |
-| `app/developer/image-editor/_components/image-stitch/index.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, stacked PNG export) |
+| `app/developer/image-editor/_components/image-stitch/index.tsx` | Screenshot Stitcher client component (multi-image upload, frame alignment, spacing, selected-format export) |
 | `app/developer/image-editor/_components/image-stitch/types.ts` | Stitcher types (ImageItem, StackDirection, StitchedImage, etc.) |
 | `app/developer/image-editor/_components/image-stitch/constants.ts` | Checkerboard background style |
 | `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
@@ -200,7 +200,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/_components/types.ts` | Shared types (Model, ProviderGroup, SortKey, etc.) |
 | `app/developer/llm-usage/_components/constants.ts` | Release filter options |
 | `app/developer/llm-usage/_components/helpers.ts` | Formatting utilities (cost, tokens, modalities, relative time) |
-| `app/developer/llm-usage/page.tsx` | LLM Pricing route page (server-side fetch from OpenRouter) |
+| `app/developer/llm-usage/page.tsx` | LLM Pricing route page that renders the client-side OpenRouter fetcher |
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
@@ -325,6 +325,12 @@ type WebApplicationJsonLdProps = {
   applicationCategory: string
   featureList?: string[]
 }
+
+type ItemListJsonLdProps = {
+  name: string
+  description: string
+  items: { name: string; url: string; description: string }[]
+}
 ```
 
 ### Background Remover types (app/developer/image-editor/_components/background-remover/types.ts)
@@ -431,6 +437,10 @@ type CanvasDropProps = {
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
 }
+
+type ImageEditorProps = {
+  infoContent: React.ReactNode
+}
 ```
 
 ### Upload Zone types (app/developer/image-editor/_components/upload-zone.tsx)
@@ -444,6 +454,12 @@ type UploadZoneProps = {
   onDragOver: (event: React.DragEvent) => void
   onDragLeave: (event: React.DragEvent) => void
 }
+```
+
+### Download format types (app/developer/image-editor/_components/download-format-selector.tsx)
+
+```typescript
+type DownloadFormat = "png" | "jpeg" | "webp"
 ```
 
 ### Image Cropper types (app/developer/image-editor/_components/image-cropper/types.ts)
@@ -561,6 +577,8 @@ type OgData = {
   twitterImage: string | null
   favicon: string | null
 }
+
+type FetchResult = { ok: true; data: OgData } | { ok: false; error: string }
 ```
 
 ## Theme tokens
@@ -591,4 +609,4 @@ Defined in `app/globals.css` under `@theme`:
 | `--color-dev-syntax-boolean` | #ff8b39 | JSON boolean |
 | `--color-dev-syntax-null` | #ff8b39 | JSON null |
 | `--color-dev-syntax-property` | #6cb6ff | JSON property |
-| `--color-dev-syntax-punctuation` | #adbac7 | JSON punctuatio    
+| `--color-dev-syntax-punctuation` | #adbac7 | JSON punctuation |
