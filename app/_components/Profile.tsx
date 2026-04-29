@@ -31,6 +31,7 @@ const Profile: FC<ProfileProps> = (props) => {
             width={160}
             height={160}
             alt="Tim — developer portrait"
+            loading="eager"
           />
         </Link>
       </div>

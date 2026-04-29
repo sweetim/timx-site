@@ -1,9 +1,10 @@
 "use client"
 
 import { Calculator, ChevronsUpDown, Download, X } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { RELEASE_OPTIONS } from "./constants"
 import { CostCalculatorDialog } from "./cost-calculator-dialog"
+import { serializeModel } from "./helpers"
 import { ProviderSection } from "./provider-section"
 import type {
   Model,
@@ -13,7 +14,26 @@ import type {
   SortKey,
 } from "./types"
 
-export default function LlmUsage({ models }: { models: Model[] }) {
+export default function LlmUsage() {
+  const [models, setModels] = useState<Model[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch("https://openrouter.ai/api/v1/models")
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to fetch models")
+        return response.json()
+      })
+      .then((data) => {
+        setModels((data.data as Record<string, unknown>[]).map(serializeModel))
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Unknown error")
+        setLoading(false)
+      })
+  }, [])
   const [search, setSearch] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("created")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
@@ -24,25 +44,6 @@ export default function LlmUsage({ models }: { models: Model[] }) {
   )
   const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(true)
-
-  const toggleProvider = (provider: string) => {
-    setExpandedProviders((prev) => {
-      const next = new Set(prev)
-      if (next.has(provider)) next.delete(provider)
-      else next.add(provider)
-      return next
-    })
-  }
-
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"))
-    } else {
-      setSortKey(key)
-      setSortDirection("asc")
-    }
-  }
-
   const [now] = useState(() => Date.now() / 1000)
   const groups = useMemo(() => {
     const query = search.toLowerCase()
@@ -90,6 +91,46 @@ export default function LlmUsage({ models }: { models: Model[] }) {
       })
       .map(([provider, models]): ProviderGroup => ({ provider, models }))
   }, [models, search, releaseFilter, freeOnly, now])
+
+  if (loading) {
+    return (
+      <div className="h-full overflow-auto bg-dev-canvas">
+        <div className="max-w-6xl mx-auto px-6 py-12 w-full">
+          <p className="text-dev-text-secondary">Loading models...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-full overflow-auto bg-dev-canvas">
+        <div className="max-w-6xl mx-auto px-6 py-12 w-full">
+          <p className="text-dev-text-secondary">
+            Failed to load models: {error}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const toggleProvider = (provider: string) => {
+    setExpandedProviders((prev) => {
+      const next = new Set(prev)
+      if (next.has(provider)) next.delete(provider)
+      else next.add(provider)
+      return next
+    })
+  }
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDirection("asc")
+    }
+  }
 
   const allExpanded =
     groups.length > 0 && groups.every((g) => expandedProviders.has(g.provider))
