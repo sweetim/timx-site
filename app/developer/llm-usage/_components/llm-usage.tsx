@@ -1,6 +1,6 @@
 "use client"
 
-import { Calculator, ChevronsUpDown, Download, X } from "lucide-react"
+import { Calculator, ChevronsUpDown, Download, Info, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { RELEASE_OPTIONS } from "./constants"
 import { CostCalculatorDialog } from "./cost-calculator-dialog"
@@ -14,10 +14,11 @@ import type {
   SortKey,
 } from "./types"
 
-export default function LlmUsage() {
+export default function LlmUsage({ children }: { children: React.ReactNode }) {
   const [models, setModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
     fetch("https://openrouter.ai/api/v1/models")
@@ -124,9 +125,7 @@ export default function LlmUsage() {
   if (loading) {
     return (
       <div className="h-full overflow-auto bg-dev-canvas">
-        <div className="max-w-6xl mx-auto px-6 py-12 w-full">
-          <p className="text-dev-text-secondary">Loading models...</p>
-        </div>
+        {children}
       </div>
     )
   }
@@ -147,7 +146,17 @@ export default function LlmUsage() {
     <div className="h-full overflow-auto bg-dev-canvas">
       <div className="max-w-6xl mx-auto px-6 py-12 w-full">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-semibold text-dev-text">LLM Pricing</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-dev-text">LLM Pricing</h1>
+            <button
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              className="text-dev-text-secondary hover:text-dev-text transition-colors cursor-pointer"
+              aria-label="Show pricing info"
+            >
+              <Info size={18} />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setCalculatorOpen(true)}
@@ -293,6 +302,31 @@ export default function LlmUsage() {
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
       />
+      {infoOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 cursor-default"
+            onClick={() => setInfoOpen(false)}
+          />
+          <div className="relative bg-dev-surface border border-dev-border rounded-lg w-full max-w-3xl max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-dev-border bg-dev-surface z-10">
+              <h2 className="text-lg font-semibold text-dev-text">
+                LLM Pricing Info
+              </h2>
+              <button
+                type="button"
+                onClick={() => setInfoOpen(false)}
+                className="text-dev-text-secondary hover:text-dev-text transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-5 py-6">
+              {children}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

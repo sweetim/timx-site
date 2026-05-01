@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import LlmUsage from "./_components/llm-usage"
+import { LlmUsageInfo } from "./_components/llm-usage-info"
 
 export const metadata: Metadata = {
   title: "LLM Pricing Comparison",
@@ -32,7 +33,9 @@ export default function LlmUsagePage() {
           "Estimate token costs with a calculator",
         ]}
       />
-      <LlmUsage />
+      <LlmUsage>
+        <LlmUsageInfo />
+      </LlmUsage>
     </>
   )
 }

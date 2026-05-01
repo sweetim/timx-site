@@ -47,7 +47,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 1. `app/developer/layout.tsx` wraps all developer routes with a `NavBar`.
 2. `app/developer/page.tsx` reads the tool registry from `app/developer/_lib/tools.ts` and renders a card grid linking to each tool.
 3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
-4. The LLM Pricing page renders the `LlmUsage` client component, which fetches model data from the OpenRouter API and provides interactive sorting and filtering.
+4. The LLM Pricing page renders a server-rendered H1 and introductory paragraph, then the `LlmUsage` client component, which fetches model data from the OpenRouter API and provides interactive sorting and filtering.
 5. The OG Preview page uses a server action (`fetchOgData`) to validate and fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
 
 ### Image Editor flow
