@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { match } from "ts-pattern"
 import {
-  applyAspectRatio,
   clampCrop,
   clampCropKeepCenter,
   clampEdgeCrop,
@@ -19,6 +18,14 @@ import {
   MAX_DISPLAY_WIDTH,
 } from "../constants"
 import type { AnchorMode, AspectRatioPreset, DragState, Status } from "../types"
+
+function resolveRatio(
+  preset: AspectRatioPreset,
+  customRatio: number,
+): number | null {
+  if (preset === "custom") return customRatio
+  return ASPECT_RATIOS.find((r) => r.preset === preset)?.ratio ?? null
+}
 
 type UseImageCropperOptions = {
   isActive?: boolean
@@ -40,6 +47,7 @@ function useImageCropper({
   const [anchorMode, setAnchorMode] = useState<AnchorMode>("center")
   const [aspectPreset, setAspectPreset] =
     useState<AspectRatioPreset>(DEFAULT_ASPECT_RATIO)
+  const [customRatio, setCustomRatio] = useState(1)
   const [isDragOver, setIsDragOver] = useState(false)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -95,9 +103,7 @@ function useImageCropper({
         containerWidth,
         containerHeight,
       )
-      const ratio =
-        ASPECT_RATIOS.find((r) => r.preset === DEFAULT_ASPECT_RATIO)?.ratio
-        ?? null
+      const ratio = resolveRatio(DEFAULT_ASPECT_RATIO, customRatio)
       setDisplayDimensions({
         width: displayWidth,
         height: displayHeight,
@@ -118,27 +124,79 @@ function useImageCropper({
   const handleAspectRatioChange = useCallback(
     (preset: AspectRatioPreset) => {
       setAspectPreset(preset)
-      const ratio =
-        ASPECT_RATIOS.find((r) => r.preset === preset)?.ratio ?? null
+      const ratio = resolveRatio(preset, customRatio)
       setCrop((prev) => {
-        const withRatio = applyAspectRatio(prev, ratio)
-        return clampCrop(
-          withRatio,
-          displayDimensions.width,
-          displayDimensions.height,
+        if (ratio === null) {
+          return clampCrop(
+            prev,
+            displayDimensions.width,
+            displayDimensions.height,
+            null,
+          )
+        }
+        const cx = prev.x + prev.width / 2
+        const cy = prev.y + prev.height / 2
+        const maxW = displayDimensions.width
+        const maxH = displayDimensions.height
+        let width: number
+        let height: number
+        if (maxW / maxH > ratio) {
+          height = maxH
+          width = height * ratio
+        } else {
+          width = maxW
+          height = width / ratio
+        }
+        return clampCropKeepCenter(
+          { x: cx - width / 2, y: cy - height / 2, width, height },
+          cx,
+          cy,
+          maxW,
+          maxH,
           ratio,
         )
       })
     },
-    [displayDimensions],
+    [displayDimensions, customRatio],
+  )
+
+  const handleCustomRatioChange = useCallback(
+    (ratio: number) => {
+      if (ratio <= 0 || !Number.isFinite(ratio)) return
+      setCustomRatio(ratio)
+      if (aspectPreset !== "custom") return
+      setCrop((prev) => {
+        const cx = prev.x + prev.width / 2
+        const cy = prev.y + prev.height / 2
+        const maxW = displayDimensions.width
+        const maxH = displayDimensions.height
+        let width: number
+        let height: number
+        if (maxW / maxH > ratio) {
+          height = maxH
+          width = height * ratio
+        } else {
+          width = maxW
+          height = width / ratio
+        }
+        return clampCropKeepCenter(
+          { x: cx - width / 2, y: cy - height / 2, width, height },
+          cx,
+          cy,
+          maxW,
+          maxH,
+          ratio,
+        )
+      })
+    },
+    [displayDimensions, aspectPreset],
   )
 
   const handleDimensionChange = useCallback(
     (dimension: "width" | "height", value: string) => {
       const parsed = parseInt(value, 10)
       if (Number.isNaN(parsed) || parsed <= 0) return
-      const ratio =
-        ASPECT_RATIOS.find((r) => r.preset === aspectPreset)?.ratio ?? null
+      const ratio = resolveRatio(aspectPreset, customRatio)
       const { scale } = displayDimensions
       const maxX = displayDimensions.width
       const maxY = displayDimensions.height
@@ -166,13 +224,12 @@ function useImageCropper({
           : { x: crop.x, y: crop.y, width: newDisplayW, height: newDisplayH }
       setCrop(clampCrop(newCrop, maxX, maxY, ratio))
     },
-    [aspectPreset, displayDimensions, crop, anchorMode],
+    [aspectPreset, customRatio, displayDimensions, crop, anchorMode],
   )
 
   const handleDragStart = useCallback(
     (newDrag: DragState) => {
-      const ratio =
-        ASPECT_RATIOS.find((r) => r.preset === aspectPreset)?.ratio ?? null
+      const ratio = resolveRatio(aspectPreset, customRatio)
       const handleMove = (e: MouseEvent) => {
         const dx = e.clientX - newDrag.startX
         const dy = e.clientY - newDrag.startY
@@ -214,9 +271,7 @@ function useImageCropper({
         dragCleanupRef.current = null
         if (anchorModeRef.current === "center" && newDrag.type !== "move") {
           const dims = displayDimensionsRef.current
-          const r =
-            ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio
-            ?? null
+          const r = resolveRatio(aspectPreset, customRatio)
           const centerX = newDrag.startCrop.x + newDrag.startCrop.width / 2
           const centerY = newDrag.startCrop.y + newDrag.startCrop.height / 2
           setCrop((prev) =>
@@ -238,7 +293,7 @@ function useImageCropper({
         window.removeEventListener("mouseup", handleUp)
       }
     },
-    [displayDimensions, anchorMode, aspectPreset],
+    [displayDimensions, anchorMode, aspectPreset, customRatio],
   )
 
   const handleCrop = useCallback(() => {
@@ -311,6 +366,7 @@ function useImageCropper({
     displayDimensions,
     anchorMode,
     aspectPreset,
+    customRatio,
     isDragOver,
     wrapperRef,
     fileInputRef,
@@ -321,6 +377,7 @@ function useImageCropper({
     setIsDragOver,
     loadImage,
     handleAspectRatioChange,
+    handleCustomRatioChange,
     handleDimensionChange,
     handleDragStart,
     handleCrop,

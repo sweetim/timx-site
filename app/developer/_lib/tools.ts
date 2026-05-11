@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Globe, Images, Scale } from "lucide-react"
+import { Braces, Globe, Images, Monitor, Scale } from "lucide-react"
 
 export type Tool = {
   name: string
@@ -34,5 +34,11 @@ export const tools: Tool[] = [
     slug: "og-preview",
     description: "Debug Open Graph and Twitter meta tags for any URL",
     icon: Globe,
+  },
+  {
+    name: "Black Screen",
+    slug: "black-screen",
+    description: "Fullscreen black display for spotting dead pixels and cleaning your monitor — press Escape or click to exit",
+    icon: Monitor,
   },
 ]

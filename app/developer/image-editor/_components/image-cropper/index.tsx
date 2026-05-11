@@ -61,6 +61,7 @@ function ImageCropper({
     displayDimensions,
     anchorMode,
     aspectPreset,
+    customRatio,
     isDragOver,
     wrapperRef,
     fileInputRef,
@@ -70,6 +71,7 @@ function ImageCropper({
     setIsDragOver,
     loadImage,
     handleAspectRatioChange,
+    handleCustomRatioChange,
     handleDimensionChange,
     handleDragStart,
     handleCrop,
@@ -192,7 +194,10 @@ function ImageCropper({
       const imageCx = displayDimensions.width / 2
       const imageCy = displayDimensions.height / 2
       const ratio =
-        ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio ?? null
+        aspectPreset === "custom"
+          ? customRatio
+          : (ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio
+            ?? null)
       return clampCrop(
         {
           x: imageCx - prev.width / 2,
@@ -205,7 +210,7 @@ function ImageCropper({
         ratio,
       )
     })
-  }, [setAnchorMode, setCrop, displayDimensions, aspectPreset])
+  }, [setAnchorMode, setCrop, displayDimensions, aspectPreset, customRatio])
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click()
@@ -356,7 +361,9 @@ function ImageCropper({
               <>
                 <AspectRatioToolbar
                   aspectPreset={aspectPreset}
+                  customRatio={customRatio}
                   onChange={handleAspectRatioChange}
+                  onCustomRatioChange={handleCustomRatioChange}
                   variant="panel"
                 />
                 <AnchorModeToolbar
@@ -456,7 +463,9 @@ function ImageCropper({
                 <div className="flex items-center gap-4 flex-wrap">
                   <AspectRatioToolbar
                     aspectPreset={aspectPreset}
+                    customRatio={customRatio}
                     onChange={handleAspectRatioChange}
+                    onCustomRatioChange={handleCustomRatioChange}
                     variant="page"
                   />
                   <AnchorModeToolbar
@@ -508,7 +517,9 @@ function ImageCropper({
                 <div className="flex items-center gap-4 flex-wrap">
                   <AspectRatioToolbar
                     aspectPreset={aspectPreset}
+                    customRatio={customRatio}
                     onChange={handleAspectRatioChange}
+                    onCustomRatioChange={handleCustomRatioChange}
                     variant="page"
                   />
                   <AnchorModeToolbar
@@ -595,15 +606,53 @@ function ImageCropper({
 
 type AspectRatioToolbarProps = {
   aspectPreset: AspectRatioPreset
+  customRatio: number
   onChange: (preset: AspectRatioPreset) => void
+  onCustomRatioChange: (ratio: number) => void
   variant: "panel" | "page"
 }
 
 function AspectRatioToolbar({
   aspectPreset,
+  customRatio,
   onChange,
+  onCustomRatioChange,
   variant,
 }: AspectRatioToolbarProps) {
+  const [numerator, setNumerator] = useState(
+    String(Math.round(customRatio * 100)),
+  )
+  const [denominator, setDenominator] = useState("100")
+  const denominatorRef = useRef(denominator)
+  denominatorRef.current = denominator
+
+  const applyCustomRatio = useCallback(
+    (num: string, den: string) => {
+      const n = parseFloat(num)
+      const d = parseFloat(den)
+      if (Number.isFinite(n) && Number.isFinite(d) && n > 0 && d > 0) {
+        onCustomRatioChange(n / d)
+      }
+    },
+    [onCustomRatioChange],
+  )
+
+  const handleNumeratorChange = useCallback(
+    (value: string) => {
+      setNumerator(value)
+      applyCustomRatio(value, denominatorRef.current)
+    },
+    [applyCustomRatio],
+  )
+
+  const handleDenominatorChange = useCallback(
+    (value: string) => {
+      setDenominator(value)
+      applyCustomRatio(numerator, value)
+    },
+    [applyCustomRatio, numerator],
+  )
+
   if (variant === "page") {
     return (
       <div className="flex items-center gap-1">
@@ -615,13 +664,34 @@ function AspectRatioToolbar({
             className={clsx(
               "px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer",
               aspectPreset === preset
-                ? "bg-dev-accent-blue text-white"
+                ? preset === "custom"
+                  ? "bg-amber-500 text-white"
+                  : "bg-dev-accent-blue text-white"
                 : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
             )}
           >
             {label}
           </button>
         ))}
+        {aspectPreset === "custom" && (
+          <div className="flex items-center gap-1 ml-1">
+            <input
+              type="number"
+              min="1"
+              value={numerator}
+              onChange={(e) => handleNumeratorChange(e.target.value)}
+              className="w-14 rounded border border-dev-border bg-dev-inset px-1.5 py-1 text-xs text-dev-text text-center"
+            />
+            <span className="text-xs text-dev-text-secondary">:</span>
+            <input
+              type="number"
+              min="1"
+              value={denominator}
+              onChange={(e) => handleDenominatorChange(e.target.value)}
+              className="w-14 rounded border border-dev-border bg-dev-inset px-1.5 py-1 text-xs text-dev-text text-center"
+            />
+          </div>
+        )}
       </div>
     )
   }
@@ -640,7 +710,9 @@ function AspectRatioToolbar({
             className={clsx(
               "rounded px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer",
               aspectPreset === preset
-                ? "bg-dev-accent-blue text-white"
+                ? preset === "custom"
+                  ? "bg-amber-500 text-white"
+                  : "bg-dev-accent-blue text-white"
                 : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
             )}
           >
@@ -648,6 +720,25 @@ function AspectRatioToolbar({
           </button>
         ))}
       </div>
+      {aspectPreset === "custom" && (
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            type="number"
+            min="1"
+            value={numerator}
+            onChange={(e) => handleNumeratorChange(e.target.value)}
+            className="w-full rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-xs text-dev-text text-center"
+          />
+          <span className="text-xs text-dev-text-secondary">:</span>
+          <input
+            type="number"
+            min="1"
+            value={denominator}
+            onChange={(e) => handleDenominatorChange(e.target.value)}
+            className="w-full rounded border border-dev-border bg-dev-inset px-2 py-1.5 text-xs text-dev-text text-center"
+          />
+        </div>
+      )}
     </div>
   )
 }

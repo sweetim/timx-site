@@ -26,7 +26,16 @@ export type Status =
 
 export type AnchorMode = "center" | "edge"
 
-export type AspectRatioPreset = "free" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16"
+export type AspectRatioPreset =
+  | "free"
+  | "1:1"
+  | "4:3"
+  | "3:4"
+  | "16:9"
+  | "9:16"
+  | "21:9"
+  | "2:1"
+  | "custom"
 
 export type AspectRatioOption = {
   label: string
