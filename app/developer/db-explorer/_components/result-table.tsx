@@ -75,20 +75,25 @@ const ResultTable: FC<ResultTableProps> = ({ result }) => {
                   {row.map((cell, cellIndex) => {
                     const text = cell === null ? "NULL" : String(cell)
                     const columnName = result.columns[cellIndex]
+                    const openCell = () =>
+                      setDialogCell({ columnName, value: text })
                     return (
                       <td
-                        key={cellIndex}
+                        key={columnName}
                         className={clsx(
-                          "px-3 py-1 whitespace-nowrap font-mono text-xs max-w-80 truncate cursor-pointer",
+                          "px-3 py-1 whitespace-nowrap font-mono text-xs max-w-80 truncate",
                           cell === null
                             ? "text-dev-text-secondary italic"
                             : "text-dev-text",
                         )}
-                        onClick={() =>
-                          setDialogCell({ columnName, value: text })
-                        }
                       >
-                        {text}
+                        <button
+                          type="button"
+                          className="cursor-pointer text-left w-full"
+                          onClick={openCell}
+                        >
+                          {text}
+                        </button>
                       </td>
                     )
                   })}

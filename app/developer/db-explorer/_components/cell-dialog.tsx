@@ -198,8 +198,9 @@ const CellDialog: FC<CellDialogProps> = ({ columnName, value, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60"
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/60 cursor-default"
         onClick={onClose}
       />
       <div
@@ -221,6 +222,7 @@ const CellDialog: FC<CellDialogProps> = ({ columnName, value, onClose }) => {
             <div className="flex rounded-md border border-dev-border overflow-hidden">
               {VIEW_MODES.map(({ mode: m, label, icon: Icon }) => (
                 <button
+                  type="button"
                   key={m}
                   onClick={() => setMode(m)}
                   title={label}
@@ -236,6 +238,7 @@ const CellDialog: FC<CellDialogProps> = ({ columnName, value, onClose }) => {
               ))}
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="text-dev-text-secondary hover:text-dev-text"
             >
@@ -258,6 +261,7 @@ const CellDialog: FC<CellDialogProps> = ({ columnName, value, onClose }) => {
             </pre>
           )}
           <button
+            type="button"
             onClick={handleCopy}
             className="absolute top-2 right-2 p-1 rounded bg-dev-surface border border-dev-border text-dev-text-secondary hover:text-dev-text opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
             title="Copy"
