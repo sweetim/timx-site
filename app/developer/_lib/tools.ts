@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Globe, Images, Monitor, Scale } from "lucide-react"
+import { Braces, Database, Globe, Images, Monitor, Scale } from "lucide-react"
 
 export type Tool = {
   name: string
@@ -34,6 +34,12 @@ export const tools: Tool[] = [
     slug: "og-preview",
     description: "Debug Open Graph and Twitter meta tags for any URL",
     icon: Globe,
+  },
+  {
+    name: "DB Explorer",
+    slug: "db-explorer",
+    description: "Browse SQLite database files, view tables, and run SQL queries in your browser",
+    icon: Database,
   },
   {
     name: "Black Screen",

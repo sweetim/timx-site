@@ -29,10 +29,11 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
 /developer/llm-usage        → LLM Pricing tool
+/developer/db-explorer       → SQLite DB Explorer tool
 /developer/og-preview       → OG Preview tool
 ```
 
-All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, and the OG Preview tool uses a server action for server-side URL fetching.
+All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the DB Explorer tool uses sql.js (WASM) to parse SQLite files client-side.
 
 ## Execution flow
 
@@ -81,6 +82,16 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 3. `useMemo` parses the input; errors are caught and displayed.
 4. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
 5. Toolbar actions: Format, Minify, Unescape, Clear, Whitespace toggle.
+
+### DB Reader flow
+
+1. User selects or drops a `.db`/`.sqlite`/`.sqlite3` file via file picker or drag-and-drop.
+2. The file is loaded client-side using `sql.js` (WASM-based SQLite), parsing the file as an `ArrayBuffer`.
+3. All user tables are enumerated from `sqlite_master` with row counts and displayed in a sidebar.
+4. Clicking a table shows its rows (paginated at 100 rows per page) in the main data table.
+5. A SQL query editor lets users run arbitrary queries against the loaded database; results appear in the same table view.
+6. Ctrl+Enter shortcut runs the query. Query errors are displayed inline.
+7. The database can be closed to load a different file.
 
 ### Screenshot Stitcher flow
 
@@ -157,6 +168,16 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
+| `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants) |
+| `app/developer/db-explorer/_components/use-sql-js.ts` | Hook for sql.js WASM initialization and database loading |
+| `app/developer/db-explorer/_components/use-recent-files.ts` | Hook for recent files localStorage persistence |
+| `app/developer/db-explorer/_components/db-explorer.tsx` | DB Explorer orchestrator component (state management, phase rendering) |
+| `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
+| `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
+| `app/developer/db-explorer/_components/query-editor.tsx` | SQL query textarea with run button and Ctrl+Enter shortcut |
+| `app/developer/db-explorer/_components/result-view.tsx` | Result display with pagination (wraps ResultTable) |
+| `app/developer/db-explorer/_components/result-table.tsx` | Generic SQL result table rendering |
+| `app/developer/db-explorer/page.tsx` | DB Explorer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
 | `app/developer/image-editor/_components/editor-info-content.tsx` | SEO/help content shown from the Image Editor info panel |
 | `app/developer/image-editor/page.tsx` | Image Editor route page |
@@ -240,6 +261,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `next` | 16.2.2 | React framework |
 | `react` | 19.2.4 | UI library |
 | `react-dom` | 19.2.4 | React DOM renderer |
+| `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Reader tool |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
 
 ### Dev dependencies
