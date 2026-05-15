@@ -9,7 +9,7 @@ import {
   startCompletion,
 } from "@codemirror/autocomplete"
 import { history, historyKeymap } from "@codemirror/commands"
-import { sql } from "@codemirror/lang-sql"
+import { SQLite, type SQLNamespace, sql } from "@codemirror/lang-sql"
 import {
   bracketMatching,
   HighlightStyle,
@@ -20,11 +20,20 @@ import { drawSelection, EditorView, keymap, lineNumbers } from "@codemirror/view
 import { tags } from "@lezer/highlight"
 import { Play } from "lucide-react"
 import { type FC, useCallback, useEffect, useRef } from "react"
+import type { TableInfo } from "./types"
 
 type QueryEditorProps = {
   query: string
+  tables: TableInfo[]
   onQueryChange: (query: string) => void
   onRunQuery: () => void
+}
+
+function buildSqlSchema(tables: TableInfo[]): SQLNamespace {
+  return tables.reduce<Record<string, readonly string[]>>((schema, table) => {
+    schema[table.name] = []
+    return schema
+  }, {})
 }
 
 const devTheme = EditorView.theme({
@@ -95,6 +104,7 @@ const devHighlightStyle = HighlightStyle.define([
 
 const QueryEditor: FC<QueryEditorProps> = ({
   query,
+  tables,
   onQueryChange,
   onRunQuery,
 }) => {
@@ -139,7 +149,7 @@ const QueryEditor: FC<QueryEditorProps> = ({
         history(),
         bracketMatching(),
         closeBrackets(),
-        sql(),
+        sql({ dialect: SQLite, schema: buildSqlSchema(tables) }),
         autocompletion(),
         runQueryKeymap,
         keymap.of([

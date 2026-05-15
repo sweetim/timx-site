@@ -92,7 +92,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 3. All user tables are enumerated from `sqlite_master` with row counts and displayed in a sidebar.
 4. Clicking a table shows its rows (paginated at 100 rows per page) in the main data table.
 5. A SQL query editor lets users run arbitrary queries against the loaded database; results appear in the same table view.
-6. Ctrl+Enter shortcut runs the query. Query errors are displayed inline.
+6. Ctrl+Enter shortcut runs the query, and Ctrl+Space offers table-name autocomplete from the loaded SQLite schema. Query errors are displayed inline.
 7. The database can be closed to load a different file.
 
 ### Screenshot Stitcher flow
@@ -176,7 +176,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/db-explorer/_components/db-explorer.tsx` | DB Explorer orchestrator component (state management, phase rendering) |
 | `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
 | `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
-| `app/developer/db-explorer/_components/query-editor.tsx` | SQL query textarea with run button and Ctrl+Enter shortcut |
+| `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with table-name autocomplete, run button, and Ctrl+Enter shortcut |
 | `app/developer/db-explorer/_components/result-view.tsx` | Result display with pagination (wraps ResultTable) |
 | `app/developer/db-explorer/_components/result-table.tsx` | Generic SQL result table rendering |
 | `app/developer/db-explorer/page.tsx` | DB Explorer route page |

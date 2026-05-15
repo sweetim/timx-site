@@ -22,6 +22,14 @@ const ResultTable = ({ result }: ResultTableProps) => {
     overscan: 20,
   })
 
+  const virtualItems = virtualizer.getVirtualItems()
+  const totalSize = virtualizer.getTotalSize()
+  const afterSize =
+    totalSize > 0
+      ? totalSize - (virtualItems[virtualItems.length - 1]?.end ?? 0)
+      : 0
+  const beforeSize = virtualItems[0]?.start ?? 0
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="overflow-auto flex-1 min-h-0" ref={parentRef}>
@@ -38,28 +46,18 @@ const ResultTable = ({ result }: ResultTableProps) => {
               ))}
             </tr>
           </thead>
-          <tbody
-            style={{
-              position: "relative",
-              height: virtualizer.getTotalSize(),
-              display: "block",
-            }}
-          >
-            {virtualizer.getVirtualItems().map((virtualRow) => {
+          <tbody>
+            {beforeSize > 0 && (
+              <tr>
+                <td style={{ height: beforeSize }} colSpan={result.columns.length} />
+              </tr>
+            )}
+            {virtualItems.map((virtualRow) => {
               const row = rows[virtualRow.index]
               return (
                 <tr
                   key={virtualRow.index}
                   className="border-b border-dev-border/50 hover:bg-dev-surface/50"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: virtualRow.size,
-                    transform: `translateY(${virtualRow.start}px)`,
-                    display: "flex",
-                  }}
                 >
                   {row.map((cell, cellIndex) => {
                     const text = cell === null ? "NULL" : String(cell)
@@ -67,7 +65,7 @@ const ResultTable = ({ result }: ResultTableProps) => {
                       <td
                         key={cellIndex}
                         className={clsx(
-                          "px-3 py-1 whitespace-nowrap font-mono text-xs max-w-80 truncate shrink-0",
+                          "px-3 py-1 whitespace-nowrap font-mono text-xs max-w-80 truncate",
                           cell === null
                             ? "text-dev-text-secondary italic"
                             : "text-dev-text",
@@ -81,6 +79,11 @@ const ResultTable = ({ result }: ResultTableProps) => {
                 </tr>
               )
             })}
+            {afterSize > 0 && (
+              <tr>
+                <td style={{ height: afterSize }} colSpan={result.columns.length} />
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

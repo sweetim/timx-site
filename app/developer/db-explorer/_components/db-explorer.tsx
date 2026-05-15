@@ -292,6 +292,7 @@ const DbExplorer: FC = () => {
             <div className="flex-1 flex flex-col overflow-hidden">
               <QueryEditor
                 query={query}
+                tables={tables}
                 onQueryChange={setQuery}
                 onRunQuery={runQuery}
               />
