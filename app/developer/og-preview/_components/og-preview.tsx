@@ -61,17 +61,13 @@ const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
 
   return (
     <div className="mx-auto px-6 py-8 w-full">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-xl font-semibold text-dev-text mb-1">
+      <div className="max-w-3xl mx-auto mt-2">
+        <h2 className="text-2xl font-semibold text-dev-text">
           Open Graph Preview
-        </h1>
-        <p className="text-sm text-dev-text-secondary mb-6">
-          Enter a URL to inspect its Open Graph and Twitter Card meta tags.
-        </p>
-
+        </h2>
         <form
           onSubmit={handleSubmit}
-          className="flex gap-2 mb-6"
+          className="flex gap-2 py-8"
         >
           <input
             type="text"
@@ -95,6 +91,7 @@ const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
           </button>
         </form>
       </div>
+      {status.phase !== "loaded" && descriptionSection}
 
       {match(status)
         .with({ phase: "loading" }, () => (
@@ -117,8 +114,6 @@ const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
         .with({ phase: "loaded" }, ({ data }) => <OgResult data={data} />)
         .with({ phase: "idle" }, () => null)
         .exhaustive()}
-
-      {status.phase !== "loaded" && descriptionSection}
     </div>
   )
 }

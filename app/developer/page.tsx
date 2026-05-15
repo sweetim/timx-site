@@ -35,8 +35,19 @@ export default function DeveloperPage() {
           <h1 className="text-2xl font-semibold text-dev-text mb-2">
             Developer Tools
           </h1>
-          <p className="text-dev-text-secondary mb-8">
+          <p className="text-dev-text-secondary mb-2">
             A collection of handy utilities for everyday development tasks.
+          </p>
+          <p className="text-sm text-dev-text-secondary mb-8">
+            All tools are open source —{" "}
+            <Link
+              href="https://github.com/sweetim/timx-site/tree/main/app/developer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-dev-link hover:underline"
+            >
+              browse the code on GitHub
+            </Link>
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {tools.map((tool) => (
