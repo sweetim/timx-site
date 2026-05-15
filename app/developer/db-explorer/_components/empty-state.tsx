@@ -1,8 +1,46 @@
 "use client"
 
-import { Database, Trash2, Upload } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import {
+  Database,
+  FileJson,
+  LayoutGrid,
+  ListOrdered,
+  ShieldCheck,
+  Terminal,
+  Trash2,
+  Upload,
+} from "lucide-react"
 import type { FC } from "react"
 import type { RecentFile } from "./types"
+
+type Feature = {
+  icon: LucideIcon
+  label: string
+}
+
+const FEATURES: Feature[] = [
+  {
+    icon: LayoutGrid,
+    label: "Browse all tables in a SQLite database with row counts",
+  },
+  {
+    icon: ListOrdered,
+    label: "View table data with pagination (100 rows per page)",
+  },
+  {
+    icon: Terminal,
+    label: "Run custom SQL queries with table and column autocomplete",
+  },
+  {
+    icon: FileJson,
+    label: "Inspect cell values with JSON, JSONL, and Markdown highlighting",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Entirely client-side — no data is uploaded to any server",
+  },
+]
 
 type EmptyStateProps = {
   recentFiles: RecentFile[]
@@ -34,10 +72,14 @@ const EmptyState: FC<EmptyStateProps> = ({
       <h2 className="text-lg font-medium text-dev-text mb-2">
         SQLite DB Explorer
       </h2>
-      <p className="text-sm text-dev-text-secondary mb-6 max-w-md">
-        Select a <code className="text-dev-syntax-string">.db</code> file to
-        browse tables and run SQL queries. Everything runs in your browser.
-      </p>
+      <ul className="space-y-2 mb-10 max-w-lg mx-auto text-left">
+        {FEATURES.map(({ icon: Icon, label }) => (
+          <li key={label} className="flex items-start gap-2.5">
+            <Icon className="mt-0.5 size-4 shrink-0 text-dev-accent" />
+            <span className="text-sm text-dev-text-secondary">{label}</span>
+          </li>
+        ))}
+      </ul>
       {recentFiles.length > 0 && (
         <div className="mb-4 text-left max-w-lg mx-auto">
           <div className="text-xs text-dev-text-secondary uppercase tracking-wider mb-2 px-1">

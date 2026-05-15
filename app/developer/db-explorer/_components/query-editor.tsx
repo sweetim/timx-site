@@ -3,12 +3,11 @@
 import {
   acceptCompletion,
   autocompletion,
+  type Completion,
+  type CompletionSource,
   closeBrackets,
   closeBracketsKeymap,
-  type Completion,
   completionKeymap,
-  type CompletionSource,
-  startCompletion,
 } from "@codemirror/autocomplete"
 import { history, historyKeymap } from "@codemirror/commands"
 import { SQLite, type SQLNamespace, sql } from "@codemirror/lang-sql"
@@ -18,11 +17,17 @@ import {
   syntaxHighlighting,
 } from "@codemirror/language"
 import { EditorState } from "@codemirror/state"
-import { drawSelection, EditorView, keymap, lineNumbers } from "@codemirror/view"
+import {
+  drawSelection,
+  EditorView,
+  highlightWhitespace,
+  keymap,
+  lineNumbers,
+} from "@codemirror/view"
 import { tags } from "@lezer/highlight"
 import { Loader2, Play } from "lucide-react"
 import { type FC, useCallback, useEffect, useRef } from "react"
-import type { TableInfo } from "./types"
+import { escapeSqlIdentifier, type TableInfo } from "./types"
 
 type QueryEditorProps = {
   query: string
@@ -39,10 +44,6 @@ function buildSqlSchema(tables: TableInfo[]): SQLNamespace {
     schema[table.name] = table.columns
     return schema
   }, {})
-}
-
-function quoteSqlIdentifier(name: string): string {
-  return `"${name.replace(/"/g, '""')}"`
 }
 
 function escapeRegularExpression(value: string): string {
@@ -66,25 +67,39 @@ function getSqlIdentifierPatterns(name: string): string[] {
 function getStatementBounds(documentText: string, position: number) {
   const start = documentText.lastIndexOf(";", position - 1) + 1
   const nextStatementIndex = documentText.indexOf(";", position)
-  const end = nextStatementIndex === -1 ? documentText.length : nextStatementIndex
+  const end =
+    nextStatementIndex === -1 ? documentText.length : nextStatementIndex
   return { start, end }
 }
 
-function isSelectListContext(statementBeforeCursor: string): boolean {
-  const selectPattern = /\bselect\b/gi
-  let selectIndex = -1
-  let match: RegExpExecArray | null = selectPattern.exec(statementBeforeCursor)
+type ClauseKind = "select-list" | "where" | "group-by" | "having" | "order-by"
+
+function getClauseContext(statementBeforeCursor: string): ClauseKind | null {
+  const clausePattern =
+    /\b(select|from|where|group\s+by|having|order\s+by|limit|union|intersect|except)\b/gi
+  let lastClause: { kind: string; index: number } | null = null
+  let match: RegExpExecArray | null = clausePattern.exec(statementBeforeCursor)
 
   while (match) {
-    selectIndex = match.index
-    match = selectPattern.exec(statementBeforeCursor)
+    lastClause = { kind: match[1].toLowerCase(), index: match.index }
+    match = clausePattern.exec(statementBeforeCursor)
   }
 
-  if (selectIndex === -1) return false
+  if (!lastClause) return null
 
-  return !/\b(from|where|group|having|order|limit|union|intersect|except)\b/i.test(
-    statementBeforeCursor.slice(selectIndex),
-  )
+  const kind = lastClause.kind.replace(/\s+/g, "-")
+
+  if (
+    kind === "select" ||
+    kind === "where" ||
+    kind === "group-by" ||
+    kind === "having" ||
+    kind === "order-by"
+  ) {
+    return kind as ClauseKind
+  }
+
+  return null
 }
 
 function getReferencedTables(
@@ -109,9 +124,8 @@ function buildColumnCompletions(tables: TableInfo[]): Completion[] {
       detail: table.name,
       apply: sqlIdentifierPattern.test(column)
         ? undefined
-        : quoteSqlIdentifier(column),
-      section: "Columns",
-      boost: 2,
+        : escapeSqlIdentifier(column),
+      boost: 99,
     })),
   )
 }
@@ -130,11 +144,13 @@ function createSelectColumnCompletionSource(
     const { start, end } = getStatementBounds(documentText, context.pos)
     const statementBeforeCursor = documentText.slice(start, context.pos)
 
-    if (!isSelectListContext(statementBeforeCursor)) return null
+    const clauseContext = getClauseContext(statementBeforeCursor)
+    if (!clauseContext) return null
 
     const statement = documentText.slice(start, end)
     const referencedTables = getReferencedTables(statement, tables)
-    const completionTables = referencedTables.length > 0 ? referencedTables : tables
+    const completionTables =
+      referencedTables.length > 0 ? referencedTables : tables
     const options = buildColumnCompletions(completionTables)
 
     if (options.length === 0) return null
@@ -195,6 +211,18 @@ const devTheme = EditorView.theme({
   ".cm-completionLabel": {
     fontFamily: "monospace",
   },
+  ".cm-highlightSpace": {
+    backgroundImage:
+      "radial-gradient(circle at 50% 55%, #2f353e 20%, transparent 5%) !important",
+    backgroundPosition: "center !important",
+  },
+  ".cm-highlightTab": {
+    backgroundImage:
+      'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20"><path stroke="%232f353e" stroke-width="1" fill="none" d="M1 10H196L190 5M190 15L196 10M197 4L197 16"/></svg>\') !important',
+    backgroundSize: "auto 100% !important",
+    backgroundPosition: "right 90% !important",
+    backgroundRepeat: "no-repeat !important",
+  },
 })
 
 const devHighlightStyle = HighlightStyle.define([
@@ -254,6 +282,7 @@ const QueryEditor: FC<QueryEditorProps> = ({
       doc: query,
       extensions: [
         drawSelection(),
+        highlightWhitespace(),
         devTheme,
         syntaxHighlighting(devHighlightStyle),
         lineNumbers(),
@@ -269,7 +298,11 @@ const QueryEditor: FC<QueryEditorProps> = ({
         keymap.of([
           {
             key: "Tab",
-            run: (view) => acceptCompletion(view) || startCompletion(view),
+            run: (view) => {
+              if (acceptCompletion(view)) return true
+              view.dispatch(view.state.replaceSelection("  "))
+              return true
+            },
           },
           ...closeBracketsKeymap,
           ...historyKeymap,
@@ -291,6 +324,7 @@ const QueryEditor: FC<QueryEditorProps> = ({
       view.destroy()
       viewRef.current = null
     }
+    // Schema and completions are intentionally captured at mount; tables don't change after load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -317,7 +351,7 @@ const QueryEditor: FC<QueryEditorProps> = ({
       <div className="flex items-start gap-2">
         <div
           ref={editorRef}
-          className="flex-1 min-h-20"
+          className="flex-1"
         />
         <button
           type="button"
@@ -326,15 +360,15 @@ const QueryEditor: FC<QueryEditorProps> = ({
           onClick={onRunQuery}
         >
           {queryRunning ? (
-            <Loader2 size={14} className="animate-spin" />
+            <Loader2
+              size={14}
+              className="animate-spin"
+            />
           ) : (
             <Play size={14} />
           )}
           {queryRunning ? "Running…" : "Run"}
         </button>
-      </div>
-      <div className="text-xs text-dev-text-secondary mt-1">
-        Ctrl+Enter to run
       </div>
     </div>
   )

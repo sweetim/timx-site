@@ -1,4 +1,6 @@
 import initSqlJs, { type Database } from "sql.js"
+import { match } from "ts-pattern"
+import { escapeSqlIdentifier } from "./types"
 
 type WorkerRequest =
   | { id: string; type: "init"; buffer: ArrayBuffer }
@@ -18,9 +20,13 @@ type WorkerResponse =
   | { type: "countUpdate"; index: number; rowCount: number }
 
 let db: Database | null = null
+let sqlJsPromise: Promise<Awaited<ReturnType<typeof initSqlJs>>> | null = null
 
-function escapeSqlIdentifier(name: string): string {
-  return `"${name.replace(/"/g, '""')}"`
+function getSqlJs(): Promise<Awaited<ReturnType<typeof initSqlJs>>> {
+  if (!sqlJsPromise) {
+    sqlJsPromise = initSqlJs({ locateFile: () => "/sql-wasm.wasm" })
+  }
+  return sqlJsPromise
 }
 
 function getTableColumns(database: Database, tableName: string): string[] {
@@ -34,17 +40,12 @@ function send(response: WorkerResponse): void {
   self.postMessage(response)
 }
 
-async function ensureSqlJs(): Promise<ReturnType<typeof initSqlJs>> {
-  const SQL = await initSqlJs({ locateFile: () => "/sql-wasm.wasm" })
-  return SQL
-}
-
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const msg = event.data
 
   if (msg.type === "init") {
     try {
-      const SQL = await ensureSqlJs()
+      const SQL = await getSqlJs()
       const database = new SQL.Database(new Uint8Array(msg.buffer))
       db = database
 
@@ -69,8 +70,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           const countResult = db.exec(
             `SELECT COUNT(*) FROM ${escapeSqlIdentifier(name)}`,
           )
-          const rowCount =
-            (countResult[0]?.values[0]?.[0] as number) ?? 0
+          const rowCount = (countResult[0]?.values[0]?.[0] as number) ?? 0
           send({ type: "countUpdate", index, rowCount })
         } catch {
           // skip failed counts
@@ -94,40 +94,41 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     return
   }
 
-  switch (msg.type) {
-    case "exec": {
+  const database = db
+
+  match(msg)
+    .with({ type: "exec" }, (m) => {
       try {
-        const result = db.exec(msg.sql)
+        const result = database.exec(m.sql)
         if (result[0]) {
           send({
-            id: msg.id,
+            id: m.id,
             type: "result",
             payload: { columns: result[0].columns, rows: result[0].values },
           })
         } else {
           send({
-            id: msg.id,
+            id: m.id,
             type: "result",
             payload: "Query executed. No results returned.",
           })
         }
       } catch (err: unknown) {
         send({
-          id: msg.id,
+          id: m.id,
           type: "error",
-          message: err instanceof Error ? err.message : "Query execution failed",
+          message:
+            err instanceof Error ? err.message : "Query execution failed",
         })
       }
-      break
-    }
-
-    case "getTablePage": {
+    })
+    .with({ type: "getTablePage" }, (m) => {
       try {
-        const result = db.exec(
-          `SELECT * FROM ${escapeSqlIdentifier(msg.table)} LIMIT ${msg.limit} OFFSET ${msg.offset}`,
+        const result = database.exec(
+          `SELECT * FROM ${escapeSqlIdentifier(m.table)} LIMIT ${m.limit} OFFSET ${m.offset}`,
         )
         send({
-          id: msg.id,
+          id: m.id,
           type: "result",
           payload: result[0]
             ? { columns: result[0].columns, rows: result[0].values }
@@ -135,19 +136,17 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         })
       } catch (err: unknown) {
         send({
-          id: msg.id,
+          id: m.id,
           type: "error",
-          message: err instanceof Error ? err.message : "Query execution failed",
+          message:
+            err instanceof Error ? err.message : "Query execution failed",
         })
       }
-      break
-    }
-
-    case "close": {
-      db.close()
+    })
+    .with({ type: "close" }, (m) => {
+      database.close()
       db = null
-      send({ id: msg.id, type: "result", payload: null })
-      break
-    }
-  }
+      send({ id: m.id, type: "result", payload: null })
+    })
+    .exhaustive()
 }

@@ -24,3 +24,7 @@ export type DbState =
   | { phase: "error"; message: string }
 
 export const PAGE_SIZE = 100
+
+export function escapeSqlIdentifier(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`
+}

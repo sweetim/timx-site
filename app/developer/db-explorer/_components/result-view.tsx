@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react"
 import type { FC } from "react"
+import { match, P } from "ts-pattern"
 import Pagination from "./pagination"
 import ResultTable from "./result-table"
 import type { QueryResult, TableInfo } from "./types"
@@ -48,35 +49,41 @@ const ResultView: FC<ResultViewProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {isLoading ? (
-        <div className="flex items-center justify-center h-full text-dev-text-secondary text-sm gap-2">
-          <Loader2 size={16} className="animate-spin" />
-          {queryRunning ? "Running query…" : "Loading…"}
-        </div>
-      ) : queryResult !== null ? (
-        typeof queryResult === "string" ? (
+      {match({ isLoading, queryResult, tableData })
+        .with({ isLoading: true }, () => (
+          <div className="flex items-center justify-center h-full text-dev-text-secondary text-sm gap-2">
+            <Loader2 size={16} className="animate-spin" />
+            {queryRunning ? "Running query…" : "Loading…"}
+          </div>
+        ))
+        .with({ queryResult: P.string }, ({ queryResult }) => (
           <div className="p-4 text-sm text-dev-text-secondary">
             {queryResult}
           </div>
-        ) : (
-          <ResultTable result={queryResult} />
+        ))
+        .with(
+          { queryResult: P.when((r): r is QueryResult => r !== null && typeof r !== "string") },
+          ({ queryResult }) => (
+            <ResultTable result={queryResult} />
+          ),
         )
-      ) : tableData ? (
-        <>
-          <ResultTable result={tableData} />
-          {pagination && (
-            <Pagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              onPageChange={onLoadPage}
-            />
-          )}
-        </>
-      ) : (
-        <div className="flex items-center justify-center h-full text-dev-text-secondary text-sm">
-          Select a table from the sidebar
-        </div>
-      )}
+        .with({ tableData: P.nonNullable }, ({ tableData }) => (
+          <>
+            <ResultTable result={tableData} />
+            {pagination && (
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={onLoadPage}
+              />
+            )}
+          </>
+        ))
+        .otherwise(() => (
+          <div className="flex items-center justify-center h-full text-dev-text-secondary text-sm">
+            Select a table from the sidebar
+          </div>
+        ))}
     </div>
   )
 }

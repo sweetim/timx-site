@@ -1,25 +1,21 @@
 "use client"
 
-import { type FC, useCallback, useRef, useReducer } from "react"
+import { type FC, useCallback, useReducer, useRef } from "react"
 import { match } from "ts-pattern"
-import { dbExplorerReducer, initialDbExplorerState } from "./db-explorer-reducer"
+import {
+  dbExplorerReducer,
+  initialDbExplorerState,
+} from "./db-explorer-reducer"
 import EmptyState from "./empty-state"
 import QueryEditor from "./query-editor"
 import ResultView from "./result-view"
 import TableSidebar from "./table-sidebar"
-import { PAGE_SIZE } from "./types"
-import {
-  loadFileFromHandle,
-  useFileHandles,
-} from "./use-file-handle"
+import { escapeSqlIdentifier, PAGE_SIZE } from "./types"
 import useDbWorker from "./use-db-worker"
+import { loadFileFromHandle, useFileHandles } from "./use-file-handle"
 
 const isFileSystemAccessSupported =
   typeof window !== "undefined" && "showOpenFilePicker" in window
-
-function escapeSqlIdentifier(name: string): string {
-  return `"${name.replace(/"/g, '""')}"`
-}
 
 const DbExplorer: FC = () => {
   const [state, dispatch] = useReducer(
@@ -38,11 +34,17 @@ const DbExplorer: FC = () => {
     fileName,
   } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const requestIdRef = useRef(0)
 
   const { recentFiles, addHandle, removeHandle, refreshFiles } =
     useFileHandles()
 
-  const { initDb, execQuery, getTablePage, closeDb: closeDbWorker } = useDbWorker({
+  const {
+    initDb,
+    execQuery,
+    getTablePage,
+    closeDb: closeDbWorker,
+  } = useDbWorker({
     onCountUpdate: (index, rowCount) =>
       dispatch({ type: "UPDATE_TABLE_COUNT", index, rowCount }),
   })
@@ -82,9 +84,15 @@ const DbExplorer: FC = () => {
         tableData: null,
         query: queryStr,
       })
+      const requestId = ++requestIdRef.current
       getTablePage(name, PAGE_SIZE, 0).then((result) => {
-        if (result) {
-          dispatch({ type: "SELECT_TABLE", name, tableData: result, query: queryStr })
+        if (result && requestId === requestIdRef.current) {
+          dispatch({
+            type: "SELECT_TABLE",
+            name,
+            tableData: result,
+            query: queryStr,
+          })
         }
       })
     },
@@ -99,9 +107,12 @@ const DbExplorer: FC = () => {
         page: newPage,
         tableData: null,
       })
+      const requestId = ++requestIdRef.current
       getTablePage(selectedTable, PAGE_SIZE, newPage * PAGE_SIZE).then(
         (result) => {
-          dispatch({ type: "SET_PAGE", page: newPage, tableData: result })
+          if (requestId === requestIdRef.current) {
+            dispatch({ type: "SET_PAGE", page: newPage, tableData: result })
+          }
         },
       )
     },
@@ -112,7 +123,6 @@ const DbExplorer: FC = () => {
     if (dbState.phase !== "ready" || !query.trim() || queryRunning) return
 
     dispatch({ type: "SET_QUERY_RUNNING", running: true })
-    dispatch({ type: "SET_QUERY_RESULT", result: null })
 
     execQuery(query)
       .then((result) => {

@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
-import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import {
+  BreadcrumbJsonLd,
+  WebApplicationJsonLd,
+} from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import DbExplorer from "./_components/db-explorer"
 

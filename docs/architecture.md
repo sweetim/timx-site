@@ -89,13 +89,14 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 ### DB Reader flow
 
-1. User selects or drops a `.db`/`.sqlite`/`.sqlite3` file via file picker or drag-and-drop.
-2. The file is loaded client-side using `sql.js` (WASM-based SQLite) in a Web Worker, parsing the file as an `ArrayBuffer`.
-3. All user tables are enumerated from `sqlite_master`; each table's columns are read from SQLite schema metadata, row counts are computed asynchronously, and tables are displayed in a sidebar.
-4. Clicking a table shows its rows (paginated at 100 rows per page) in the main data table.
-5. A SQL query editor lets users run arbitrary queries against the loaded database; results appear in the same table view.
-6. Ctrl+Enter shortcut runs the query, and Ctrl+Space offers table and column autocomplete from the loaded SQLite schema. Query errors are displayed inline.
-7. The database can be closed to load a different file.
+1. The empty state displays a file upload area and a list of recently opened database files (persisted in IndexedDB via the File System Access API).
+2. User selects or drops a `.db`/`.sqlite`/`.sqlite3` file via file picker or drag-and-drop, or re-opens a recent file from the list.
+3. The file is loaded client-side using `sql.js` (WASM-based SQLite) in a Web Worker, parsing the file as an `ArrayBuffer`.
+4. All user tables are enumerated from `sqlite_master`; each table's columns are read from SQLite schema metadata, row counts are computed asynchronously, and tables are displayed in a sidebar.
+5. Clicking a table shows its rows (paginated at 100 rows per page) in the main data table.
+6. A SQL query editor lets users run arbitrary queries against the loaded database; results appear in the same table view.
+7. Ctrl+Enter shortcut runs the query, and Ctrl+Space offers table and column autocomplete from the loaded SQLite schema, prioritizing column suggestions in SELECT lists. Query errors are displayed inline.
+8. The database can be closed to load a different file.
 
 ### Screenshot Stitcher flow
 
@@ -179,7 +180,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
-| `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants) |
+| `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants, escapeSqlIdentifier) |
 | `app/developer/db-explorer/_components/db-worker.ts` | Web Worker that owns sql.js WASM and executes all SQL queries off the main thread |
 | `app/developer/db-explorer/_components/use-db-worker.ts` | Hook managing the DB Web Worker lifecycle and typed request/response communication |
 | `app/developer/db-explorer/_components/use-file-handle.ts` | Hook for recent files IndexedDB persistence via File System Access API |
@@ -187,9 +188,10 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/db-explorer/_components/db-explorer-reducer.ts` | DB Explorer reducer (DbExplorerState, DbExplorerAction, ts-pattern dispatch) |
 | `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
 | `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
-| `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with table and column autocomplete, run button, and Ctrl+Enter shortcut |
+| `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with clause-aware column autocomplete (SELECT list, WHERE, ORDER BY, GROUP BY, HAVING), run button, and Ctrl+Enter shortcut |
 | `app/developer/db-explorer/_components/result-view.tsx` | Result display with pagination (wraps ResultTable) |
-| `app/developer/db-explorer/_components/result-table.tsx` | Generic SQL result table rendering |
+| `app/developer/db-explorer/_components/cell-dialog.tsx` | Modal for viewing cell values with JSON/JSONL/Markdown highlighting |
+| `app/developer/db-explorer/_components/result-table.tsx` | Generic SQL result table rendering (virtualized) |
 | `app/developer/db-explorer/_components/pagination.tsx` | Paginated prev/next navigation for query results |
 | `app/developer/db-explorer/page.tsx` | DB Explorer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
@@ -394,6 +396,12 @@ type TableInfo = {
 type QueryResult = {
   columns: string[]
   rows: SqlValue[][]
+}
+
+type RecentFile = {
+  name: string
+  size: number
+  lastOpened: number
 }
 
 type DbState =

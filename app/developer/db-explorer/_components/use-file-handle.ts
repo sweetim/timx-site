@@ -26,8 +26,17 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
+let dbPromise: Promise<IDBDatabase> | null = null
+
+function getDb(): Promise<IDBDatabase> {
+  if (!dbPromise) {
+    dbPromise = openDb()
+  }
+  return dbPromise
+}
+
 async function getAllHandles(): Promise<StoredHandle[]> {
-  const db = await openDb()
+  const db = await getDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly")
     const store = tx.objectStore(STORE_NAME)
@@ -38,7 +47,7 @@ async function getAllHandles(): Promise<StoredHandle[]> {
 }
 
 async function putHandle(entry: StoredHandle): Promise<void> {
-  const db = await openDb()
+  const db = await getDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite")
     const store = tx.objectStore(STORE_NAME)
@@ -49,7 +58,7 @@ async function putHandle(entry: StoredHandle): Promise<void> {
 }
 
 async function deleteHandle(name: string): Promise<void> {
-  const db = await openDb()
+  const db = await getDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite")
     const store = tx.objectStore(STORE_NAME)
@@ -60,7 +69,7 @@ async function deleteHandle(name: string): Promise<void> {
 }
 
 async function getHandleEntry(name: string): Promise<StoredHandle | null> {
-  const db = await openDb()
+  const db = await getDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly")
     const store = tx.objectStore(STORE_NAME)
