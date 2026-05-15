@@ -1,5 +1,6 @@
 "use client"
 
+import { Loader2 } from "lucide-react"
 import type { FC } from "react"
 import Pagination from "./pagination"
 import ResultTable from "./result-table"
@@ -8,7 +9,9 @@ import { PAGE_SIZE } from "./types"
 
 type ResultViewProps = {
   queryResult: QueryResult | string | null
+  queryRunning: boolean
   tableData: QueryResult | null
+  tableLoading: boolean
   selectedTable: string | null
   tables: TableInfo[]
   page: number
@@ -31,7 +34,9 @@ function getPagination(
 
 const ResultView: FC<ResultViewProps> = ({
   queryResult,
+  queryRunning,
   tableData,
+  tableLoading,
   selectedTable,
   tables,
   page,
@@ -39,9 +44,16 @@ const ResultView: FC<ResultViewProps> = ({
 }) => {
   const pagination = getPagination(selectedTable, tables, page)
 
+  const isLoading = queryRunning || tableLoading
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {queryResult !== null ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full text-dev-text-secondary text-sm gap-2">
+          <Loader2 size={16} className="animate-spin" />
+          {queryRunning ? "Running query…" : "Loading…"}
+        </div>
+      ) : queryResult !== null ? (
         typeof queryResult === "string" ? (
           <div className="p-4 text-sm text-dev-text-secondary">
             {queryResult}

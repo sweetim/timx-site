@@ -1,7 +1,8 @@
-import type { Database as SqlJsDatabase, SqlValue } from "sql.js"
+import type { SqlValue } from "sql.js"
 
 export type TableInfo = {
   name: string
+  columns: string[]
   rowCount: number
 }
 
@@ -19,7 +20,7 @@ export type RecentFile = {
 export type DbState =
   | { phase: "empty" }
   | { phase: "loading" }
-  | { phase: "ready"; db: SqlJsDatabase; tables: TableInfo[] }
+  | { phase: "ready"; tables: TableInfo[] }
   | { phase: "error"; message: string }
 
 export const PAGE_SIZE = 100

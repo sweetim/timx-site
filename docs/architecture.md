@@ -16,7 +16,8 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 | Icons | lucide-react, @icons-pack/react-simple-icons |
 | Virtual list | @tanstack/react-virtual |
 | Utilities | clsx, date-fns |
-| Code editor | CodeMirror 6 (@codemirror/view, @codemirror/state, @codemirror/lang-sql, @codemirror/commands) |
+| Markdown rendering | react-markdown, remark-gfm |
+| Code editor | CodeMirror 6 (@codemirror/view, @codemirror/state, @codemirror/lang-sql, @codemirror/commands, @codemirror/autocomplete) |
 | Background removal | @imgly/background-removal |
 | Linting | ESLint 9, Biome 2 |
 | Component dev | Storybook 10 |
@@ -30,12 +31,13 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
-/developer/llm-usage        → LLM Pricing tool
-/developer/db-explorer       → SQLite DB Explorer tool
-/developer/og-preview       → OG Preview tool
+/developer/llm-usage       → LLM Pricing tool
+/developer/db-explorer     → SQLite DB Explorer tool
+/developer/og-preview      → OG Preview tool
+/developer/black-screen    → Black Screen (pixel & dust checker) tool
 ```
 
-All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the DB Explorer tool uses sql.js (WASM) to parse SQLite files client-side.
+All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the DB Explorer tool uses sql.js (WASM) in a Web Worker to parse SQLite files off the main thread.
 
 ## Execution flow
 
@@ -88,11 +90,11 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 ### DB Reader flow
 
 1. User selects or drops a `.db`/`.sqlite`/`.sqlite3` file via file picker or drag-and-drop.
-2. The file is loaded client-side using `sql.js` (WASM-based SQLite), parsing the file as an `ArrayBuffer`.
-3. All user tables are enumerated from `sqlite_master` with row counts and displayed in a sidebar.
+2. The file is loaded client-side using `sql.js` (WASM-based SQLite) in a Web Worker, parsing the file as an `ArrayBuffer`.
+3. All user tables are enumerated from `sqlite_master`; each table's columns are read from SQLite schema metadata, row counts are computed asynchronously, and tables are displayed in a sidebar.
 4. Clicking a table shows its rows (paginated at 100 rows per page) in the main data table.
 5. A SQL query editor lets users run arbitrary queries against the loaded database; results appear in the same table view.
-6. Ctrl+Enter shortcut runs the query, and Ctrl+Space offers table-name autocomplete from the loaded SQLite schema. Query errors are displayed inline.
+6. Ctrl+Enter shortcut runs the query, and Ctrl+Space offers table and column autocomplete from the loaded SQLite schema. Query errors are displayed inline.
 7. The database can be closed to load a different file.
 
 ### Screenshot Stitcher flow
@@ -112,6 +114,13 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 3. The server action accepts only HTTPS URLs, blocks private or reserved hosts, follows redirects only after validating the final host, and limits the fetch to 10 seconds and 512 KB of HTML.
 4. The server action parses `<meta property="og:*">`, `<meta name="twitter:*">`, description, title, and favicon tags via regex, resolves relative URLs, and returns structured data.
 5. The client renders platform-specific preview cards (Facebook, WhatsApp, Discord, LinkedIn) in a grid, plus a raw tags table showing all discovered meta values.
+
+### Black Screen flow
+
+1. `/developer/black-screen` renders an SEO heading and description explaining the tool's purpose.
+2. The `BlackScreenButton` client component shows an "Enter Full Black Screen" button.
+3. Clicking the button activates fullscreen mode via the Fullscreen API and displays a pure black overlay.
+4. The user exits by pressing Escape or clicking anywhere; fullscreen is exited and the overlay is dismissed.
 
 ## Key design decisions
 
@@ -134,7 +143,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 | `mise.toml` | Pins Bun 1 for local development via mise |
 | `bun.lock` | Bun dependency lockfile for the main application |
 | `next-env.d.ts` | Next.js generated type declarations |
-| `next.config.ts` | Next.js configuration (image remote patterns) |
+| `next.config.ts` | Next.js configuration (image remote patterns, WASM content-type header) |
 | `tsconfig.json` | TypeScript configuration |
 | `postcss.config.mjs` | PostCSS with Tailwind |
 | `eslint.config.mjs` | ESLint flat config |
@@ -171,14 +180,17 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants) |
-| `app/developer/db-explorer/_components/use-sql-js.ts` | Hook for sql.js WASM initialization and database loading |
+| `app/developer/db-explorer/_components/db-worker.ts` | Web Worker that owns sql.js WASM and executes all SQL queries off the main thread |
+| `app/developer/db-explorer/_components/use-db-worker.ts` | Hook managing the DB Web Worker lifecycle and typed request/response communication |
 | `app/developer/db-explorer/_components/use-file-handle.ts` | Hook for recent files IndexedDB persistence via File System Access API |
 | `app/developer/db-explorer/_components/db-explorer.tsx` | DB Explorer orchestrator component (state management, phase rendering) |
+| `app/developer/db-explorer/_components/db-explorer-reducer.ts` | DB Explorer reducer (DbExplorerState, DbExplorerAction, ts-pattern dispatch) |
 | `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
 | `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
-| `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with table-name autocomplete, run button, and Ctrl+Enter shortcut |
+| `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with table and column autocomplete, run button, and Ctrl+Enter shortcut |
 | `app/developer/db-explorer/_components/result-view.tsx` | Result display with pagination (wraps ResultTable) |
 | `app/developer/db-explorer/_components/result-table.tsx` | Generic SQL result table rendering |
+| `app/developer/db-explorer/_components/pagination.tsx` | Paginated prev/next navigation for query results |
 | `app/developer/db-explorer/page.tsx` | DB Explorer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
 | `app/developer/image-editor/_components/editor-info-content.tsx` | SEO/help content shown from the Image Editor info panel |
@@ -218,6 +230,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
 | `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
+| `app/developer/llm-usage/_components/llm-usage-info.tsx` | LLM Pricing SEO heading, intro copy, and educational sections |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
 | `app/developer/llm-usage/_components/cost-calculator-dialog.tsx` | Cost calculator modal |
 | `app/developer/llm-usage/_components/types.ts` | Shared types (Model, ProviderGroup, SortKey, etc.) |
@@ -227,6 +240,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
+| `app/developer/black-screen/page.tsx` | Black Screen route page |
+| `app/developer/black-screen/_components/black-screen-button.tsx` | Fullscreen black screen toggle (enter via button, exit via Escape/click) |
 
 Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
 
@@ -247,6 +262,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `public/linkedin.svg` | LinkedIn icon |
 | `public/stackoverflow.svg` | Stack Overflow icon |
 | `public/timx-logo.png` | Site logo |
+| `public/sql-wasm.wasm` | sql.js WASM binary for client-side SQLite in DB Explorer |
 
 ## Dependencies
 
@@ -254,18 +270,24 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 
 | Package | Version | Purpose |
 |---|---|---|
+| `@codemirror/autocomplete` | ^6.20.2 | CodeMirror autocomplete for DB Explorer query editor |
+| `@codemirror/commands` | ^6.10.3 | CodeMirror editing commands |
+| `@codemirror/lang-sql` | ^6.10.0 | CodeMirror SQL language support |
+| `@codemirror/state` | ^6.6.0 | CodeMirror editor state |
+| `@codemirror/view` | ^6.43.0 | CodeMirror editor view |
 | `@icons-pack/react-simple-icons` | ^13.13.0 | Brand and social SVG icons |
-| `@next/third-parties` | ^16.2.4 | Google Analytics integration |
 | `@imgly/background-removal` | ^1.7.0 | Client-side AI background removal |
+| `@next/third-parties` | ^16.2.4 | Google Analytics integration |
+| `@tanstack/react-virtual` | ^3.13.24 | Virtual scrolling for DB Explorer result table |
 | `clsx` | ^2.1.1 | Conditional CSS class joining |
 | `date-fns` | ^4.1.0 | Date formatting utilities |
 | `lucide-react` | ^1.7.0 | Icon library |
 | `next` | 16.2.2 | React framework |
 | `react` | 19.2.4 | UI library |
 | `react-dom` | 19.2.4 | React DOM renderer |
-| `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Reader tool |
-| `@tanstack/react-virtual` | ^3.13.24 | Virtualized rendering for large result sets in DB Explorer |
-| `@tanstack/react-virtual` | ^3.13.24 | Virtual scrolling for DB Explorer result table |
+| `react-markdown` | ^10.1.0 | Markdown rendering |
+| `remark-gfm` | ^4.0.1 | GitHub Flavored Markdown plugin for react-markdown |
+| `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Explorer tool |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
 
 ### Dev dependencies
@@ -278,6 +300,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `@types/node` | ^25 | Node.js type definitions |
 | `@types/react` | ^19 | React type definitions |
 | `@types/react-dom` | ^19 | React DOM type definitions |
+| `@types/sql.js` | ^1.4.11 | sql.js type definitions |
 | `eslint` | ^9 | JavaScript linter |
 | `eslint-config-next` | 16.2.2 | Next.js ESLint config |
 | `eslint-plugin-storybook` | ^10.3.4 | Storybook ESLint plugin |
@@ -357,6 +380,27 @@ type ItemListJsonLdProps = {
   description: string
   items: { name: string; url: string; description: string }[]
 }
+```
+
+### DB Explorer types (app/developer/db-explorer/_components/types.ts)
+
+```typescript
+type TableInfo = {
+  name: string
+  columns: string[]
+  rowCount: number
+}
+
+type QueryResult = {
+  columns: string[]
+  rows: SqlValue[][]
+}
+
+type DbState =
+  | { phase: "empty" }
+  | { phase: "loading" }
+  | { phase: "ready"; tables: TableInfo[] }
+  | { phase: "error"; message: string }
 ```
 
 ### Background Remover types (app/developer/image-editor/_components/background-remover/types.ts)
@@ -500,7 +544,7 @@ type CropRect = {
 
 type AnchorMode = "center" | "edge"
 
-type AspectRatioPreset = "free" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16"
+type AspectRatioPreset = "free" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16" | "21:9" | "2:1" | "custom"
 
 type AspectRatioOption = {
   label: string

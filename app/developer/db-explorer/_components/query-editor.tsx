@@ -5,7 +5,9 @@ import {
   autocompletion,
   closeBrackets,
   closeBracketsKeymap,
+  type Completion,
   completionKeymap,
+  type CompletionSource,
   startCompletion,
 } from "@codemirror/autocomplete"
 import { history, historyKeymap } from "@codemirror/commands"
@@ -18,22 +20,127 @@ import {
 import { EditorState } from "@codemirror/state"
 import { drawSelection, EditorView, keymap, lineNumbers } from "@codemirror/view"
 import { tags } from "@lezer/highlight"
-import { Play } from "lucide-react"
+import { Loader2, Play } from "lucide-react"
 import { type FC, useCallback, useEffect, useRef } from "react"
 import type { TableInfo } from "./types"
 
 type QueryEditorProps = {
   query: string
   tables: TableInfo[]
+  queryRunning: boolean
   onQueryChange: (query: string) => void
   onRunQuery: () => void
 }
 
+const sqlIdentifierPattern = /^[A-Za-z_][A-Za-z0-9_$]*$/
+
 function buildSqlSchema(tables: TableInfo[]): SQLNamespace {
   return tables.reduce<Record<string, readonly string[]>>((schema, table) => {
-    schema[table.name] = []
+    schema[table.name] = table.columns
     return schema
   }, {})
+}
+
+function quoteSqlIdentifier(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`
+}
+
+function escapeRegularExpression(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function getSqlIdentifierPatterns(name: string): string[] {
+  const patterns = [
+    `"${escapeRegularExpression(name.replace(/"/g, '""'))}"`,
+    `\`${escapeRegularExpression(name.replace(/`/g, "``"))}\``,
+    `\\[${escapeRegularExpression(name.replace(/]/g, "]]"))}\\]`,
+  ]
+
+  if (sqlIdentifierPattern.test(name)) {
+    patterns.unshift(escapeRegularExpression(name))
+  }
+
+  return patterns
+}
+
+function getStatementBounds(documentText: string, position: number) {
+  const start = documentText.lastIndexOf(";", position - 1) + 1
+  const nextStatementIndex = documentText.indexOf(";", position)
+  const end = nextStatementIndex === -1 ? documentText.length : nextStatementIndex
+  return { start, end }
+}
+
+function isSelectListContext(statementBeforeCursor: string): boolean {
+  const selectPattern = /\bselect\b/gi
+  let selectIndex = -1
+  let match: RegExpExecArray | null = selectPattern.exec(statementBeforeCursor)
+
+  while (match) {
+    selectIndex = match.index
+    match = selectPattern.exec(statementBeforeCursor)
+  }
+
+  if (selectIndex === -1) return false
+
+  return !/\b(from|where|group|having|order|limit|union|intersect|except)\b/i.test(
+    statementBeforeCursor.slice(selectIndex),
+  )
+}
+
+function getReferencedTables(
+  statement: string,
+  tables: TableInfo[],
+): TableInfo[] {
+  return tables.filter((table) => {
+    const tablePattern = getSqlIdentifierPatterns(table.name).join("|")
+    const tableReferencePattern = new RegExp(
+      `\\b(?:from|join)\\s+(?:${tablePattern})(?=\\s|,|\\)|;|$)`,
+      "i",
+    )
+    return tableReferencePattern.test(statement)
+  })
+}
+
+function buildColumnCompletions(tables: TableInfo[]): Completion[] {
+  return tables.flatMap((table) =>
+    table.columns.map((column) => ({
+      label: column,
+      type: "property",
+      detail: table.name,
+      apply: sqlIdentifierPattern.test(column)
+        ? undefined
+        : quoteSqlIdentifier(column),
+      section: "Columns",
+      boost: 2,
+    })),
+  )
+}
+
+function createSelectColumnCompletionSource(
+  tables: TableInfo[],
+): CompletionSource {
+  return (context) => {
+    const word = context.matchBefore(/[\w$]*/)
+    if (!word || (word.from === word.to && !context.explicit)) return null
+    if (context.state.sliceDoc(Math.max(0, word.from - 1), word.from) === ".") {
+      return null
+    }
+
+    const documentText = context.state.doc.toString()
+    const { start, end } = getStatementBounds(documentText, context.pos)
+    const statementBeforeCursor = documentText.slice(start, context.pos)
+
+    if (!isSelectListContext(statementBeforeCursor)) return null
+
+    const statement = documentText.slice(start, end)
+    const referencedTables = getReferencedTables(statement, tables)
+    const completionTables = referencedTables.length > 0 ? referencedTables : tables
+    const options = buildColumnCompletions(completionTables)
+
+    if (options.length === 0) return null
+
+    return { from: word.from, options, validFor: /^[\w$]*$/ }
+  }
 }
 
 const devTheme = EditorView.theme({
@@ -105,6 +212,7 @@ const devHighlightStyle = HighlightStyle.define([
 const QueryEditor: FC<QueryEditorProps> = ({
   query,
   tables,
+  queryRunning,
   onQueryChange,
   onRunQuery,
 }) => {
@@ -112,17 +220,10 @@ const QueryEditor: FC<QueryEditorProps> = ({
   const viewRef = useRef<EditorView | null>(null)
   const isExternalUpdate = useRef(false)
   const onRunQueryRef = useRef(onRunQuery)
-  onRunQueryRef.current = onRunQuery
 
-  const runQueryKeymap = keymap.of([
-    {
-      key: "Mod-Enter",
-      run: () => {
-        onRunQueryRef.current()
-        return true
-      },
-    },
-  ])
+  useEffect(() => {
+    onRunQueryRef.current = onRunQuery
+  }, [onRunQuery])
 
   const onUpdate = useCallback(
     (update: {
@@ -139,6 +240,16 @@ const QueryEditor: FC<QueryEditorProps> = ({
   useEffect(() => {
     if (!editorRef.current) return
 
+    const runQueryKeymap = keymap.of([
+      {
+        key: "Mod-Enter",
+        run: () => {
+          onRunQueryRef.current()
+          return true
+        },
+      },
+    ])
+
     const state = EditorState.create({
       doc: query,
       extensions: [
@@ -150,6 +261,9 @@ const QueryEditor: FC<QueryEditorProps> = ({
         bracketMatching(),
         closeBrackets(),
         sql({ dialect: SQLite, schema: buildSqlSchema(tables) }),
+        SQLite.language.data.of({
+          autocomplete: createSelectColumnCompletionSource(tables),
+        }),
         autocompletion(),
         runQueryKeymap,
         keymap.of([
@@ -207,11 +321,16 @@ const QueryEditor: FC<QueryEditorProps> = ({
         />
         <button
           type="button"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-dev-accent-blue text-white text-sm hover:opacity-90 transition-opacity cursor-pointer"
+          disabled={queryRunning}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-dev-accent-blue text-white text-sm hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={onRunQuery}
         >
-          <Play size={14} />
-          Run
+          {queryRunning ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Play size={14} />
+          )}
+          {queryRunning ? "Running…" : "Run"}
         </button>
       </div>
       <div className="text-xs text-dev-text-secondary mt-1">

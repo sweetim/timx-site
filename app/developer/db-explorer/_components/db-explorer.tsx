@@ -1,64 +1,24 @@
 "use client"
 
-import { type FC, useCallback, useEffect, useRef, useReducer } from "react"
-import type { Database as SqlJsDatabase } from "sql.js"
+import { type FC, useCallback, useRef, useReducer } from "react"
 import { match } from "ts-pattern"
 import { dbExplorerReducer, initialDbExplorerState } from "./db-explorer-reducer"
 import EmptyState from "./empty-state"
 import QueryEditor from "./query-editor"
 import ResultView from "./result-view"
 import TableSidebar from "./table-sidebar"
-import type { QueryResult } from "./types"
 import { PAGE_SIZE } from "./types"
 import {
   loadFileFromHandle,
   useFileHandles,
 } from "./use-file-handle"
-import { useSqlJs } from "./use-sql-js"
+import useDbWorker from "./use-db-worker"
 
 const isFileSystemAccessSupported =
   typeof window !== "undefined" && "showOpenFilePicker" in window
 
 function escapeSqlIdentifier(name: string): string {
   return `"${name.replace(/"/g, '""')}"`
-}
-
-function countTableRows(
-  db: SqlJsDatabase,
-  tableNames: string[],
-  onUpdate: (index: number, rowCount: number) => void,
-  aborted: () => boolean,
-): void {
-  const countNext = (index: number) => {
-    if (aborted() || index >= tableNames.length) return
-    try {
-      const name = tableNames[index]
-      const countResult = db.exec(
-        `SELECT COUNT(*) FROM ${escapeSqlIdentifier(name)}`,
-      )
-      const rowCount = (countResult[0]?.values[0]?.[0] as number) ?? 0
-      onUpdate(index, rowCount)
-    } catch {
-      return
-    }
-    setTimeout(() => countNext(index + 1), 0)
-  }
-  setTimeout(() => countNext(0), 0)
-}
-
-function execTableQuery(
-  db: SqlJsDatabase,
-  tableName: string,
-  limit: number,
-  offset: number,
-): QueryResult | null {
-  const result = db.exec(
-    `SELECT * FROM ${escapeSqlIdentifier(tableName)} LIMIT ${limit} OFFSET ${offset}`,
-  )
-  if (result[0]) {
-    return { columns: result[0].columns, rows: result[0].values }
-  }
-  return null
 }
 
 const DbExplorer: FC = () => {
@@ -70,56 +30,38 @@ const DbExplorer: FC = () => {
     dbState,
     selectedTable,
     tableData,
+    tableLoading,
     query,
     queryResult,
+    queryRunning,
     page,
     fileName,
   } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const abortCountRef = useRef(false)
-  const dbRef = useRef<SqlJsDatabase | null>(null)
 
-  const { buildDbState } = useSqlJs()
   const { recentFiles, addHandle, removeHandle, refreshFiles } =
     useFileHandles()
 
-  useEffect(() => {
-    dbRef.current = dbState.phase === "ready" ? dbState.db : null
-  }, [dbState])
-
-  useEffect(() => {
-    return () => {
-      dbRef.current?.close()
-    }
-  }, [])
+  const { initDb, execQuery, getTablePage, closeDb: closeDbWorker } = useDbWorker({
+    onCountUpdate: (index, rowCount) =>
+      dispatch({ type: "UPDATE_TABLE_COUNT", index, rowCount }),
+  })
 
   const loadDb = useCallback(
     (file: File) => {
-      abortCountRef.current = true
-      dbRef.current?.close()
       dispatch({ type: "LOAD_START", fileName: file.name })
 
-      buildDbState(file).then((newDbState) => {
-        if (newDbState.phase === "ready") {
-          dispatch({
-            type: "LOAD_READY",
-            db: newDbState.db,
-            tables: newDbState.tables,
-          })
-          abortCountRef.current = false
-          countTableRows(
-            newDbState.db,
-            newDbState.tables.map((t) => t.name),
-            (index, rowCount) =>
-              dispatch({ type: "UPDATE_TABLE_COUNT", index, rowCount }),
-            () => abortCountRef.current,
-          )
-        } else if (newDbState.phase === "error") {
-          dispatch({ type: "LOAD_ERROR", message: newDbState.message })
-        }
-      })
+      initDb(file)
+        .then(({ tables }) => {
+          dispatch({ type: "LOAD_READY", tables })
+        })
+        .catch((err: unknown) => {
+          const message =
+            err instanceof Error ? err.message : "Failed to open database"
+          dispatch({ type: "LOAD_ERROR", message })
+        })
     },
-    [buildDbState],
+    [initDb],
   )
 
   const handleFileChange = useCallback(
@@ -133,14 +75,20 @@ const DbExplorer: FC = () => {
   const selectTable = useCallback(
     (name: string) => {
       if (dbState.phase !== "ready") return
+      const queryStr = `SELECT * FROM ${escapeSqlIdentifier(name)}`
       dispatch({
         type: "SELECT_TABLE",
         name,
-        tableData: execTableQuery(dbState.db, name, PAGE_SIZE, 0),
-        query: `SELECT * FROM ${escapeSqlIdentifier(name)}`,
+        tableData: null,
+        query: queryStr,
+      })
+      getTablePage(name, PAGE_SIZE, 0).then((result) => {
+        if (result) {
+          dispatch({ type: "SELECT_TABLE", name, tableData: result, query: queryStr })
+        }
       })
     },
-    [dbState],
+    [dbState, getTablePage],
   )
 
   const loadPage = useCallback(
@@ -149,50 +97,38 @@ const DbExplorer: FC = () => {
       dispatch({
         type: "SET_PAGE",
         page: newPage,
-        tableData: execTableQuery(
-          dbState.db,
-          selectedTable,
-          PAGE_SIZE,
-          newPage * PAGE_SIZE,
-        ),
+        tableData: null,
       })
+      getTablePage(selectedTable, PAGE_SIZE, newPage * PAGE_SIZE).then(
+        (result) => {
+          dispatch({ type: "SET_PAGE", page: newPage, tableData: result })
+        },
+      )
     },
-    [dbState, selectedTable],
+    [dbState, selectedTable, getTablePage],
   )
 
   const runQuery = useCallback(() => {
-    if (dbState.phase !== "ready" || !query.trim()) return
+    if (dbState.phase !== "ready" || !query.trim() || queryRunning) return
 
-    try {
-      const result = dbState.db.exec(query)
-      if (result[0]) {
-        dispatch({
-          type: "SET_QUERY_RESULT",
-          result: {
-            columns: result[0].columns,
-            rows: result[0].values,
-          },
-        })
-      } else {
-        dispatch({
-          type: "SET_QUERY_RESULT",
-          result: "Query executed. No results returned.",
-        })
-      }
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Query execution failed"
-      dispatch({ type: "SET_QUERY_RESULT", result: message })
-    }
-  }, [dbState, query])
+    dispatch({ type: "SET_QUERY_RUNNING", running: true })
+    dispatch({ type: "SET_QUERY_RESULT", result: null })
+
+    execQuery(query)
+      .then((result) => {
+        dispatch({ type: "SET_QUERY_RESULT", result })
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "Query execution failed"
+        dispatch({ type: "SET_QUERY_RESULT", result: message })
+      })
+  }, [dbState, query, queryRunning, execQuery])
 
   const closeDb = useCallback(() => {
-    abortCountRef.current = true
-    if (dbState.phase === "ready") {
-      dbState.db.close()
-    }
+    closeDbWorker().catch(() => {})
     dispatch({ type: "RESET" })
-  }, [dbState])
+  }, [closeDbWorker])
 
   const openFilePicker = useCallback(async () => {
     if (isFileSystemAccessSupported) {
@@ -293,12 +229,15 @@ const DbExplorer: FC = () => {
               <QueryEditor
                 query={query}
                 tables={tables}
+                queryRunning={queryRunning}
                 onQueryChange={setQuery}
                 onRunQuery={runQuery}
               />
               <ResultView
                 queryResult={queryResult}
+                queryRunning={queryRunning}
                 tableData={tableData}
+                tableLoading={tableLoading}
                 selectedTable={selectedTable}
                 tables={tables}
                 page={page}
