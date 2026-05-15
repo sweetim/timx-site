@@ -1,15 +1,14 @@
 "use client"
 
-import { Database, FileX2, Upload } from "lucide-react"
+import { Database, Trash2, Upload } from "lucide-react"
 import type { FC } from "react"
 import type { RecentFile } from "./types"
 
 type EmptyStateProps = {
   recentFiles: RecentFile[]
   onRemoveRecent: (name: string) => void
+  onOpenRecent: (name: string) => void
   onOpenFilePicker: () => void
-  onDrop: (e: React.DragEvent) => void
-  onDragOver: (e: React.DragEvent) => void
 }
 
 function formatFileSize(bytes: number): string {
@@ -21,15 +20,10 @@ function formatFileSize(bytes: number): string {
 const EmptyState: FC<EmptyStateProps> = ({
   recentFiles,
   onRemoveRecent,
+  onOpenRecent,
   onOpenFilePicker,
-  onDrop,
-  onDragOver,
 }) => (
-  <div
-    className="flex-1 flex items-center justify-center"
-    onDrop={onDrop}
-    onDragOver={onDragOver}
-  >
+  <div className="flex-1 flex items-center justify-center">
     <div className="text-center">
       <div className="mb-4">
         <Database
@@ -41,9 +35,8 @@ const EmptyState: FC<EmptyStateProps> = ({
         SQLite DB Explorer
       </h2>
       <p className="text-sm text-dev-text-secondary mb-6 max-w-md">
-        Select or drop a <code className="text-dev-syntax-string">.db</code>{" "}
-        file to browse tables and run SQL queries. Everything runs in your
-        browser.
+        Select a <code className="text-dev-syntax-string">.db</code> file to
+        browse tables and run SQL queries. Everything runs in your browser.
       </p>
       {recentFiles.length > 0 && (
         <div className="mb-4 text-left max-w-lg mx-auto">
@@ -56,7 +49,11 @@ const EmptyState: FC<EmptyStateProps> = ({
                 key={file.name}
                 className="flex items-center justify-between gap-2 px-2 py-1.5 rounded text-sm hover:bg-dev-surface group"
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 min-w-0 cursor-pointer text-left flex-1"
+                  onClick={() => onOpenRecent(file.name)}
+                >
                   <Database
                     size={14}
                     className="shrink-0 text-dev-text-secondary"
@@ -65,7 +62,7 @@ const EmptyState: FC<EmptyStateProps> = ({
                   <span className="shrink-0 text-dev-text-secondary text-xs">
                     {formatFileSize(file.size)}
                   </span>
-                </div>
+                </button>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-dev-text-secondary">
                     {new Date(file.lastOpened).toLocaleDateString()}
@@ -74,9 +71,9 @@ const EmptyState: FC<EmptyStateProps> = ({
                     type="button"
                     className="p-0.5 rounded hover:bg-dev-button transition-colors cursor-pointer text-dev-text-secondary opacity-0 group-hover:opacity-100"
                     onClick={() => onRemoveRecent(file.name)}
-                    title="Remove from recent"
+                    title="Remove"
                   >
-                    <FileX2 size={12} />
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>

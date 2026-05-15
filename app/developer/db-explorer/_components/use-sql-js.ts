@@ -66,5 +66,5 @@ export function useSqlJs() {
     [error],
   )
 
-  return { buildDbState, sqlJsRef }
+  return { buildDbState }
 }

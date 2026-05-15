@@ -14,7 +14,9 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 | Package manager | Bun 1 via mise |
 | Pattern matching | ts-pattern 5 |
 | Icons | lucide-react, @icons-pack/react-simple-icons |
+| Virtual list | @tanstack/react-virtual |
 | Utilities | clsx, date-fns |
+| Code editor | CodeMirror 6 (@codemirror/view, @codemirror/state, @codemirror/lang-sql, @codemirror/commands) |
 | Background removal | @imgly/background-removal |
 | Linting | ESLint 9, Biome 2 |
 | Component dev | Storybook 10 |
@@ -170,7 +172,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants) |
 | `app/developer/db-explorer/_components/use-sql-js.ts` | Hook for sql.js WASM initialization and database loading |
-| `app/developer/db-explorer/_components/use-recent-files.ts` | Hook for recent files localStorage persistence |
+| `app/developer/db-explorer/_components/use-file-handle.ts` | Hook for recent files IndexedDB persistence via File System Access API |
 | `app/developer/db-explorer/_components/db-explorer.tsx` | DB Explorer orchestrator component (state management, phase rendering) |
 | `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
 | `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
@@ -262,6 +264,8 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `react` | 19.2.4 | UI library |
 | `react-dom` | 19.2.4 | React DOM renderer |
 | `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Reader tool |
+| `@tanstack/react-virtual` | ^3.13.24 | Virtualized rendering for large result sets in DB Explorer |
+| `@tanstack/react-virtual` | ^3.13.24 | Virtual scrolling for DB Explorer result table |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
 
 ### Dev dependencies
