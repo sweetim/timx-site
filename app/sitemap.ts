@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://timx.co"
-  const now = new Date("2026-04-28")
+  const now = new Date("2026-05-15")
 
   return [
     { url: base, lastModified: now, changeFrequency: "monthly", priority: 1.0 },
