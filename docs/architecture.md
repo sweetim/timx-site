@@ -35,6 +35,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/db-explorer     → SQLite DB Explorer tool
 /developer/og-preview      → OG Preview tool
 /developer/black-screen    → Black Screen (pixel & dust checker) tool
+/developer/openapi-viewer  → OpenAPI Viewer tool
 ```
 
 All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the DB Explorer tool uses sql.js (WASM) in a Web Worker to parse SQLite files off the main thread.
@@ -54,6 +55,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
 4. The LLM Pricing page renders a server-rendered H1 and introductory paragraph, then the `LlmUsage` client component, which fetches model data from the OpenRouter API and provides interactive sorting and filtering.
 5. The OG Preview page uses a server action (`fetchOgData`) to validate and fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
+6. The OpenAPI Viewer page lets users upload an OpenAPI 3.x JSON file, parses it client-side, and renders an endpoint explorer grouped by tags with parameter tables, request/response schema views, and improvement suggestions.
 
 ### Image Editor flow
 
@@ -122,6 +124,17 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 2. The `BlackScreenButton` client component shows an "Enter Full Black Screen" button.
 3. Clicking the button activates fullscreen mode via the Fullscreen API and displays a pure black overlay.
 4. The user exits by pressing Escape or clicking anywhere; fullscreen is exited and the overlay is dismissed.
+
+### OpenAPI Viewer flow
+
+1. `/developer/openapi-viewer` renders a server-rendered `LandingSection` (H1, feature cards) passed into the `OpenApiViewer` client component.
+2. The empty phase shows the landing section, upload zone, and recent files vertically centered. After loading a file, the landing section is replaced by the viewer.
+2. User uploads or drops an OpenAPI 3.x JSON or YAML file into the upload zone.
+3. The file is parsed client-side (JSON natively, YAML via js-yaml); endpoints are extracted from `paths` and grouped by tags.
+4. A sidebar lists all endpoints grouped by tag, showing HTTP method (color-coded), path, and summary.
+5. Clicking an endpoint displays its details in the main panel: full URL, method badge, summary, description, operation ID, parameters table (path/query/header), request body schema with content types, and response schemas with status codes.
+6. A "Suggestions" toggle analyzes the spec for completeness issues: missing descriptions, missing summaries, missing operation IDs, missing examples, missing error responses, and missing server definitions. Suggestions are categorized by severity (error, warning, info).
+7. The user can load a new file at any time via the "New File" button.
 
 ## Key design decisions
 
@@ -244,6 +257,22 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 | `app/developer/black-screen/page.tsx` | Black Screen route page |
 | `app/developer/black-screen/_components/black-screen-button.tsx` | Fullscreen black screen toggle (enter via button, exit via Escape/click) |
+| `app/developer/openapi-viewer/page.tsx` | OpenAPI Viewer route page |
+| `app/developer/openapi-viewer/_components/landing-section.tsx` | Server-rendered landing section with H1, subtitle, and feature cards for SEO |
+| `app/developer/openapi-viewer/_components/openapi-viewer.tsx` | OpenAPI Viewer orchestrator (state management, phase rendering, accepts landing content) |
+| `app/developer/openapi-viewer/_components/types.ts` | OpenAPI Viewer shared types (OpenApiSpec, OpenApiOperation, ViewerState, Suggestion, etc.) |
+| `app/developer/openapi-viewer/_components/upload-zone.tsx` | Empty-state upload UI with drag-and-drop and recent files list |
+| `app/developer/openapi-viewer/_components/endpoint-sidebar.tsx` | Sidebar with grouped/tagged endpoint list |
+| `app/developer/openapi-viewer/_components/endpoint-detail.tsx` | Main panel showing selected endpoint details or suggestions |
+| `app/developer/openapi-viewer/_components/param-table.tsx` | Parameter table component (path/query/header params) |
+| `app/developer/openapi-viewer/_components/body-section.tsx` | Request body section with content types and schema previews |
+| `app/developer/openapi-viewer/_components/responses-section.tsx` | Responses section with status codes and schema previews |
+| `app/developer/openapi-viewer/_components/suggestion-item.tsx` | Single suggestion item with severity icon |
+| `app/developer/openapi-viewer/_lib/constants.ts` | HTTP method color and background mappings |
+| `app/developer/openapi-viewer/_lib/parse-spec.ts` | OpenAPI spec parsing and endpoint extraction |
+| `app/developer/openapi-viewer/_lib/suggestions.ts` | Spec completeness suggestion generation |
+| `app/developer/openapi-viewer/_lib/schema-resolver.tsx` | $ref resolution, example generation, highlighted JSON preview, and example/schema tab switcher |
+| `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent files localStorage persistence |
 
 Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
 
@@ -289,6 +318,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `react-dom` | 19.2.4 | React DOM renderer |
 | `react-markdown` | ^10.1.0 | Markdown rendering |
 | `remark-gfm` | ^4.0.1 | GitHub Flavored Markdown plugin for react-markdown |
+| `js-yaml` | ^4.1.1 | YAML parser for OpenAPI Viewer |
 | `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Explorer tool |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
 
@@ -299,6 +329,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `@biomejs/biome` | 2.4.10 | Linter/formatter |
 | `@storybook/nextjs-vite` | ^10.3.4 | Storybook integration for Next.js |
 | `@tailwindcss/postcss` | ^4 | Tailwind CSS PostCSS plugin |
+| `@types/js-yaml` | ^4.0.9 | js-yaml type definitions |
 | `@types/node` | ^25 | Node.js type definitions |
 | `@types/react` | ^19 | React type definitions |
 | `@types/react-dom` | ^19 | React DOM type definitions |
@@ -657,6 +688,72 @@ type OgData = {
 }
 
 type FetchResult = { ok: true; data: OgData } | { ok: false; error: string }
+```
+
+### OpenAPI Viewer types (app/developer/openapi-viewer/_components/types.ts)
+
+```typescript
+type HttpMethod = "get" | "post" | "put" | "patch" | "delete" | "head" | "options" | "trace"
+
+type OpenApiParameter = {
+  name: string
+  location: "path" | "query" | "header" | "cookie"
+  required: boolean
+  description: string
+  schema?: unknown
+  example?: unknown
+}
+
+type OpenApiRequestBody = {
+  description?: string
+  required?: boolean
+  content: Record<string, { schema?: unknown; example?: unknown; examples?: Record<string, unknown> }>
+}
+
+type OpenApiResponse = {
+  description?: string
+  content?: Record<string, { schema?: unknown; example?: unknown; examples?: Record<string, unknown> }>
+}
+
+type OpenApiOperation = {
+  method: HttpMethod
+  path: string
+  operationId?: string
+  summary?: string
+  description?: string
+  tags?: string[]
+  deprecated?: boolean
+  parameters?: OpenApiParameter[]
+  requestBody?: OpenApiRequestBody
+  responses?: Record<string, OpenApiResponse>
+}
+
+type OpenApiSpec = {
+  openapi: string
+  info: { title: string; version: string; description?: string }
+  servers?: { url: string; description?: string }[]
+  paths: Record<string, Record<string, unknown>>
+  components?: {
+    schemas?: Record<string, unknown>
+    securitySchemes?: Record<string, unknown>
+  }
+}
+
+type EndpointGroup = {
+  tag: string
+  endpoints: OpenApiOperation[]
+}
+
+type ViewerState =
+  | { phase: "empty" }
+  | { phase: "error"; message: string }
+  | { phase: "ready"; spec: OpenApiSpec; endpoints: EndpointGroup[] }
+
+type Suggestion = {
+  severity: "error" | "warning" | "info"
+  message: string
+  path?: string
+}
 ```
 
 ## Theme tokens

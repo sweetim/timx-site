@@ -1,5 +1,13 @@
 import type { LucideIcon } from "lucide-react"
-import { Braces, Database, Globe, Images, Monitor, Scale } from "lucide-react"
+import {
+  BookOpen,
+  Braces,
+  Database,
+  Globe,
+  Images,
+  Monitor,
+  Scale,
+} from "lucide-react"
 
 export type Tool = {
   name: string
@@ -38,13 +46,22 @@ export const tools: Tool[] = [
   {
     name: "DB Explorer",
     slug: "db-explorer",
-    description: "Browse SQLite database files, view tables, and run SQL queries in your browser",
+    description:
+      "Browse SQLite database files, view tables, and run SQL queries in your browser",
     icon: Database,
   },
   {
     name: "Black Screen",
     slug: "black-screen",
-    description: "Fullscreen black display for spotting dead pixels and cleaning your monitor — press Escape or click to exit",
+    description:
+      "Fullscreen black display for spotting dead pixels and cleaning your monitor — press Escape or click to exit",
     icon: Monitor,
+  },
+  {
+    name: "OpenAPI Viewer",
+    slug: "openapi-viewer",
+    description:
+      "Visualize OpenAPI specs — browse endpoints, parameters, request/response schemas, and get improvement suggestions",
+    icon: BookOpen,
   },
 ]
