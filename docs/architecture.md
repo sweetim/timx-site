@@ -179,7 +179,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/page.tsx` | Home page - maker profile landing page with homepage metadata, Person JSON-LD, ItemList JSON-LD, and selected developer-tool links |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
-| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, maker profile background, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, soft cyan/amber maker profile background, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Centered maker profile landing component with avatar, hero text, responsive icon craft-card grid, connect links, and selected work cards |

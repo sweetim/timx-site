@@ -80,8 +80,9 @@
 
 .maker-profile-background {
     background:
-        radial-gradient(circle at 20% 10%, rgb(251 191 36 / 0.25), transparent 28rem),
-        linear-gradient(180deg, #fff5e6 0%, #f5dfc3 100%);
+        radial-gradient(circle at 18% 12%, rgb(56 189 248 / 0.14), transparent 28rem),
+        radial-gradient(circle at 82% 18%, rgb(251 191 36 / 0.14), transparent 24rem),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
 }
 
 .profile-tool-description {
