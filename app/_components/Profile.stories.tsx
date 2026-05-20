@@ -22,11 +22,12 @@ const defaultArgs: Story["args"] = {
   location: "Tokyo, Japan",
   imageUrl: "/favicon.ico",
   craftAreas: [
-    "Web applications",
-    "Artificial intelligence",
+    "Embedded",
+    "Cloud",
+    "Mobile",
+    "AI",
     "Robotics",
     "Blockchain",
-    "Developer tools",
   ],
   linkUrl: [
     {

@@ -79,7 +79,16 @@
 }
 
 .maker-profile-background {
-    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    background:
+        radial-gradient(circle at 20% 10%, rgb(251 191 36 / 0.25), transparent 28rem),
+        linear-gradient(180deg, #fff5e6 0%, #f5dfc3 100%);
+}
+
+.profile-tool-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 @keyframes spinner-rotate {

@@ -46,8 +46,7 @@ export const tools: Tool[] = [
   {
     name: "DB Explorer",
     slug: "db-explorer",
-    description:
-      "Browse SQLite database files, view tables, and run SQL queries in your browser",
+    description: "Browse SQLite files, view tables, and run SQL queries",
     icon: Database,
   },
   {
@@ -60,8 +59,7 @@ export const tools: Tool[] = [
   {
     name: "OpenAPI Viewer",
     slug: "openapi-viewer",
-    description:
-      "Visualize OpenAPI specs — browse endpoints, parameters, request/response schemas, and get improvement suggestions",
+    description: "Browse OpenAPI specs, endpoints, parameters, and schemas",
     icon: BookOpen,
   },
 ]

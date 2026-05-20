@@ -44,9 +44,9 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 ### Home page (`/`)
 
-1. `app/page.tsx` renders a centered maker `Profile` component with profile copy, craft-area tags, profile actions, social connect links, and selected work cards derived from the tool registry.
+1. `app/page.tsx` renders a centered maker `Profile` component with profile copy, a responsive icon craft-card grid, social connect links, and selected work cards derived from the tool registry.
 2. The page exports homepage-specific metadata, Open Graph metadata, Twitter metadata, Person JSON-LD, and ItemList JSON-LD for the highlighted tools.
-3. The selected-work cards link to static developer tool routes, and a "View all tools" link goes to `/developer`.
+3. The selected-work cards link to static developer tool routes, clamp card descriptions to two lines, and a "View all tools" link goes to `/developer`.
 4. Social links render as crawlable external anchors in the connect section with CSS-only hover animation.
 
 ### Developer tools (`/developer/*`)
@@ -179,10 +179,10 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/page.tsx` | Home page - maker profile landing page with homepage metadata, Person JSON-LD, ItemList JSON-LD, and selected developer-tool links |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
-| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, maker profile background, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, maker profile background, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/terms/page.tsx` | Terms of service page |
-| `app/_components/Profile.tsx` | Centered maker profile landing component with avatar, hero text, actions, craft tags, connect links, and selected work cards |
+| `app/_components/Profile.tsx` | Centered maker profile landing component with avatar, hero text, responsive icon craft-card grid, connect links, and selected work cards |
 | `app/_components/ProfileLink.tsx` | Social link button with CSS-only blob hover animation |
 | `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication, BreadcrumbList) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
@@ -375,9 +375,17 @@ type ProfileProps = {
   location: string
   imageUrl: string
   linkUrl: ProfileLinkProps[]
-  craftAreas: string[]
+  craftAreas: ProfileCraftArea[]
   featuredToolLinks: ProfileFeaturedLink[]
 }
+
+type ProfileCraftArea =
+  | "Embedded"
+  | "Cloud"
+  | "Mobile"
+  | "AI"
+  | "Robotics"
+  | "Blockchain"
 
 type ProfileFeaturedLink = {
   title: string

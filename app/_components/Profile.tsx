@@ -2,7 +2,16 @@ import Image from "next/image"
 import Link from "next/link"
 import type { FC } from "react"
 import type { LucideIcon } from "lucide-react"
-import { ArrowUpRight, MapPin } from "lucide-react"
+import {
+  ArrowUpRight,
+  Blocks,
+  Bot,
+  BrainCircuit,
+  Cloud,
+  Cpu,
+  MapPin,
+  Smartphone,
+} from "lucide-react"
 
 import ProfileLink, { type ProfileLinkProps } from "./ProfileLink"
 
@@ -13,9 +22,17 @@ export type ProfileProps = {
   location: string
   imageUrl: string
   linkUrl: ProfileLinkProps[]
-  craftAreas: string[]
+  craftAreas: ProfileCraftArea[]
   featuredToolLinks: ProfileFeaturedLink[]
 }
+
+export type ProfileCraftArea =
+  | "Embedded"
+  | "Cloud"
+  | "Mobile"
+  | "AI"
+  | "Robotics"
+  | "Blockchain"
 
 export type ProfileFeaturedLink = {
   title: string
@@ -23,6 +40,15 @@ export type ProfileFeaturedLink = {
   href: string
   icon?: LucideIcon
 }
+
+const craftAreaIcons = {
+  Embedded: Cpu,
+  Cloud,
+  Mobile: Smartphone,
+  AI: BrainCircuit,
+  Robotics: Bot,
+  Blockchain: Blocks,
+} satisfies Record<ProfileCraftArea, LucideIcon>
 
 const Profile: FC<ProfileProps> = (props) => {
   return (
@@ -43,6 +69,10 @@ const Profile: FC<ProfileProps> = (props) => {
         <h1 className="text-balance text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
           {props.title}
         </h1>
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-400">
+          <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+          {props.location}
+        </p>
         <p className="mt-3 text-lg leading-8 text-slate-700">
           {props.description}
         </p>
@@ -51,20 +81,20 @@ const Profile: FC<ProfileProps> = (props) => {
         </p>
       </div>
 
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-sm text-slate-400">
-        <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-        {props.location}
-      </p>
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {props.craftAreas.map((area) => {
+          const Icon = craftAreaIcons[area]
 
-      <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-        {props.craftAreas.map((area) => (
-          <span
-            key={area}
-            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500"
-          >
-            {area}
-          </span>
-        ))}
+          return (
+            <span
+              key={area}
+              className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-xs font-medium text-slate-500 shadow-sm"
+            >
+              <Icon className="h-5 w-5 text-slate-400" aria-hidden="true" />
+              {area}
+            </span>
+          )
+        })}
       </div>
 
       <div className="mt-8 flex flex-col items-center gap-3">
@@ -116,7 +146,7 @@ const Profile: FC<ProfileProps> = (props) => {
                 <span className="mt-4 block text-lg font-semibold">
                   {link.title}
                 </span>
-                <span className="mt-1 block text-sm leading-6 text-slate-500 line-clamp-2">
+                <span className="profile-tool-description mt-1 block text-sm leading-6 text-slate-500">
                   {link.description}
                 </span>
               </Link>

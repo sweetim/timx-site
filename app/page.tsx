@@ -62,11 +62,12 @@ function getProfile(): ProfileProps {
     location: "Tokyo, Japan",
     imageUrl: "https://avatars.githubusercontent.com/u/6851767?v=4",
     craftAreas: [
-      "Web applications",
-      "Artificial intelligence",
+      "Embedded",
+      "Cloud",
+      "Mobile",
+      "AI",
       "Robotics",
       "Blockchain",
-      "Developer tools",
     ],
     linkUrl: [
       {
@@ -112,7 +113,9 @@ export default function Home() {
         description={homepageDescription}
         image="https://avatars.githubusercontent.com/u/6851767?v=4"
         knowsAbout={[
-          "Developer tools",
+          "Embedded systems",
+          "Cloud computing",
+          "Mobile development",
           "Robotics",
           "Artificial intelligence",
           "Blockchain",
