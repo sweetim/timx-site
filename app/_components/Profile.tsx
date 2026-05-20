@@ -55,7 +55,7 @@ const Profile: FC<ProfileProps> = (props) => {
     <div className="mx-auto w-full max-w-2xl text-slate-950">
       <div className="flex justify-center">
         <Image
-          className="rounded-full border-2 border-slate-200 shadow-sm"
+          className="rounded-full border border-slate-200 bg-white shadow-sm"
           src={props.imageUrl}
           width={96}
           height={96}
