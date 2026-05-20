@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import BlackScreenButton from "./_components/black-screen-button"
+import { LandingSection } from "./_components/landing-section"
 
 export const metadata: Metadata = {
   title: "Black Screen — Pixel & Dust Checker",
@@ -33,22 +34,17 @@ export default function BlackScreenPage() {
           "One-click enter and exit",
         ]}
       />
-      <div className="flex flex-col items-center justify-center min-h-full bg-dev-canvas px-6">
-        <div className="max-w-md text-center mb-8">
-          <h1 className="text-xl font-semibold text-dev-text mb-3">
-            Black Screen
-          </h1>
-          <p className="text-sm text-dev-text-secondary leading-relaxed">
-            Display a pure black fullscreen to help spot stuck pixels, dust, and
-            smudges on your monitor. Useful for cleaning your screen or checking
-            for display defects.
-          </p>
+      <div className="flex flex-col items-center justify-center min-h-full bg-dev-canvas p-8">
+        <div className="w-full max-w-2xl">
+          <LandingSection />
+          <div className="flex flex-col items-center">
+            <BlackScreenButton />
+            <p className="mt-4 flex items-center gap-1.5 text-xs text-dev-text-secondary">
+              <Info className="size-3" />
+              Press Escape or click to exit when in fullscreen
+            </p>
+          </div>
         </div>
-        <BlackScreenButton />
-        <p className="mt-4 flex items-center gap-1.5 text-xs text-dev-text-secondary">
-          <Info className="size-3" />
-          Press Escape or click to exit when in fullscreen
-        </p>
       </div>
     </>
   )

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
 import DbExplorer from "./_components/db-explorer"
+import { LandingSection } from "./_components/landing-section"
 
 export const metadata: Metadata = {
   title: "SQLite DB Explorer — Free Online Tool",
@@ -32,7 +33,7 @@ export default function DbExplorerPage() {
           "Entirely client-side — no data leaves your machine",
         ]}
       />
-      <DbExplorer />
+      <DbExplorer landingContent={<LandingSection />} />
     </>
   )
 }

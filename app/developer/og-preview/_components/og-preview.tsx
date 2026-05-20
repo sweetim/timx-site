@@ -11,7 +11,7 @@ import {
 import clsx from "clsx"
 import { AlertCircle, Loader2, Search } from "lucide-react"
 import Image from "next/image"
-import { type FC, useState } from "react"
+import { type FC, type ReactNode, useState } from "react"
 import { match } from "ts-pattern"
 import { fetchOgData, type OgData } from "../_lib/fetch-og"
 
@@ -38,11 +38,7 @@ type Status =
   | { phase: "loaded"; data: OgData }
   | { phase: "error"; message: string }
 
-type OgPreviewProps = {
-  descriptionSection?: React.ReactNode
-}
-
-const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
+const OgPreview: FC<{ landingContent: ReactNode }> = ({ landingContent }) => {
   const [url, setUrl] = useState("")
   const [status, setStatus] = useState<Status>({ phase: "idle" })
 
@@ -60,59 +56,96 @@ const OgPreview: FC<OgPreviewProps> = ({ descriptionSection }) => {
   }
 
   return (
-    <div className="mx-auto px-6 py-8 w-full">
-      <div className="max-w-3xl mx-auto mt-2">
-        <h2 className="text-2xl font-semibold text-dev-text">
-          Open Graph Preview
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="flex gap-2 py-8"
-        >
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            aria-label="Enter URL to preview"
-            placeholder="https://example.com"
-            className="flex-1 px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary text-sm focus:outline-none focus:border-dev-link"
-          />
-          <button
-            type="submit"
-            disabled={status.phase === "loading"}
-            className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {status.phase === "loading" ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Search className="size-4" />
-            )}
-            Preview
-          </button>
-        </form>
-      </div>
-      {status.phase !== "loaded" && descriptionSection}
-
+    <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
       {match(status)
+        .with({ phase: "idle" }, () => (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="w-full max-w-2xl">
+              {landingContent}
+              <form onSubmit={handleSubmit} className="flex gap-2 mt-6">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  aria-label="Enter URL to preview"
+                  placeholder="https://example.com"
+                  className="flex-1 px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary text-sm focus:outline-none focus:border-dev-link"
+                />
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors cursor-pointer"
+                >
+                  <Search className="size-4" />
+                  Preview
+                </button>
+              </form>
+            </div>
+          </div>
+        ))
         .with({ phase: "loading" }, () => (
-          <div className="max-w-2xl mx-auto flex items-center justify-center py-12 text-dev-text-secondary">
+          <div className="flex-1 flex items-center justify-center text-dev-text-secondary">
             <Loader2 className="size-5 animate-spin mr-2" />
             Fetching meta tags…
           </div>
         ))
         .with({ phase: "error" }, ({ message }) => (
-          <div className="max-w-2xl mx-auto flex items-start gap-3 p-4 rounded-md border border-dev-accent-red/30 bg-dev-accent-red/10">
-            <AlertCircle className="size-5 text-dev-accent-red shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-dev-accent-red">
-                Failed to fetch
-              </p>
-              <p className="text-sm text-dev-text-secondary mt-1">{message}</p>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="max-w-md text-center">
+              <div className="flex items-start gap-3 p-4 rounded-md border border-dev-accent-red/30 bg-dev-accent-red/10">
+                <AlertCircle className="size-5 text-dev-accent-red shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-dev-accent-red">
+                    Failed to fetch
+                  </p>
+                  <p className="text-sm text-dev-text-secondary mt-1">
+                    {message}
+                  </p>
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="flex gap-2 mt-4">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  aria-label="Enter URL to preview"
+                  placeholder="https://example.com"
+                  className="flex-1 px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary text-sm focus:outline-none focus:border-dev-link"
+                />
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors cursor-pointer"
+                >
+                  <Search className="size-4" />
+                  Preview
+                </button>
+              </form>
             </div>
           </div>
         ))
-        .with({ phase: "loaded" }, ({ data }) => <OgResult data={data} />)
-        .with({ phase: "idle" }, () => null)
+        .with({ phase: "loaded" }, ({ data }) => (
+          <div className="flex-1 overflow-auto">
+            <div className="mx-auto px-6 py-8 w-full max-w-3xl">
+              <form onSubmit={handleSubmit} className="flex gap-2 mb-6">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  aria-label="Enter URL to preview"
+                  placeholder="https://example.com"
+                  className="flex-1 px-3 py-2 rounded-md border border-dev-border bg-dev-inset text-dev-text placeholder:text-dev-text-secondary text-sm focus:outline-none focus:border-dev-link"
+                />
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md bg-dev-button hover:bg-dev-button-hover text-dev-text text-sm font-medium transition-colors cursor-pointer"
+                >
+                  <Search className="size-4" />
+                  Preview
+                </button>
+              </form>
+              <OgResult data={data} />
+            </div>
+          </div>
+        ))
         .exhaustive()}
     </div>
   )

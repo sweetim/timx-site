@@ -1,6 +1,6 @@
 "use client"
 
-import { type FC, useCallback, useReducer, useRef } from "react"
+import { type FC, type ReactNode, useCallback, useReducer, useRef } from "react"
 import { match } from "ts-pattern"
 import {
   dbExplorerReducer,
@@ -17,7 +17,7 @@ import { loadFileFromHandle, useFileHandles } from "./use-file-handle"
 const isFileSystemAccessSupported =
   typeof window !== "undefined" && "showOpenFilePicker" in window
 
-const DbExplorer: FC = () => {
+const DbExplorer: FC<{ landingContent: ReactNode }> = ({ landingContent }) => {
   const [state, dispatch] = useReducer(
     dbExplorerReducer,
     initialDbExplorerState,
@@ -197,6 +197,7 @@ const DbExplorer: FC = () => {
       {match(dbState)
         .with({ phase: "empty" }, () => (
           <EmptyState
+            landingContent={landingContent}
             recentFiles={recentFiles}
             onRemoveRecent={removeHandle}
             onOpenRecent={handleOpenRecent}
