@@ -201,9 +201,9 @@ function renderJsonLines(
   entries.forEach(([key, val], i) => {
     const isLast = i === entries.length - 1
     const isOpt = key.endsWith("?")
-    const propHl =
-      hl
-      ?? (isCompositeArray(val) ? "composite" : isOpt ? "optional" : undefined)
+    const propHl = isOpt
+      ? "optional"
+      : hl ?? (isCompositeArray(val) ? "composite" : undefined)
 
     const childLines = renderJsonLines(val, indent + 1, propHl)
     const childPad = "  ".repeat(indent + 1)

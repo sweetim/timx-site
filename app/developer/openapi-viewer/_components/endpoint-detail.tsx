@@ -4,6 +4,7 @@ import { METHOD_BG, METHOD_COLORS } from "../_lib/constants"
 import { BodySection } from "./body-section"
 import { ParamTable } from "./param-table"
 import { ResponsesSection } from "./responses-section"
+import { SecuritySection } from "./security-section"
 import { SuggestionItem } from "./suggestion-item"
 import type { OpenApiOperation, OpenApiSpec, Suggestion } from "./types"
 
@@ -94,6 +95,12 @@ function EndpointDetail({
           </span>
         </div>
       )}
+
+      <SecuritySection
+        security={endpoint.security}
+        securitySchemes={spec.components?.securitySchemes}
+        specSecurity={spec.security}
+      />
 
       <ParamTable
         params={endpoint.parameters?.filter((p) => p.location === "path")}

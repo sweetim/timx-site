@@ -130,12 +130,12 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 1. `/developer/openapi-viewer` renders a server-rendered `LandingSection` (H1, feature cards) passed into the `OpenApiViewer` client component.
 2. The empty phase shows the landing section, upload zone, and recent files vertically centered. After loading a file, the landing section is replaced by the viewer.
-2. User uploads or drops an OpenAPI 3.x JSON or YAML file into the upload zone.
-3. The file is parsed client-side (JSON natively, YAML via js-yaml); endpoints are extracted from `paths` and grouped by tags.
-4. A sidebar lists all endpoints grouped by tag, showing HTTP method (color-coded), path, and summary.
-5. Clicking an endpoint displays its details in the main panel: full URL, method badge, summary, description, operation ID, parameters table (path/query/header), request body schema with content types, and response schemas with status codes.
-6. A "Suggestions" toggle analyzes the spec for completeness issues: missing descriptions, missing summaries, missing operation IDs, missing examples, missing error responses, and missing server definitions. Suggestions are categorized by severity (error, warning, info).
-7. The user can load a new file at any time via the "New File" button.
+3. Click-to-browse uses the File System Access API when available, then stores a `FileSystemFileHandle` plus title/version metadata in IndexedDB for recent files; the file input fallback, drag-and-drop, and paste still load specs without storing recent entries.
+4. The file is parsed client-side (JSON natively, YAML via js-yaml); endpoints are extracted from `paths` and grouped by tags.
+5. A sidebar lists all endpoints grouped by tag, showing HTTP method (color-coded), path, summary, and a lock icon when the endpoint requires authorization.
+6. Clicking an endpoint displays its details in the main panel: full URL, method badge, summary, description, operation ID, authorization requirements (resolved from per-operation or top-level security against defined security schemes), parameters table (path/query/header), request body schema with content types, and response schemas with status codes.
+7. A "Suggestions" toggle analyzes the spec for completeness issues: missing descriptions, missing summaries, missing operation IDs, missing examples, missing error responses, missing server definitions, undefined security scheme references, and unused security scheme definitions. Suggestions are categorized by severity (error, warning, info).
+8. Selecting a recent file re-requests read permission and reads the current file contents from the stored handle; the user can load a new file at any time via the "New File" button.
 
 ## Key design decisions
 
@@ -264,19 +264,21 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/openapi-viewer/_components/openapi-viewer.tsx` | OpenAPI Viewer orchestrator (state management, phase rendering, accepts landing content) |
 | `app/developer/openapi-viewer/_components/types.ts` | OpenAPI Viewer shared types (OpenApiSpec, OpenApiOperation, ViewerState, Suggestion, etc.) |
 | `app/developer/openapi-viewer/_components/upload-zone.tsx` | Empty-state upload UI with drag-and-drop and recent files list |
-| `app/developer/openapi-viewer/_components/endpoint-sidebar.tsx` | Sidebar with grouped/tagged endpoint list |
-| `app/developer/openapi-viewer/_components/endpoint-detail.tsx` | Main panel showing selected endpoint details or suggestions |
+| `app/developer/openapi-viewer/_components/endpoint-sidebar.tsx` | Sidebar with spec info (title, version, servers), grouped/tagged endpoint list, and authorization indicators |
+| `app/developer/openapi-viewer/_components/endpoint-detail.tsx` | Main panel showing selected endpoint details (including authorization) or suggestions |
 | `app/developer/openapi-viewer/_components/param-table.tsx` | Parameter table component (path/query/header params) |
 | `app/developer/openapi-viewer/_components/body-section.tsx` | Request body section with content types and schema previews |
 | `app/developer/openapi-viewer/_components/responses-section.tsx` | Responses section with status codes and schema previews |
+| `app/developer/openapi-viewer/_components/security-section.tsx` | Endpoint authorization details resolved from security schemes |
 | `app/developer/openapi-viewer/_components/suggestion-item.tsx` | Single suggestion item with severity icon |
 | `app/developer/openapi-viewer/_lib/constants.ts` | HTTP method color and background mappings |
 | `app/developer/openapi-viewer/_lib/parse-spec.ts` | OpenAPI spec parsing and endpoint extraction |
 | `app/developer/openapi-viewer/_lib/suggestions.ts` | Spec completeness suggestion generation |
 | `app/developer/openapi-viewer/_lib/schema-resolver.tsx` | $ref resolution, example generation, highlighted JSON preview, and example/schema tab switcher |
-| `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent files localStorage persistence |
+| `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent file labeling helpers |
+| `app/developer/openapi-viewer/_lib/use-file-handle.ts` | IndexedDB persistence for OpenAPI Viewer file handles and recent-file metadata |
 
-Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
 
 ### `app/` assets
 
@@ -744,6 +746,19 @@ type OpenApiResponse = {
   content?: Record<string, { schema?: unknown; example?: unknown; examples?: Record<string, unknown> }>
 }
 
+type OpenApiSecurityRequirement = Record<string, string[]>
+
+type OpenApiSecurityScheme = {
+  type: "apiKey" | "http" | "oauth2" | "openIdConnect"
+  description?: string
+  name?: string
+  in?: "query" | "header" | "cookie"
+  scheme?: string
+  bearerFormat?: string
+  flows?: Record<string, unknown>
+  openIdConnectUrl?: string
+}
+
 type OpenApiOperation = {
   method: HttpMethod
   path: string
@@ -755,16 +770,18 @@ type OpenApiOperation = {
   parameters?: OpenApiParameter[]
   requestBody?: OpenApiRequestBody
   responses?: Record<string, OpenApiResponse>
+  security?: OpenApiSecurityRequirement[]
 }
 
 type OpenApiSpec = {
   openapi: string
   info: { title: string; version: string; description?: string }
   servers?: { url: string; description?: string }[]
+  security?: OpenApiSecurityRequirement[]
   paths: Record<string, Record<string, unknown>>
   components?: {
     schemas?: Record<string, unknown>
-    securitySchemes?: Record<string, unknown>
+    securitySchemes?: Record<string, OpenApiSecurityScheme>
   }
 }
 

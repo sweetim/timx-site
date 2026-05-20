@@ -112,6 +112,57 @@ function generateSuggestions(spec: OpenApiSpec): Suggestion[] {
     })
   }
 
+  const definedSchemes = Object.keys(spec.components?.securitySchemes ?? {})
+  const referencedSchemes = new Set<string>()
+
+  for (const [, methods] of Object.entries(spec.paths)) {
+    for (const [, operation] of Object.entries(
+      methods as Record<string, unknown>,
+    )) {
+      if (typeof operation !== "object" || !operation) continue
+      const op = operation as Record<string, unknown>
+      const opSecurity = op.security as Record<string, string[]>[] | undefined
+      if (opSecurity) {
+        for (const req of opSecurity) {
+          for (const name of Object.keys(req)) {
+            referencedSchemes.add(name)
+          }
+        }
+      }
+    }
+  }
+
+  if (spec.security) {
+    for (const req of spec.security) {
+      for (const name of Object.keys(req)) {
+        referencedSchemes.add(name)
+      }
+    }
+  }
+
+  for (const name of referencedSchemes) {
+    if (!definedSchemes.includes(name)) {
+      suggestions.push({
+        severity: "error",
+        message: `Security scheme "${name}" is referenced but not defined in components.securitySchemes`,
+        path: `components.securitySchemes.${name}`,
+      })
+    }
+  }
+
+  if (
+    definedSchemes.length > 0
+    && referencedSchemes.size === 0
+    && !spec.security
+  ) {
+    suggestions.push({
+      severity: "info",
+      message:
+        "Security schemes are defined but never referenced. Add a top-level security field or per-operation security to apply them.",
+      path: "security",
+    })
+  }
+
   return suggestions
 }
 

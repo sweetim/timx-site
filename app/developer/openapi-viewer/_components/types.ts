@@ -34,6 +34,19 @@ type OpenApiResponse = {
   >
 }
 
+type OpenApiSecurityRequirement = Record<string, string[]>
+
+type OpenApiSecurityScheme = {
+  type: "apiKey" | "http" | "oauth2" | "openIdConnect"
+  description?: string
+  name?: string
+  in?: "query" | "header" | "cookie"
+  scheme?: string
+  bearerFormat?: string
+  flows?: Record<string, unknown>
+  openIdConnectUrl?: string
+}
+
 type OpenApiOperation = {
   method: HttpMethod
   path: string
@@ -45,6 +58,7 @@ type OpenApiOperation = {
   parameters?: OpenApiParameter[]
   requestBody?: OpenApiRequestBody
   responses?: Record<string, OpenApiResponse>
+  security?: OpenApiSecurityRequirement[]
 }
 
 type OpenApiSpec = {
@@ -55,10 +69,11 @@ type OpenApiSpec = {
     description?: string
   }
   servers?: { url: string; description?: string }[]
+  security?: OpenApiSecurityRequirement[]
   paths: Record<string, Record<string, unknown>>
   components?: {
     schemas?: Record<string, unknown>
-    securitySchemes?: Record<string, unknown>
+    securitySchemes?: Record<string, OpenApiSecurityScheme>
   }
 }
 
@@ -71,14 +86,6 @@ type ViewerState =
   | { phase: "empty" }
   | { phase: "error"; message: string }
   | { phase: "ready"; spec: OpenApiSpec; endpoints: EndpointGroup[] }
-
-type RecentFile = {
-  fileName: string
-  title: string
-  version: string
-  content: string
-  openedAt: number
-}
 
 type Suggestion = {
   severity: "error" | "warning" | "info"
@@ -93,8 +100,9 @@ export type {
   OpenApiParameter,
   OpenApiRequestBody,
   OpenApiResponse,
+  OpenApiSecurityRequirement,
+  OpenApiSecurityScheme,
   OpenApiSpec,
-  RecentFile,
   Suggestion,
   ViewerState,
 }

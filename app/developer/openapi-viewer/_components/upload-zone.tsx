@@ -1,7 +1,6 @@
 import { Clock, FileUp, Trash2 } from "lucide-react"
 import type { ChangeEvent, DragEvent, RefObject } from "react"
 import type { RecentFileWithLabel } from "../_lib/recent-files"
-import type { RecentFile } from "./types"
 
 function UploadZone({
   recentFiles,
@@ -9,6 +8,7 @@ function UploadZone({
   onDrop,
   onDragOver,
   onInputChange,
+  onOpenFilePicker,
   onLoadRecent,
   onRemoveRecent,
 }: {
@@ -17,7 +17,8 @@ function UploadZone({
   onDrop: (e: DragEvent) => void
   onDragOver: (e: DragEvent) => void
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void
-  onLoadRecent: (recent: RecentFile) => void
+  onOpenFilePicker: () => void
+  onLoadRecent: (fileName: string) => void
   onRemoveRecent: (e: React.MouseEvent, fileName: string) => void
 }) {
   return (
@@ -27,9 +28,9 @@ function UploadZone({
         className="w-full border-2 border-dashed border-dev-border-muted rounded-lg p-12 text-center hover:border-dev-link transition-colors cursor-pointer bg-transparent"
         onDrop={onDrop}
         onDragOver={onDragOver}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={onOpenFilePicker}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click()
+          if (e.key === "Enter" || e.key === " ") onOpenFilePicker()
         }}
       >
         <FileUp className="size-12 text-dev-text-secondary mx-auto mb-4" />
@@ -64,7 +65,7 @@ function UploadZone({
                 key={file.fileName}
                 type="button"
                 className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-dev-inset transition-colors cursor-pointer text-left group"
-                onClick={() => onLoadRecent(file)}
+                onClick={() => onLoadRecent(file.fileName)}
               >
                 <Clock className="size-4 text-dev-text-secondary shrink-0" />
                 <div className="min-w-0 flex-1">

@@ -49,6 +49,7 @@ function extractEndpoints(spec: OpenApiSpec): EndpointGroup[] {
         parameters: op.parameters as OpenApiOperation["parameters"],
         requestBody: op.requestBody as OpenApiOperation["requestBody"],
         responses: op.responses as OpenApiOperation["responses"],
+        security: op.security as OpenApiOperation["security"],
       }
 
       const tags =

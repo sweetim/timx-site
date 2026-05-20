@@ -1,12 +1,28 @@
 import clsx from "clsx"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight, Lock } from "lucide-react"
 import { METHOD_BG, METHOD_COLORS } from "../_lib/constants"
-import type { EndpointGroup, OpenApiOperation } from "./types"
+import type {
+  EndpointGroup,
+  OpenApiOperation,
+  OpenApiSecurityRequirement,
+} from "./types"
+
+function hasAuthorization(
+  endpoint: OpenApiOperation,
+  specSecurity: OpenApiSecurityRequirement[] | undefined,
+): boolean {
+  const security = endpoint.security ?? specSecurity
+  return Boolean(
+    security?.length
+      && security.every((requirement) => Object.keys(requirement).length > 0),
+  )
+}
 
 function EndpointSidebar({
   specTitle,
   specVersion,
   specServers,
+  specSecurity,
   fileName,
   endpoints,
   selectedEndpoint,
@@ -17,6 +33,7 @@ function EndpointSidebar({
   specTitle: string
   specVersion: string
   specServers?: { url: string; description?: string }[]
+  specSecurity?: OpenApiSecurityRequirement[]
   fileName: string | null
   endpoints: EndpointGroup[]
   selectedEndpoint: OpenApiOperation | null
@@ -65,6 +82,10 @@ function EndpointSidebar({
                   const isSelected =
                     selectedEndpoint?.method === endpoint.method
                     && selectedEndpoint?.path === endpoint.path
+                  const requiresAuthorization = hasAuthorization(
+                    endpoint,
+                    specSecurity,
+                  )
                   return (
                     <button
                       key={`${endpoint.method}-${endpoint.path}`}
@@ -94,6 +115,16 @@ function EndpointSidebar({
                           </div>
                         )}
                       </div>
+                      {requiresAuthorization && (
+                        <span
+                          role="img"
+                          aria-label="Requires authorization"
+                          title="Requires authorization"
+                          className="text-dev-accent-purple shrink-0"
+                        >
+                          <Lock size={13} />
+                        </span>
+                      )}
                       {endpoint.deprecated && (
                         <span className="text-xs text-dev-accent-orange shrink-0">
                           deprecated

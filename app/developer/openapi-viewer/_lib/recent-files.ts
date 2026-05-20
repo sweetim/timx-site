@@ -1,37 +1,8 @@
-import type { RecentFile } from "../_components/types"
+import type { RecentHandleFile } from "./use-file-handle"
 
-const RECENT_FILES_KEY = "openapi-viewer-recent-files"
 const MAX_RECENT_FILES = 5
 
-type RecentFileWithLabel = RecentFile & { relativeTime: string }
-
-function loadRecentFiles(): RecentFile[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(RECENT_FILES_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveRecentFiles(files: RecentFile[]) {
-  try {
-    localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(files))
-  } catch {
-    // localStorage might be full; silently ignore
-  }
-}
-
-function addRecentFile(entry: RecentFile) {
-  const files = loadRecentFiles().filter((f) => f.fileName !== entry.fileName)
-  files.unshift(entry)
-  saveRecentFiles(files.slice(0, MAX_RECENT_FILES))
-}
-
-function removeRecentFile(fileName: string) {
-  saveRecentFiles(loadRecentFiles().filter((f) => f.fileName !== fileName))
-}
+type RecentFileWithLabel = RecentHandleFile & { relativeTime: string }
 
 function computeRelativeTime(timestamp: number, now: number): string {
   const seconds = Math.floor((now - timestamp) / 1000)
@@ -44,26 +15,17 @@ function computeRelativeTime(timestamp: number, now: number): string {
   return `${days}d ago`
 }
 
-function toRecentFilesWithLabels(files: RecentFile[]): RecentFileWithLabel[] {
+function toRecentFilesWithLabels(
+  files: RecentHandleFile[],
+): RecentFileWithLabel[] {
   const now = Date.now()
-  return files.map((f) => ({
-    ...f,
-    relativeTime: computeRelativeTime(f.openedAt, now),
-  }))
-}
-
-function loadRecentFilesWithLabels(): RecentFileWithLabel[] {
-  return toRecentFilesWithLabels(loadRecentFiles())
-}
-
-function refreshRecentFiles(): RecentFileWithLabel[] {
-  return loadRecentFilesWithLabels()
+  return files
+    .slice(0, MAX_RECENT_FILES)
+    .map((f) => ({
+      ...f,
+      relativeTime: computeRelativeTime(f.lastOpened, now),
+    }))
 }
 
 export type { RecentFileWithLabel }
-export {
-  addRecentFile,
-  loadRecentFilesWithLabels,
-  refreshRecentFiles,
-  removeRecentFile,
-}
+export { toRecentFilesWithLabels }

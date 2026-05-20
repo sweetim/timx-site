@@ -2,26 +2,37 @@
 
 import clsx from "clsx"
 import { AlertTriangle, Upload, X } from "lucide-react"
-import { type FC, type ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import {
+  type FC,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { match } from "ts-pattern"
 import { extractEndpoints, parseSpec } from "../_lib/parse-spec"
-import type { RecentFileWithLabel } from "../_lib/recent-files"
-import {
-  addRecentFile,
-  refreshRecentFiles,
-  removeRecentFile,
-} from "../_lib/recent-files"
+import { toRecentFilesWithLabels } from "../_lib/recent-files"
 import { generateSuggestions } from "../_lib/suggestions"
+import {
+  loadFileFromHandle,
+  updateHandleMetadata,
+  useFileHandles,
+} from "../_lib/use-file-handle"
 import { EndpointDetail } from "./endpoint-detail"
 import { EndpointSidebar } from "./endpoint-sidebar"
 import type {
   EndpointGroup,
   OpenApiOperation,
   OpenApiSpec,
-  RecentFile,
   ViewerState,
 } from "./types"
+
 import { UploadZone } from "./upload-zone"
+
+const isFileSystemAccessSupported =
+  typeof window !== "undefined" && "showOpenFilePicker" in window
 
 const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
   landingContent,
@@ -31,47 +42,51 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     useState<OpenApiOperation | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
-  const [recentFiles, setRecentFiles] = useState<RecentFileWithLabel[]>(() =>
-    refreshRecentFiles(),
+  const { recentFiles, addHandle, removeHandle, refreshFiles } =
+    useFileHandles()
+  const recentFilesWithLabels = useMemo(
+    () => toRecentFilesWithLabels(recentFiles),
+    [recentFiles],
   )
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const loadRawSpec = useCallback((raw: string, name: string) => {
-    try {
-      const spec = parseSpec(raw)
-      const endpoints = extractEndpoints(spec)
-      setState({ phase: "ready", spec, endpoints })
-      setFileName(name)
-      setSelectedEndpoint(null)
-      setShowSuggestions(false)
-      setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
-      addRecentFile({
-        fileName: name,
-        title: spec.info.title,
-        version: spec.info.version,
-        content: raw,
-        openedAt: Date.now(),
-      })
-      setRecentFiles(refreshRecentFiles())
-    } catch (error) {
-      setState({
-        phase: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to parse OpenAPI spec",
-      })
-    }
-  }, [])
+  const loadRawSpec = useCallback(
+    (raw: string, name: string, handle?: FileSystemFileHandle) => {
+      try {
+        const spec = parseSpec(raw)
+        const endpoints = extractEndpoints(spec)
+        setState({ phase: "ready", spec, endpoints })
+        setFileName(name)
+        setSelectedEndpoint(null)
+        setShowSuggestions(false)
+        setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
+        if (handle) {
+          addHandle(handle, spec.info.title, spec.info.version).catch(() => {})
+        }
+      } catch (error) {
+        setState({
+          phase: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to parse OpenAPI spec",
+        })
+      }
+    },
+    [addHandle],
+  )
 
-  const handleFile = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onload = () => loadRawSpec(reader.result as string, file.name)
-    reader.onerror = () =>
-      setState({ phase: "error", message: "Failed to read file" })
-    reader.readAsText(file)
-  }, [loadRawSpec])
+  const handleFile = useCallback(
+    (file: File) => {
+      const reader = new FileReader()
+      reader.onload = () => loadRawSpec(reader.result as string, file.name)
+      reader.onerror = () =>
+        setState({ phase: "error", message: "Failed to read file" })
+      reader.readAsText(file)
+    },
+    [loadRawSpec],
+  )
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -95,13 +110,16 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     [handleFile],
   )
 
-  const handlePaste = useCallback((text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed) return
-    const isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
-    const name = `pasted-spec.${isJson ? "json" : "yaml"}`
-    loadRawSpec(text, name)
-  }, [loadRawSpec])
+  const handlePaste = useCallback(
+    (text: string) => {
+      const trimmed = text.trim()
+      if (!trimmed) return
+      const isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
+      const name = `pasted-spec.${isJson ? "json" : "yaml"}`
+      loadRawSpec(text, name)
+    },
+    [loadRawSpec],
+  )
 
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
@@ -118,30 +136,72 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
   const suggestions =
     state.phase === "ready" ? generateSuggestions(state.spec) : []
 
-  const handleLoadRecent = useCallback((recent: RecentFile) => {
-    try {
-      const spec = parseSpec(recent.content)
-      const endpoints = extractEndpoints(spec)
-      setState({ phase: "ready", spec, endpoints })
-      setFileName(recent.fileName)
-      setSelectedEndpoint(null)
-      setShowSuggestions(false)
-      setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
-      addRecentFile({ ...recent, openedAt: Date.now() })
-      setRecentFiles(refreshRecentFiles())
-    } catch {
-      setState({
-        phase: "error",
-        message: `Failed to re-parse "${recent.fileName}". The cached content may be corrupted.`,
-      })
-    }
-  }, [])
+  const handleLoadRecent = useCallback(
+    async (fileName: string) => {
+      try {
+        const result = await loadFileFromHandle(fileName)
+        if (!result) {
+          setState({
+            phase: "error",
+            message: `Permission denied for "${fileName}". Allow file access to reopen recent files.`,
+          })
+          await refreshFiles()
+          return
+        }
+        const text = await result.text()
+        const spec = parseSpec(text)
+        const endpoints = extractEndpoints(spec)
+        setState({ phase: "ready", spec, endpoints })
+        setFileName(fileName)
+        setSelectedEndpoint(null)
+        setShowSuggestions(false)
+        setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
+        await updateHandleMetadata(fileName, spec.info.title, spec.info.version)
+        await refreshFiles()
+      } catch {
+        setState({
+          phase: "error",
+          message: `Failed to re-read "${fileName}". The file may have been moved or permissions were denied.`,
+        })
+      }
+    },
+    [refreshFiles],
+  )
 
-  const handleRemoveRecent = useCallback((e: React.MouseEvent, fn: string) => {
-    e.stopPropagation()
-    removeRecentFile(fn)
-    setRecentFiles(refreshRecentFiles())
-  }, [])
+  const handleRemoveRecent = useCallback(
+    async (e: React.MouseEvent, fn: string) => {
+      e.stopPropagation()
+      await removeHandle(fn)
+    },
+    [removeHandle],
+  )
+
+  const openFilePicker = useCallback(async () => {
+    if (isFileSystemAccessSupported) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [
+            {
+              description: "OpenAPI specifications",
+              accept: {
+                "application/json": [".json"],
+                "text/yaml": [".yaml", ".yml"],
+              },
+            },
+          ],
+        })
+        const file = await handle.getFile()
+        const reader = new FileReader()
+        reader.onload = () =>
+          loadRawSpec(reader.result as string, file.name, handle)
+        reader.onerror = () =>
+          setState({ phase: "error", message: "Failed to read file" })
+        reader.readAsText(file)
+      } catch {}
+    } else {
+      fileInputRef.current?.click()
+    }
+  }, [loadRawSpec])
 
   const handleToggleGroup = useCallback((tag: string) => {
     setExpandedGroups((prev) => {
@@ -168,11 +228,12 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
             <div className="w-full max-w-2xl">
               {landingContent}
               <UploadZone
-                recentFiles={recentFiles}
+                recentFiles={recentFilesWithLabels}
                 fileInputRef={fileInputRef}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onInputChange={handleInputChange}
+                onOpenFilePicker={openFilePicker}
                 onLoadRecent={handleLoadRecent}
                 onRemoveRecent={handleRemoveRecent}
               />
@@ -241,6 +302,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
                   specTitle={readySpec.info.title}
                   specVersion={readySpec.info.version}
                   specServers={readySpec.servers}
+                  specSecurity={readySpec.security}
                   fileName={fileName}
                   endpoints={readyEndpoints}
                   selectedEndpoint={selectedEndpoint}
