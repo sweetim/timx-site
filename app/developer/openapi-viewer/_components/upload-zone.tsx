@@ -40,7 +40,7 @@ function UploadZone({
           or click to browse
         </p>
         <p className="text-xs text-dev-text-secondary">
-          Supports OpenAPI 3.x JSON and YAML files
+          Supports OpenAPI 3.x JSON and YAML — or paste directly on this page
         </p>
         <input
           ref={fileInputRef}

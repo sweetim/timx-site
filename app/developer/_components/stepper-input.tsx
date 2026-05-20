@@ -6,6 +6,7 @@ type StepperInputProps = {
   id?: string
   value: number | string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onBlur?: () => void
   onIncrement?: () => void
   onDecrement?: () => void
   min?: number
@@ -23,6 +24,7 @@ export default function StepperInput({
   id,
   value,
   onChange,
+  onBlur,
   onIncrement,
   onDecrement,
   min,
@@ -52,6 +54,7 @@ export default function StepperInput({
         type="number"
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         min={min}
         max={max}
         step={step}

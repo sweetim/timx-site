@@ -842,29 +842,57 @@ function OutputSizeInputs({
   const width = Math.round(crop.width / displayDimensions.scale)
   const height = Math.round(crop.height / displayDimensions.scale)
 
+  const [draftWidth, setDraftWidth] = useState<string | null>(null)
+  const [draftHeight, setDraftHeight] = useState<string | null>(null)
+
+  const displayWidth = draftWidth ?? String(width)
+  const displayHeight = draftHeight ?? String(height)
+
+  const commitWidth = useCallback(() => {
+    if (draftWidth !== null) {
+      onDimensionChange("width", draftWidth)
+      setDraftWidth(null)
+    }
+  }, [draftWidth, onDimensionChange])
+
+  const commitHeight = useCallback(() => {
+    if (draftHeight !== null) {
+      onDimensionChange("height", draftHeight)
+      setDraftHeight(null)
+    }
+  }, [draftHeight, onDimensionChange])
+
   if (variant === "page") {
     return (
       <div className="flex items-center gap-1 border-l border-dev-border pl-4">
         <StepperInput
-          key={`pw-${width}`}
-          value={width}
-          onChange={() => {}}
-          onIncrement={() => onDimensionChange("width", String(width + 1))}
-          onDecrement={() =>
+          value={displayWidth}
+          onChange={(e) => setDraftWidth(e.target.value)}
+          onBlur={commitWidth}
+          onIncrement={() => {
+            setDraftWidth(null)
+            onDimensionChange("width", String(width + 1))
+          }}
+          onDecrement={() => {
+            setDraftWidth(null)
             onDimensionChange("width", String(Math.max(1, width - 1)))
-          }
+          }}
           min={1}
           className="w-24"
         />
         <span className="text-xs text-dev-text-secondary">×</span>
         <StepperInput
-          key={`ph-${height}`}
-          value={height}
-          onChange={() => {}}
-          onIncrement={() => onDimensionChange("height", String(height + 1))}
-          onDecrement={() =>
+          value={displayHeight}
+          onChange={(e) => setDraftHeight(e.target.value)}
+          onBlur={commitHeight}
+          onIncrement={() => {
+            setDraftHeight(null)
+            onDimensionChange("height", String(height + 1))
+          }}
+          onDecrement={() => {
+            setDraftHeight(null)
             onDimensionChange("height", String(Math.max(1, height - 1)))
-          }
+          }}
           min={1}
           className="w-24"
         />
@@ -888,13 +916,17 @@ function OutputSizeInputs({
           </label>
           <StepperInput
             id="crop-output-width"
-            key={`w-${width}`}
-            value={width}
-            onChange={() => {}}
-            onIncrement={() => onDimensionChange("width", String(width + 1))}
-            onDecrement={() =>
+            value={displayWidth}
+            onChange={(e) => setDraftWidth(e.target.value)}
+            onBlur={commitWidth}
+            onIncrement={() => {
+              setDraftWidth(null)
+              onDimensionChange("width", String(width + 1))
+            }}
+            onDecrement={() => {
+              setDraftWidth(null)
               onDimensionChange("width", String(Math.max(1, width - 1)))
-            }
+            }}
             min={1}
             className="mt-1 w-full"
           />
@@ -908,13 +940,17 @@ function OutputSizeInputs({
           </label>
           <StepperInput
             id="crop-output-height"
-            key={`h-${height}`}
-            value={height}
-            onChange={() => {}}
-            onIncrement={() => onDimensionChange("height", String(height + 1))}
-            onDecrement={() =>
+            value={displayHeight}
+            onChange={(e) => setDraftHeight(e.target.value)}
+            onBlur={commitHeight}
+            onIncrement={() => {
+              setDraftHeight(null)
+              onDimensionChange("height", String(height + 1))
+            }}
+            onDecrement={() => {
+              setDraftHeight(null)
               onDimensionChange("height", String(Math.max(1, height - 1)))
-            }
+            }}
             min={1}
             className="mt-1 w-full"
           />

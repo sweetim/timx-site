@@ -1,9 +1,7 @@
-"use client"
-
 import clsx from "clsx"
 
 import Image from "next/image"
-import type { FC } from "react"
+import type { CSSProperties, FC } from "react"
 
 const blobShapes = [
   "60% 40% 30% 70% / 60% 30% 70% 40%",
@@ -34,8 +32,8 @@ const ProfileLink: FC<ProfileLinkProps> = ({
   const hoverRadius = blobShapes[index % blobShapes.length]
 
   const imageShapeClass = clsx({
-    "text-blue-700 hover:bg-neutral-300 focus:ring-3 focus:outline-none focus:ring-blue-300 font-medium p-2.5 text-center inline-flex items-center": true,
-    "rounded-full": rounded,
+    "text-blue-700 hover:bg-neutral-300 focus:ring-3 focus:outline-none focus:ring-blue-300 font-medium p-2.5 text-center inline-flex items-center transition-[background-color,border-radius,box-shadow] duration-200": true,
+    "profile-link-rounded rounded-full": rounded,
     "rounded-lg": !rounded,
   })
 
@@ -49,15 +47,9 @@ const ProfileLink: FC<ProfileLinkProps> = ({
         className={imageShapeClass}
         style={
           rounded
-            ? ({ "--hover-radius": hoverRadius } as React.CSSProperties)
+            ? ({ "--hover-radius": hoverRadius } as CSSProperties)
             : undefined
         }
-        onMouseEnter={(event) => {
-          if (rounded) event.currentTarget.style.borderRadius = hoverRadius
-        }}
-        onMouseLeave={(event) => {
-          if (rounded) event.currentTarget.style.borderRadius = "9999px"
-        }}
       >
         <Image
           src={imageUrl}

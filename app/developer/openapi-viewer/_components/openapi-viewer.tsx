@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 import { AlertTriangle, Upload, X } from "lucide-react"
-import { type FC, type ReactNode, useCallback, useRef, useState } from "react"
+import { type FC, type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { match } from "ts-pattern"
 import { extractEndpoints, parseSpec } from "../_lib/parse-spec"
 import type { RecentFileWithLabel } from "../_lib/recent-files"
@@ -37,40 +37,41 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = useCallback((file: File) => {
-    setFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const raw = reader.result as string
-        const spec = parseSpec(raw)
-        const endpoints = extractEndpoints(spec)
-        setState({ phase: "ready", spec, endpoints })
-        setSelectedEndpoint(null)
-        setShowSuggestions(false)
-        setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
-        addRecentFile({
-          fileName: file.name,
-          title: spec.info.title,
-          version: spec.info.version,
-          content: raw,
-          openedAt: Date.now(),
-        })
-        setRecentFiles(refreshRecentFiles())
-      } catch (error) {
-        setState({
-          phase: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Failed to parse OpenAPI spec",
-        })
-      }
+  const loadRawSpec = useCallback((raw: string, name: string) => {
+    try {
+      const spec = parseSpec(raw)
+      const endpoints = extractEndpoints(spec)
+      setState({ phase: "ready", spec, endpoints })
+      setFileName(name)
+      setSelectedEndpoint(null)
+      setShowSuggestions(false)
+      setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
+      addRecentFile({
+        fileName: name,
+        title: spec.info.title,
+        version: spec.info.version,
+        content: raw,
+        openedAt: Date.now(),
+      })
+      setRecentFiles(refreshRecentFiles())
+    } catch (error) {
+      setState({
+        phase: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to parse OpenAPI spec",
+      })
     }
+  }, [])
+
+  const handleFile = useCallback((file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => loadRawSpec(reader.result as string, file.name)
     reader.onerror = () =>
       setState({ phase: "error", message: "Failed to read file" })
     reader.readAsText(file)
-  }, [])
+  }, [loadRawSpec])
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -93,6 +94,26 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     },
     [handleFile],
   )
+
+  const handlePaste = useCallback((text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
+    const name = `pasted-spec.${isJson ? "json" : "yaml"}`
+    loadRawSpec(text, name)
+  }, [loadRawSpec])
+
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData("text")
+      if (text && state.phase === "empty") {
+        e.preventDefault()
+        handlePaste(text)
+      }
+    }
+    document.addEventListener("paste", handler)
+    return () => document.removeEventListener("paste", handler)
+  }, [state.phase, handlePaste])
 
   const suggestions =
     state.phase === "ready" ? generateSuggestions(state.spec) : []

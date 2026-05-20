@@ -5,7 +5,7 @@ import opengraph from "@/app/opengraph.jpg"
 import "./globals.css"
 
 const mali = Mali({
-  weight: "400",
+  weight: ["400", "700"],
   subsets: ["latin"],
 })
 

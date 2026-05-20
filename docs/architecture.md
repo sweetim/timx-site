@@ -44,9 +44,10 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 ### Home page (`/`)
 
-1. `app/page.tsx` renders a `Profile` component with hardcoded profile data.
-2. The profile avatar links to `/developer`.
-3. Social links render as crawlable external anchors.
+1. `app/page.tsx` renders a maker-focused `Profile` component with hardcoded profile copy, craft-area tags, visible profile actions, and selected work links derived from the tool registry.
+2. The page exports homepage-specific metadata, Open Graph metadata, Twitter metadata, Person JSON-LD, and ItemList JSON-LD for the highlighted tools.
+3. The primary homepage action links to `/developer`, the secondary action links to GitHub, and the selected-work cards link to static developer tool routes.
+4. Social links render as crawlable external anchors in the connect section with CSS-only hover animation.
 
 ### Developer tools (`/developer/*`)
 
@@ -160,7 +161,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 | `next.config.ts` | Next.js configuration (image remote patterns, WASM content-type header) |
 | `tsconfig.json` | TypeScript configuration |
 | `postcss.config.mjs` | PostCSS with Tailwind |
-| `eslint.config.mjs` | ESLint flat config |
+| `eslint.config.mjs` | ESLint flat config with generated output ignores |
 | `biome.json` | Biome linter/formatter config |
 | `package.json` | Dependencies, Bun package-manager metadata, and scripts |
 | `.storybook/main.ts` | Storybook file discovery and framework configuration |
@@ -175,14 +176,14 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | File | Purpose |
 |---|---|
 | `app/layout.tsx` | Root layout (Mali font, global CSS, Google Analytics) |
-| `app/page.tsx` | Home page — profile card with Person JSON-LD |
+| `app/page.tsx` | Home page - maker profile landing page with homepage metadata, Person JSON-LD, ItemList JSON-LD, and selected developer-tool links |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
-| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, animations, global button bounce (hover:scale-105 active:scale-95) |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, maker profile background/grid styles, profile/social animations, and global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/terms/page.tsx` | Terms of service page |
-| `app/_components/Profile.tsx` | Profile card component |
-| `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
+| `app/_components/Profile.tsx` | Maker profile landing component with hero actions, craft tags, connect links, and selected work cards |
+| `app/_components/ProfileLink.tsx` | Social link button with CSS-only blob hover animation |
 | `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication, BreadcrumbList) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
 | `app/developer/page.tsx` | Developer tools index page |
@@ -370,9 +371,28 @@ type Tool = {
 type ProfileProps = {
   title: string
   description: string
+  summary: string
   location: string
   imageUrl: string
   linkUrl: ProfileLinkProps[]
+  profileActions: ProfileAction[]
+  craftAreas: string[]
+  featuredToolLinks: ProfileFeaturedLink[]
+  currentlyBuilding: string
+  sidePanelStats: [string, string][]
+}
+
+type ProfileAction = {
+  label: string
+  href: string
+  isExternal?: boolean
+}
+
+type ProfileFeaturedLink = {
+  title: string
+  description: string
+  href: string
+  icon?: LucideIcon
 }
 ```
 

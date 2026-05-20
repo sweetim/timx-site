@@ -78,6 +78,21 @@
     border-color: var(--color-dev-canvas);
 }
 
+.maker-profile-background {
+    background:
+        radial-gradient(circle at 12% 18%, rgb(191 219 254 / 0.72), transparent 28rem),
+        radial-gradient(circle at 86% 12%, rgb(254 215 170 / 0.64), transparent 24rem),
+        linear-gradient(135deg, #fff7ed 0%, #f8fafc 46%, #e0f2fe 100%);
+}
+
+.maker-profile-grid {
+    background-image:
+        linear-gradient(rgb(15 23 42 / 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(15 23 42 / 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(to bottom, black, transparent);
+}
+
 @keyframes spinner-rotate {
     to {
         transform: rotate(360deg);
@@ -112,6 +127,11 @@
 .blob-splash {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
     animation: blob-morph 8s ease-in-out infinite;
+}
+
+.profile-link-rounded:hover,
+.profile-link-rounded:focus-visible {
+    border-radius: var(--hover-radius, 9999px);
 }
 
 button:not(.no-bounce) {
