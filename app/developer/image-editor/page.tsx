@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
+import { ToolSeoContent } from "../_components/seo-content"
 import EditorInfoContent from "./_components/editor-info-content"
 import ImageEditor from "./_components/image-editor"
 
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
 export default function ImageEditorPage() {
   return (
     <>
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://timx.co" },
+          { name: "Developer Tools", url: "https://timx.co/developer" },
+          { name: "Image Editor", url: "https://timx.co/developer/image-editor" },
+        ]}
+      />
       <WebApplicationJsonLd
         name="Image Editor"
         description="Remove backgrounds, crop images, and stitch mobile screenshots in your browser"
@@ -31,6 +39,17 @@ export default function ImageEditorPage() {
           "Crop images with aspect ratio presets",
           "Stitch mobile screenshots",
           "Export edited images as PNG",
+        ]}
+      />
+      <ToolSeoContent
+        id="image-editor-seo"
+        heading="Free Online Image Editor"
+        headingLevel="h1"
+        description="Edit images in the browser without uploading files. Remove backgrounds with local AI processing, crop images with aspect ratio presets, and stitch mobile screenshots into presentation-ready assets."
+        features={[
+          "Remove image backgrounds locally in a Web Worker.",
+          "Crop images with freeform and common aspect ratio presets.",
+          "Stitch multiple screenshots horizontally or vertically and export PNG, JPEG, or WebP files.",
         ]}
       />
       <ImageEditor infoContent={<EditorInfoContent />} />

@@ -1,7 +1,8 @@
 import { Info } from "lucide-react"
 import type { Metadata } from "next"
-import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
+import { ToolSeoContent } from "../_components/seo-content"
 import BlackScreenButton from "./_components/black-screen-button"
 import { LandingSection } from "./_components/landing-section"
 
@@ -22,6 +23,13 @@ export const metadata: Metadata = {
 export default function BlackScreenPage() {
   return (
     <>
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://timx.co" },
+          { name: "Developer Tools", url: "https://timx.co/developer" },
+          { name: "Black Screen", url: "https://timx.co/developer/black-screen" },
+        ]}
+      />
       <WebApplicationJsonLd
         name="Black Screen"
         description="Display a pure black fullscreen to spot stuck pixels, dust, and smudges on your monitor"
@@ -46,6 +54,16 @@ export default function BlackScreenPage() {
           </div>
         </div>
       </div>
+      <ToolSeoContent
+        id="black-screen-seo"
+        heading="Black Screen Tool for Pixel and Dust Checking"
+        description="Use the Black Screen tool to display a pure black fullscreen panel for checking monitor dust, smudges, stuck pixels, and display defects. It is designed for quick screen cleaning and display inspection without installing software."
+        features={[
+          "Show a pure black fullscreen display in one click.",
+          "Spot stuck pixels, dust, fingerprints, and smudges on a monitor.",
+          "Exit fullscreen with Escape or a click when the inspection is finished.",
+        ]}
+      />
     </>
   )
 }

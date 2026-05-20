@@ -20,6 +20,7 @@ A personal portfolio and developer tools site built with Next.js.
 - **DB Explorer** — Client-side SQLite browser with SQL editor
 - **OG Preview** — Open Graph meta tag preview across platforms
 - **Black Screen** — Fullscreen pixel and dust checker
+- **OpenAPI Viewer** — Interactive API specification viewer
 
 ## Getting Started
 

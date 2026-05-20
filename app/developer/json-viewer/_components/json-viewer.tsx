@@ -223,10 +223,15 @@ const JsonViewer: FC = () => {
   return (
     <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
       <div className="flex items-center justify-between gap-4 px-4 py-2 border-b border-dev-border">
-        <h1 className="text-sm font-medium leading-relaxed text-dev-text-secondary truncate min-w-0 shrink">
-          Paste JSON to validate, format, minify, unescape nested strings, and
-          inspect data in a collapsible tree.
-        </h1>
+        <div className="min-w-0 shrink">
+          <h1 className="text-sm font-medium leading-relaxed text-dev-text truncate">
+            JSON Viewer
+          </h1>
+          <p className="hidden sm:block text-xs leading-relaxed text-dev-text-secondary truncate">
+            Paste JSON to validate, format, minify, unescape nested strings, and
+            inspect data in a collapsible tree.
+          </p>
+        </div>
         <div className="flex gap-2 shrink-0">
           <button
             type="button"

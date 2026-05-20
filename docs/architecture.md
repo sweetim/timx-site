@@ -52,7 +52,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 1. `app/developer/layout.tsx` wraps all developer routes with a `NavBar`.
 2. `app/developer/page.tsx` reads the tool registry from `app/developer/_lib/tools.ts` and renders a card grid linking to each tool.
-3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata and renders its client component.
+3. Each tool page (e.g. `json-viewer/page.tsx`) sets page metadata, renders non-visual practical SEO content, and renders its client component.
 4. The LLM Pricing page renders a server-rendered H1 and introductory paragraph, then the `LlmUsage` client component, which fetches model data from the OpenRouter API and provides interactive sorting and filtering.
 5. The OG Preview page uses a server action (`fetchOgData`) to validate and fetch a user-provided URL server-side, parse its HTML for meta tags, and return structured OG data to the client component for display.
 6. The OpenAPI Viewer page lets users upload an OpenAPI 3.x JSON file, parses it client-side, and renders an endpoint explorer grouped by tags with parameter tables, request/response schema views, and improvement suggestions.
@@ -83,7 +83,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 
 ### JSON Viewer flow
 
-1. The page renders a visible SEO heading and intro copy above the tool workspace.
+1. The page renders a visible JSON Viewer H1 in the tool header plus non-visual practical SEO content in the route.
 2. User types or pastes JSON into the input textarea.
 3. `useMemo` parses the input; errors are caught and displayed.
 4. Valid JSON is rendered as a collapsible tree via recursive `JsonTreeNode` components.
@@ -177,21 +177,22 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/layout.tsx` | Root layout (Mali font, global CSS, Google Analytics) |
 | `app/page.tsx` | Home page — profile card with Person JSON-LD |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
-| `app/sitemap.ts` | XML sitemap listing all pages |
+| `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
 | `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, animations, global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Profile card component |
 | `app/_components/ProfileLink.tsx` | Social link button with blob hover animation |
-| `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication) |
+| `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication, BreadcrumbList) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
 | `app/developer/page.tsx` | Developer tools index page |
 | `app/developer/_lib/tools.ts` | Tool registry (name, slug, description) |
 | `app/developer/_components/nav-bar.tsx` | Top navigation bar for developer section |
+| `app/developer/_components/seo-content.tsx` | Shared non-visual practical SEO content block for developer tool pages |
 | `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
 | `app/developer/_components/button-click-feedback.stories.tsx` | Storybook showcase of global button click feedback styles |
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
-| `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component |
+| `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component with crawlable H1 and tool workspace |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants, escapeSqlIdentifier) |
 | `app/developer/db-explorer/_components/db-worker.ts` | Web Worker that owns sql.js WASM and executes all SQL queries off the main thread |
@@ -209,7 +210,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/db-explorer/page.tsx` | DB Explorer route page |
 | `app/developer/image-editor/_components/image-editor.tsx` | Combined Image Editor workspace with tool rail, canvas, and properties panel |
 | `app/developer/image-editor/_components/editor-info-content.tsx` | SEO/help content shown from the Image Editor info panel |
-| `app/developer/image-editor/page.tsx` | Image Editor route page |
+| `app/developer/image-editor/page.tsx` | Image Editor route page with metadata, WebApplication JSON-LD, and a non-visual H1 |
 | `app/developer/image-editor/_components/background-remover/index.tsx` | Background Remover client component |
 | `app/developer/image-editor/_components/background-remover/types.ts` | Status, phase, and per-image processing types |
 | `app/developer/image-editor/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions |
@@ -412,6 +413,15 @@ type ItemListJsonLdProps = {
   name: string
   description: string
   items: { name: string; url: string; description: string }[]
+}
+
+type BreadcrumbItem = {
+  name: string
+  url: string
+}
+
+type BreadcrumbListJsonLdProps = {
+  items: BreadcrumbItem[]
 }
 ```
 

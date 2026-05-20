@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ItemListJsonLd } from "@/app/_components/json-ld"
+import { BreadcrumbListJsonLd, ItemListJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
+import { ToolSeoContent } from "./_components/seo-content"
 import { tools } from "./_lib/tools"
 
 export const metadata: Metadata = {
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
 export default function DeveloperPage() {
   return (
     <>
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://timx.co" },
+          { name: "Developer Tools", url: "https://timx.co/developer" },
+        ]}
+      />
       <ItemListJsonLd
         name="Free Developer Tools"
         description="A collection of free browser-based developer tools. JSON viewer, image editor, LLM pricing comparison, and OG preview."
@@ -92,6 +99,16 @@ export default function DeveloperPage() {
           </div>
         </footer>
       </div>
+      <ToolSeoContent
+        id="developer-tools-seo"
+        heading="Free Browser-Based Developer Tools"
+        description="Use timx developer tools for everyday web, API, image, database, and AI development tasks directly in the browser. The tools are free, open source, and designed for quick workflows without accounts or unnecessary uploads."
+        features={[
+          "Format and inspect JSON, Open Graph metadata, and OpenAPI specifications.",
+          "Edit images, remove backgrounds, crop assets, and stitch screenshots in the browser.",
+          "Compare LLM pricing and browse SQLite database files with local-first developer utilities.",
+        ]}
+      />
     </>
   )
 }

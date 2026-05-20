@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
+import { ToolSeoContent } from "../_components/seo-content"
 import DbExplorer from "./_components/db-explorer"
 import { LandingSection } from "./_components/landing-section"
 
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
 export default function DbExplorerPage() {
   return (
     <>
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://timx.co" },
+          { name: "Developer Tools", url: "https://timx.co/developer" },
+          { name: "DB Explorer", url: "https://timx.co/developer/db-explorer" },
+        ]}
+      />
       <WebApplicationJsonLd
         name="SQLite DB Explorer"
         description="Browse SQLite database files in your browser. View tables, inspect rows, and run SQL queries."
@@ -34,6 +42,16 @@ export default function DbExplorerPage() {
         ]}
       />
       <DbExplorer landingContent={<LandingSection />} />
+      <ToolSeoContent
+        id="db-explorer-seo"
+        heading="SQLite DB Explorer"
+        description="Use the SQLite DB Explorer to open SQLite database files in the browser, browse tables, inspect rows, and run SQL queries without uploading the database to a server. It is useful for debugging local app data, exports, and development databases."
+        features={[
+          "Open .db, .sqlite, and .sqlite3 files locally in the browser.",
+          "Browse tables, row counts, and paginated records.",
+          "Run SQL queries with table and column autocomplete.",
+        ]}
+      />
     </>
   )
 }

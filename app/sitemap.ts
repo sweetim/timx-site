@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://timx.co"
-  const now = new Date("2026-05-15")
+  const now = new Date("2026-05-20")
 
   return [
     { url: base, lastModified: now, changeFrequency: "monthly", priority: 1.0 },
@@ -57,6 +57,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${base}/developer/black-screen`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${base}/developer/openapi-viewer`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,

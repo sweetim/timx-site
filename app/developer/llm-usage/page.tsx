@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import { WebApplicationJsonLd } from "@/app/_components/json-ld"
+import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
 import opengraph from "@/app/opengraph.jpg"
+import { ToolSeoContent } from "../_components/seo-content"
 import LlmUsage from "./_components/llm-usage"
 import { LlmUsageInfo } from "./_components/llm-usage-info"
 
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
 export default function LlmUsagePage() {
   return (
     <>
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://timx.co" },
+          { name: "Developer Tools", url: "https://timx.co/developer" },
+          { name: "LLM Pricing", url: "https://timx.co/developer/llm-usage" },
+        ]}
+      />
       <WebApplicationJsonLd
         name="LLM Pricing Comparison"
         description="Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more"
@@ -36,6 +44,16 @@ export default function LlmUsagePage() {
       <LlmUsage>
         <LlmUsageInfo />
       </LlmUsage>
+      <ToolSeoContent
+        id="llm-pricing-seo"
+        heading="LLM Pricing Comparison Tool"
+        description="Compare LLM pricing across providers and models using OpenRouter data. Review prompt, completion, and cache token prices, then estimate model costs before choosing an API model for an AI application or coding workflow."
+        features={[
+          "Compare input, output, and cache token prices per 1M tokens.",
+          "Filter free models and recently released LLMs.",
+          "Estimate request costs with a token cost calculator.",
+        ]}
+      />
     </>
   )
 }
