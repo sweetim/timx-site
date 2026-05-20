@@ -21,29 +21,12 @@ const defaultArgs: Story["args"] = {
     "My work favors simple interfaces, local-first browser tools, and systems that turn technical ideas into useful products.",
   location: "Tokyo, Japan",
   imageUrl: "/favicon.ico",
-  profileActions: [
-    {
-      label: "Explore developer tools",
-      href: "/developer",
-    },
-    {
-      label: "View GitHub",
-      href: "https://github.com",
-      isExternal: true,
-    },
-  ],
   craftAreas: [
     "Web applications",
     "Artificial intelligence",
     "Robotics",
     "Blockchain",
     "Developer tools",
-  ],
-  currentlyBuilding:
-    "Practical tools and systems with a privacy-friendly edge.",
-  sidePanelStats: [
-    ["Philosophy", "Ship quietly"],
-    ["Base", "Tokyo"],
   ],
   linkUrl: [
     {
@@ -98,7 +81,7 @@ const defaultArgs: Story["args"] = {
 export const Default: Story = {
   args: defaultArgs,
   render: (args) => (
-    <div className="maker-profile-background min-h-screen px-5 py-12">
+    <div className="maker-profile-background min-h-screen px-5 py-20">
       <Profile {...args} />
     </div>
   ),

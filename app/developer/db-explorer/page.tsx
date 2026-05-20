@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import DbExplorer from "./_components/db-explorer"
 import { LandingSection } from "./_components/landing-section"
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Browse SQLite database files in your browser. View tables, inspect rows, and run SQL queries locally.",
     url: "https://timx.co/developer/db-explorer",
-    images: [opengraph.src],
+    images: ["/db-explorer-og.jpg"],
   },
 }
 

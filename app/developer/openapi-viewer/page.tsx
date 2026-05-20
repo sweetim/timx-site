@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import { LandingSection } from "./_components/landing-section"
 import OpenApiViewer from "./_components/openapi-viewer"
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Visualize OpenAPI specs with endpoint explorer, parameter details, request/response schemas, and improvement suggestions. Supports JSON and YAML.",
     url: "https://timx.co/developer/openapi-viewer",
-    images: [opengraph.src],
+    images: ["/openapi-viewer-og.jpg"],
   },
 }
 

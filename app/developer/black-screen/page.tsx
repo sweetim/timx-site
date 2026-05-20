@@ -1,7 +1,6 @@
 import { Info } from "lucide-react"
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import BlackScreenButton from "./_components/black-screen-button"
 import { LandingSection } from "./_components/landing-section"
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
     description:
       "Display a pure black fullscreen to spot stuck pixels, dust, and smudges on your monitor.",
     url: "https://timx.co/developer/black-screen",
-    images: [opengraph.src],
+    images: ["/black-screen-og.jpg"],
   },
 }
 

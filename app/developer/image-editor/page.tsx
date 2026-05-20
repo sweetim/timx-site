@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import EditorInfoContent from "./_components/editor-info-content"
 import ImageEditor from "./_components/image-editor"
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Remove backgrounds, crop images, and stitch aligned mobile screenshots in your browser.",
     url: "https://timx.co/developer/image-editor",
-    images: [opengraph.src],
+    images: ["/image-editor-og.jpg"],
   },
 }
 

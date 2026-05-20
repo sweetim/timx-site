@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import { LandingSection } from "./_components/landing-section"
 import OgPreview from "./_components/og-preview"
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
     title: "OG Preview — Free Online Tool",
     description: "Inspect Open Graph and Twitter Card meta tags for any URL.",
     url: "https://timx.co/developer/og-preview",
-    images: [opengraph.src],
+    images: ["/og-preview-og.jpg"],
   },
 }
 

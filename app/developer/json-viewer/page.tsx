@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import JsonViewer from "./_components/json-viewer"
 
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
     description:
       "View, format, validate, and explore JSON data with a collapsible tree view. Runs entirely in your browser.",
     url: "https://timx.co/developer/json-viewer",
-    images: [opengraph.src],
+    images: ["/json-viewer-og.jpg"],
   },
 }
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
-import opengraph from "@/app/opengraph.jpg"
 import { ToolSeoContent } from "../_components/seo-content"
 import LlmUsage from "./_components/llm-usage"
 import { LlmUsageInfo } from "./_components/llm-usage-info"
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
     description:
       "Compare pricing across LLM providers including OpenAI, Anthropic, Google, and more.",
     url: "https://timx.co/developer/llm-usage",
-    images: [opengraph.src],
+    images: ["/llm-pricing-og.jpg"],
   },
 }
 

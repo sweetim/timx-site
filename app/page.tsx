@@ -61,29 +61,12 @@ function getProfile(): ProfileProps {
       "My work favors simple interfaces, local-first browser tools, and systems that turn technical ideas into useful products.",
     location: "Tokyo, Japan",
     imageUrl: "https://avatars.githubusercontent.com/u/6851767?v=4",
-    profileActions: [
-      {
-        label: "Explore developer tools",
-        href: "/developer",
-      },
-      {
-        label: "View GitHub",
-        href: "https://github.com/sweetim",
-        isExternal: true,
-      },
-    ],
     craftAreas: [
       "Web applications",
       "Artificial intelligence",
       "Robotics",
       "Blockchain",
       "Developer tools",
-    ],
-    currentlyBuilding:
-      "Practical tools and systems with a privacy-friendly edge.",
-    sidePanelStats: [
-      ["Philosophy", "Ship quietly"],
-      ["Base", "Tokyo"],
     ],
     linkUrl: [
       {
@@ -152,7 +135,7 @@ export default function Home() {
           description,
         }))}
       />
-      <div className="maker-profile-background flex min-h-full items-center justify-center px-5 py-12">
+      <div className="maker-profile-background flex min-h-full items-center justify-center px-5 py-20">
         <Profile {...getProfile()} />
       </div>
     </>

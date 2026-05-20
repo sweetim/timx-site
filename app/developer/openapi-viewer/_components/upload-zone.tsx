@@ -36,11 +36,14 @@ function UploadZone({
         <p className="text-dev-text mb-2">
           Drop your OpenAPI JSON or YAML file here
         </p>
-        <p className="text-sm text-dev-text-secondary mb-4">
+        <p className="text-sm text-dev-text-secondary mb-1">
           or click to browse
         </p>
+        <p className="text-sm text-dev-text-secondary mb-4">
+          or paste directly on this page
+        </p>
         <p className="text-xs text-dev-text-secondary">
-          Supports OpenAPI 3.x JSON and YAML — or paste directly on this page
+          Supports OpenAPI 3.x JSON and YAML
         </p>
         <input
           ref={fileInputRef}
