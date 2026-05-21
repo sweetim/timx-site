@@ -2,7 +2,16 @@
 
 import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
-import { Crop, Eraser, Images, Info, Layers, Scaling, X } from "lucide-react"
+import {
+  Crop,
+  Eraser,
+  FileOutput,
+  Images,
+  Info,
+  Layers,
+  Scaling,
+  X,
+} from "lucide-react"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -14,8 +23,9 @@ const ScreenshotStitcher = dynamic(() => import("./image-stitch/"), {
   ssr: false,
 })
 const ImageScaler = dynamic(() => import("./image-scaler/"), { ssr: false })
+const ImageExporter = dynamic(() => import("./image-exporter/"), { ssr: false })
 
-export type EditorTool = "background" | "crop" | "stitch" | "scale"
+export type EditorTool = "background" | "crop" | "stitch" | "scale" | "export"
 
 export type SourceImage = {
   id: string
@@ -84,6 +94,13 @@ const TOOLS: ToolItem[] = [
     shortName: "Scale",
     description: "Resize an image by percentage or explicit dimensions.",
     icon: Scaling,
+  },
+  {
+    id: "export",
+    name: "Export",
+    shortName: "Export",
+    description: "Convert an image to PNG, JPEG, or WebP with quality control.",
+    icon: FileOutput,
   },
 ]
 
@@ -486,6 +503,27 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               }
               onClearWorkspace={handleClearWorkspace}
               onResult={(blob) => handleResult("scale", blob)}
+              onCopyToClipboard={handleCopyToClipboard}
+              hasClipboard={clipboard != null}
+              droppedFiles={droppedFiles}
+              droppedFilesKey={droppedFilesKey}
+              canvasDropProps={canvasDropProps}
+              sourceImages={sourceImages}
+              onRemoveSourceImage={removeSourceImage}
+              onAddSourceImages={addFilesToSourceImages}
+            />
+          </div>
+          <div className={activeTool === "export" ? "h-full" : "hidden"}>
+            <ImageExporter
+              variant="panel"
+              isActive={activeTool === "export"}
+              initialImage={sharedImage}
+              workspaceResetKey={workspaceResetKey}
+              onSourceImage={(blob, name) =>
+                handleSourceImage("export", blob, name)
+              }
+              onClearWorkspace={handleClearWorkspace}
+              onResult={(blob) => handleResult("export", blob)}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}

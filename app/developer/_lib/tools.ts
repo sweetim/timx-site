@@ -28,7 +28,7 @@ export const tools: Tool[] = [
     name: "Image Editor",
     slug: "image-editor",
     description:
-      "Remove backgrounds, crop images, and stitch mobile screenshots locally",
+      "Remove backgrounds, crop, scale, convert formats, and stitch mobile screenshots locally",
     icon: Images,
   },
   {

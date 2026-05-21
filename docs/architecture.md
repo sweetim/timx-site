@@ -62,7 +62,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 ### Image Editor flow
 
 1. `/developer/image-editor` renders a Photoshop-style workspace with a persistent tool rail, shared canvas area, and right properties panel.
-2. Users choose Background Remover, Crop, or Screenshot Stitcher from the tool rail; switching tools keeps each tool mounted and does not clear the current canvas image.
+2. Users choose Background Remover, Crop, Screenshot Stitcher, Scale, or Export from the tool rail; switching tools keeps each tool mounted and does not clear the current canvas image.
 3. `ImageEditor` owns a shared current image document, a shared `sourceImages` array, and background-removal results cached by source image ID. Uploads and tool results update that shared image so single-image modes can import the latest canvas image when selected. Any image uploaded in any tool is added to `sourceImages`, which is shared across all tools.
 4. The active tool controls the visible canvas overlay and right properties panel: Background Remover shows processing controls with a Source picker, Crop shows crop handles, sizing controls, and a Source picker, and Screenshot Stitcher shows a multi-frame board with layers and stitch settings.
 5. Background Remover and Crop each display a "Source" card in the properties panel showing all uploaded images as selectable thumbnails. Users can switch the active image without re-uploading.
@@ -71,6 +71,7 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 8. Background Remover uploads or drops images into `UploadZone`; images are added to `sourceImages` and shown in the Source picker. Users click "Remove Background" per image to start processing via `useBackgroundRemoverPool`, which creates one Web Worker per image for concurrent processing. Each worker calls `@imgly/background-removal` and reports progress independently. Users can browse between images while they process. Completed results are cached per source image ID so users can view previously processed results without reprocessing. The Source picker shows status badges (spinner for processing, checkmark for done, error icon for failures).
 9. Crop uploads or imports one shared image, displays a draggable crop rectangle on the canvas, moves aspect ratio and anchor controls into the properties panel, then exports the selected region via Canvas API.
 10. Screenshot Stitcher uploads multiple images, places each centered inside a consistent frame, applies optional spacing between frames, shows a live canvas preview plus export preview, stacks frames horizontally or vertically, and exports one combined image in the selected format.
+11. Export uploads or imports one shared image, converts it to PNG, JPEG, or WebP via Canvas API, shows a quality slider for lossy formats (JPEG, WebP), displays file size in the export preview, and downloads the converted image.
 
 ### Image Cropper flow
 
@@ -248,6 +249,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/image-stitch/constants.ts` | Checkerboard background style |
 | `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
 | `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
+| `app/developer/image-editor/_components/image-exporter/index.tsx` | Image Exporter client component (format conversion, quality control, file size preview) |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
 | `app/developer/llm-usage/_components/llm-usage-info.tsx` | LLM Pricing SEO heading, intro copy, and educational sections |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
@@ -521,7 +523,7 @@ type EditorToolProps = {
 }
 ```
 
-`BackgroundRemover`, `ImageCropper`, and `ScreenshotStitcher` all consume this shared prop contract. `ImageCropperProps` and `ScreenshotStitcherProps` are aliases of `EditorToolProps` in their tool-specific `types.ts` files.
+`BackgroundRemover`, `ImageCropper`, `ScreenshotStitcher`, `ImageScaler`, and `ImageExporter` all consume this shared prop contract.
 
 ### Worker types (app/developer/image-editor/_components/background-remover/_hooks/background-remover.worker.ts)
 
@@ -537,7 +539,7 @@ type WorkerEvent =
 ### Image Editor shared types (app/developer/image-editor/_components/image-editor.tsx)
 
 ```typescript
-type EditorTool = "background" | "crop" | "stitch"
+type EditorTool = "background" | "crop" | "stitch" | "scale" | "export"
 
 type SourceImage = {
   id: string

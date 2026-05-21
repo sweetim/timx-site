@@ -7,8 +7,9 @@ export default function EditorInfoContent() {
         </h2>
         <p className="text-dev-text-secondary mb-6 leading-relaxed">
           A browser-based image editor with tools for removing backgrounds,
-          cropping images, and stitching mobile screenshots together. All
-          processing happens locally — your images never leave your device.
+          cropping images, stitching mobile screenshots, scaling, and exporting
+          to different formats. All processing happens locally — your images
+          never leave your device.
         </p>
 
         <h3 className="text-lg font-semibold text-dev-text mb-3">Tools</h3>
@@ -33,13 +34,18 @@ export default function EditorInfoContent() {
             percentage or explicit width and height. Lock or unlock the aspect
             ratio for proportional or freeform scaling.
           </li>
+          <li>
+            <strong className="text-dev-text">Export</strong> — Convert images
+            to PNG, JPEG, or WebP. Adjust quality for lossy formats and see the
+            resulting file size before downloading.
+          </li>
         </ul>
 
         <h3 className="text-lg font-semibold text-dev-text mb-3">How to Use</h3>
         <ol className="list-decimal list-inside text-dev-text-secondary space-y-1.5">
           <li>
             Select a tool from the left rail (Background Remover, Crop,
-            Stitcher, or Scale)
+            Stitcher, Scale, or Export)
           </li>
           <li>
             Upload an image by dropping it on the canvas, pasting from
