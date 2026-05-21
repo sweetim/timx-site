@@ -70,13 +70,6 @@ const Profile: FC<ProfileProps> = (props) => {
         >
           <ScrambleText text={props.title} />
         </h1>
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-400">
-          <MapPin
-            className="h-3.5 w-3.5"
-            aria-hidden="true"
-          />
-          {props.location}
-        </p>
         <p className="mt-3 text-base leading-6 text-slate-700">
           {props.description}
         </p>
