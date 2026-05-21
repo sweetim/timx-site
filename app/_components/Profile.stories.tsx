@@ -17,8 +17,6 @@ const defaultArgs: Story["args"] = {
   title: "Hi, I'm Tim.",
   description:
     "I build practical software for the web, artificial intelligence, robotics, and developer workflows.",
-  summary:
-    "My work favors simple interfaces, local-first browser tools, and systems that turn technical ideas into useful products.",
   location: "Tokyo, Japan",
   imageUrl: "/favicon.ico",
   craftAreas: [

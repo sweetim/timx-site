@@ -15,6 +15,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 | Pattern matching | ts-pattern 5 |
 | Icons | lucide-react, @icons-pack/react-simple-icons |
 | Virtual list | @tanstack/react-virtual |
+| Animation | motion 12 |
 | Utilities | clsx, date-fns |
 | Markdown rendering | react-markdown, remark-gfm |
 | Code editor | CodeMirror 6 (@codemirror/view, @codemirror/state, @codemirror/lang-sql, @codemirror/commands, @codemirror/autocomplete) |
@@ -184,6 +185,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Centered maker profile landing component with avatar, hero text, responsive icon craft-card grid, connect links, and selected work cards |
 | `app/_components/ProfileLink.tsx` | Social link button with CSS-only blob hover animation |
+| `app/_components/ScrambleText.tsx` | Client component that scrambles text characters and resolves them from center outward using motion |
 | `app/_components/json-ld.tsx` | JSON-LD structured data components (Person, ItemList, WebApplication, BreadcrumbList) |
 | `app/developer/layout.tsx` | Developer section layout with NavBar and scoped developer scrollbar styling |
 | `app/developer/page.tsx` | Developer tools index page |
@@ -313,6 +315,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `clsx` | ^2.1.1 | Conditional CSS class joining |
 | `date-fns` | ^4.1.0 | Date formatting utilities |
 | `lucide-react` | ^1.7.0 | Icon library |
+| `motion` | ^12.39.0 | Animation library for scramble text effect on homepage title |
 | `next` | 16.2.2 | React framework |
 | `react` | 19.2.4 | UI library |
 | `react-dom` | 19.2.4 | React DOM renderer |
@@ -369,7 +372,6 @@ type Tool = {
 type ProfileProps = {
   title: string
   description: string
-  summary: string
   location: string
   imageUrl: string
   linkUrl: ProfileLinkProps[]

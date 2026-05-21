@@ -14,6 +14,7 @@ import Link from "next/link"
 import type { FC } from "react"
 
 import ProfileLink, { type ProfileLinkProps } from "./ProfileLink"
+import ScrambleText from "./ScrambleText"
 
 export type ProfileProps = {
   title: string
@@ -63,8 +64,11 @@ const Profile: FC<ProfileProps> = (props) => {
       </div>
 
       <div className="mt-5 text-center">
-        <h1 className="text-balance text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
-          {props.title}
+        <h1
+          className="text-balance text-4xl font-bold leading-tight text-slate-950 sm:text-5xl"
+          aria-label={props.title}
+        >
+          <ScrambleText text={props.title} />
         </h1>
         <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-slate-400">
           <MapPin

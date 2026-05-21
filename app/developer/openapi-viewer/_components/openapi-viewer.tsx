@@ -17,7 +17,9 @@ import { toRecentFilesWithLabels } from "../_lib/recent-files"
 import { generateSuggestions } from "../_lib/suggestions"
 import {
   loadFileFromHandle,
+  loadPastedSpecContent,
   updateHandleMetadata,
+  updatePastedSpecMetadata,
   useFileHandles,
 } from "../_lib/use-file-handle"
 import { EndpointDetail } from "./endpoint-detail"
@@ -42,7 +44,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     useState<OpenApiOperation | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
-  const { recentFiles, addHandle, removeHandle, refreshFiles } =
+  const { recentFiles, addHandle, addPastedSpec, removeHandle, refreshFiles } =
     useFileHandles()
   const recentFilesWithLabels = useMemo(
     () => toRecentFilesWithLabels(recentFiles),
@@ -52,7 +54,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadRawSpec = useCallback(
-    (raw: string, name: string, handle?: FileSystemFileHandle) => {
+    (raw: string, name: string, handle?: FileSystemFileHandle, isPaste?: boolean) => {
       try {
         const spec = parseSpec(raw)
         const endpoints = extractEndpoints(spec)
@@ -64,6 +66,11 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
         if (handle) {
           addHandle(handle, spec.info.title, spec.info.version).catch(() => {})
         }
+        if (isPaste) {
+          addPastedSpec(name, spec.info.title, spec.info.version, raw).catch(
+            () => {},
+          )
+        }
       } catch (error) {
         setState({
           phase: "error",
@@ -74,7 +81,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
         })
       }
     },
-    [addHandle],
+    [addHandle, addPastedSpec],
   )
 
   const handleFile = useCallback(
@@ -116,7 +123,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
       if (!trimmed) return
       const isJson = trimmed.startsWith("{") || trimmed.startsWith("[")
       const name = `pasted-spec.${isJson ? "json" : "yaml"}`
-      loadRawSpec(text, name)
+      loadRawSpec(text, name, undefined, true)
     },
     [loadRawSpec],
   )
@@ -137,8 +144,28 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     state.phase === "ready" ? generateSuggestions(state.spec) : []
 
   const handleLoadRecent = useCallback(
-    async (fileName: string) => {
+    async (fileName: string, source: "file" | "paste") => {
       try {
+        if (source === "paste") {
+          const raw = await loadPastedSpecContent(fileName)
+          if (!raw) {
+            setState({
+              phase: "error",
+              message: `Stored spec "${fileName}" not found. It may have been cleared.`,
+            })
+            await refreshFiles()
+            return
+          }
+          loadRawSpec(raw, fileName)
+          const spec = parseSpec(raw)
+          await updatePastedSpecMetadata(
+            fileName,
+            spec.info.title,
+            spec.info.version,
+          )
+          await refreshFiles()
+          return
+        }
         const result = await loadFileFromHandle(fileName)
         if (!result) {
           setState({
@@ -165,7 +192,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
         })
       }
     },
-    [refreshFiles],
+    [loadRawSpec, refreshFiles],
   )
 
   const handleRemoveRecent = useCallback(

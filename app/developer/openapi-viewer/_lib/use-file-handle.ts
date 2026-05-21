@@ -8,9 +8,18 @@ type StoredHandle = {
   handle: FileSystemFileHandle
 }
 
+type StoredPastedSpec = {
+  fileName: string
+  title: string
+  version: string
+  lastOpened: number
+  rawContent: string
+}
+
 const DB_NAME = "openapi-viewer-handles"
 const STORE_NAME = "handles"
-const DB_VERSION = 1
+const PASTED_STORE_NAME = "pasted-specs"
+const DB_VERSION = 2
 const LEGACY_RECENT_FILES_KEY = "openapi-viewer-recent-files"
 const MAX_RECENT_FILES = 5
 
@@ -21,6 +30,9 @@ function openDb(): Promise<IDBDatabase> {
       const db = request.result
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "fileName" })
+      }
+      if (!db.objectStoreNames.contains(PASTED_STORE_NAME)) {
+        db.createObjectStore(PASTED_STORE_NAME, { keyPath: "fileName" })
       }
     }
     request.onsuccess = () => resolve(request.result)
@@ -78,6 +90,60 @@ async function pruneHandles(): Promise<void> {
   await Promise.all(staleHandles.map((handle) => deleteHandle(handle.fileName)))
 }
 
+async function getAllPastedSpecs(): Promise<StoredPastedSpec[]> {
+  const db = await getDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PASTED_STORE_NAME, "readonly")
+    const store = tx.objectStore(PASTED_STORE_NAME)
+    const request = store.getAll()
+    request.onsuccess = () => resolve(request.result as StoredPastedSpec[])
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function putPastedSpec(entry: StoredPastedSpec): Promise<void> {
+  const db = await getDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PASTED_STORE_NAME, "readwrite")
+    const store = tx.objectStore(PASTED_STORE_NAME)
+    const request = store.put(entry)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function deletePastedSpec(fileName: string): Promise<void> {
+  const db = await getDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PASTED_STORE_NAME, "readwrite")
+    const store = tx.objectStore(PASTED_STORE_NAME)
+    const request = store.delete(fileName)
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function getPastedSpec(
+  fileName: string,
+): Promise<StoredPastedSpec | null> {
+  const db = await getDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PASTED_STORE_NAME, "readonly")
+    const store = tx.objectStore(PASTED_STORE_NAME)
+    const request = store.get(fileName)
+    request.onsuccess = () => resolve(request.result ?? null)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+async function prunePastedSpecs(): Promise<void> {
+  const specs = await getAllPastedSpecs()
+  const staleSpecs = specs
+    .sort((a, b) => b.lastOpened - a.lastOpened)
+    .slice(MAX_RECENT_FILES)
+  await Promise.all(staleSpecs.map((s) => deletePastedSpec(s.fileName)))
+}
+
 function removeLegacyCachedRecentFiles() {
   try {
     localStorage.removeItem(LEGACY_RECENT_FILES_KEY)
@@ -116,6 +182,7 @@ export type RecentHandleFile = {
   title: string
   version: string
   lastOpened: number
+  source: "file" | "paste"
 }
 
 export async function loadFileFromHandle(
@@ -130,22 +197,55 @@ export async function loadFileFromHandle(
   return stored.handle.getFile()
 }
 
+export async function loadPastedSpecContent(
+  fileName: string,
+): Promise<string | null> {
+  const stored = await getPastedSpec(fileName)
+  return stored?.rawContent ?? null
+}
+
+export async function updatePastedSpecMetadata(
+  fileName: string,
+  title: string,
+  version: string,
+): Promise<void> {
+  const stored = await getPastedSpec(fileName)
+  if (!stored) return
+  await putPastedSpec({ ...stored, title, version, lastOpened: Date.now() })
+}
+
 export function useFileHandles() {
   const [recentFiles, setRecentFiles] = useState<RecentHandleFile[]>([])
   const loadingRef = useRef(false)
 
   const refreshFiles = useCallback(async () => {
     try {
-      const handles = await getAllHandles()
+      const [handles, pastedSpecs] = await Promise.all([
+        getAllHandles(),
+        getAllPastedSpecs(),
+      ])
+      const fileEntries: RecentHandleFile[] = handles.map(
+        ({ fileName, title, version, lastOpened }) => ({
+          fileName,
+          title,
+          version,
+          lastOpened,
+          source: "file" as const,
+        }),
+      )
+      const pasteEntries: RecentHandleFile[] = pastedSpecs.map(
+        ({ fileName, title, version, lastOpened }) => ({
+          fileName,
+          title,
+          version,
+          lastOpened,
+          source: "paste" as const,
+        }),
+      )
       setRecentFiles(
-        handles
-          .map(({ fileName, title, version, lastOpened }) => ({
-            fileName,
-            title,
-            version,
-            lastOpened,
-          }))
-          .sort((a, b) => b.lastOpened - a.lastOpened),
+        [...fileEntries, ...pasteEntries].sort(
+          (a, b) => b.lastOpened - a.lastOpened,
+        ),
       )
     } catch {}
   }, [])
@@ -154,21 +254,34 @@ export function useFileHandles() {
     if (loadingRef.current) return
     loadingRef.current = true
     removeLegacyCachedRecentFiles()
-    pruneHandles()
+    Promise.all([pruneHandles(), prunePastedSpecs()])
       .catch(() => {})
-      .then(getAllHandles)
-      .then((handles) =>
+      .then(() => Promise.all([getAllHandles(), getAllPastedSpecs()]))
+      .then(([handles, pastedSpecs]) => {
+        const fileEntries: RecentHandleFile[] = handles.map(
+          ({ fileName, title, version, lastOpened }) => ({
+            fileName,
+            title,
+            version,
+            lastOpened,
+            source: "file" as const,
+          }),
+        )
+        const pasteEntries: RecentHandleFile[] = pastedSpecs.map(
+          ({ fileName, title, version, lastOpened }) => ({
+            fileName,
+            title,
+            version,
+            lastOpened,
+            source: "paste" as const,
+          }),
+        )
         setRecentFiles(
-          handles
-            .map(({ fileName, title, version, lastOpened }) => ({
-              fileName,
-              title,
-              version,
-              lastOpened,
-            }))
-            .sort((a, b) => b.lastOpened - a.lastOpened),
-        ),
-      )
+          [...fileEntries, ...pasteEntries].sort(
+            (a, b) => b.lastOpened - a.lastOpened,
+          ),
+        )
+      })
       .catch(() => {})
   }, [])
 
@@ -191,13 +304,36 @@ export function useFileHandles() {
     [refreshFiles],
   )
 
-  const removeHandle = useCallback(
-    async (fileName: string) => {
-      await deleteHandle(fileName)
+  const addPastedSpec = useCallback(
+    async (
+      fileName: string,
+      title: string,
+      version: string,
+      rawContent: string,
+    ) => {
+      await putPastedSpec({
+        fileName,
+        title,
+        version,
+        lastOpened: Date.now(),
+        rawContent,
+      })
+      await prunePastedSpecs()
       await refreshFiles()
     },
     [refreshFiles],
   )
 
-  return { recentFiles, addHandle, removeHandle, refreshFiles }
+  const removeHandle = useCallback(
+    async (fileName: string) => {
+      await Promise.all([
+        deleteHandle(fileName).catch(() => {}),
+        deletePastedSpec(fileName).catch(() => {}),
+      ])
+      await refreshFiles()
+    },
+    [refreshFiles],
+  )
+
+  return { recentFiles, addHandle, addPastedSpec, removeHandle, refreshFiles }
 }

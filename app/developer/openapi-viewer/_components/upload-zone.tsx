@@ -1,4 +1,4 @@
-import { Clock, FileUp, Trash2 } from "lucide-react"
+import { Clipboard, FileText, FileUp, Trash2 } from "lucide-react"
 import type { ChangeEvent, DragEvent, RefObject } from "react"
 import type { RecentFileWithLabel } from "../_lib/recent-files"
 
@@ -18,7 +18,7 @@ function UploadZone({
   onDragOver: (e: DragEvent) => void
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void
   onOpenFilePicker: () => void
-  onLoadRecent: (fileName: string) => void
+  onLoadRecent: (fileName: string, source: "file" | "paste") => void
   onRemoveRecent: (e: React.MouseEvent, fileName: string) => void
 }) {
   return (
@@ -65,9 +65,13 @@ function UploadZone({
                 key={file.fileName}
                 type="button"
                 className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-dev-inset transition-colors cursor-pointer text-left group"
-                onClick={() => onLoadRecent(file.fileName)}
+                onClick={() => onLoadRecent(file.fileName, file.source)}
               >
-                <Clock className="size-4 text-dev-text-secondary shrink-0" />
+                {file.source === "paste" ? (
+                  <Clipboard className="size-4 text-dev-text-secondary shrink-0" />
+                ) : (
+                  <FileText className="size-4 text-dev-text-secondary shrink-0" />
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="text-sm text-dev-text truncate">
                     {file.fileName}

@@ -61,18 +61,18 @@ export default function DeveloperPage() {
               <Link
                 key={tool.slug}
                 href={`/developer/${tool.slug}`}
-                className="group block p-5 rounded-md border border-dev-border bg-dev-inset hover:border-dev-border-muted hover:bg-dev-surface transition-colors"
+                className="group block p-5 rounded-lg border border-dev-border bg-dev-surface hover:opacity-90 hover:scale-[1.03] transition-opacity"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <tool.icon
                     size={16}
-                    className="text-dev-text-secondary"
+                    className="text-dev-link"
                   />
                   <h2 className="text-base font-medium text-dev-text group-hover:text-dev-link">
                     {tool.name}
                   </h2>
                 </div>
-                <p className="text-sm text-dev-text-secondary">
+                <p className="text-sm text-dev-text-secondary line-clamp-2">
                   {tool.description}
                 </p>
               </Link>
