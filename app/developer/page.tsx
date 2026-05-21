@@ -39,6 +39,12 @@ export default function DeveloperPage() {
       />
       <div className="min-h-full bg-dev-canvas flex items-center">
         <div className="max-w-3xl mx-auto px-6 py-12 w-full">
+          <Link
+            href="/"
+            className="text-sm text-dev-text-secondary hover:text-dev-link transition-colors"
+          >
+            &larr; Back to home
+          </Link>
           <h1 className="text-2xl font-semibold text-dev-text mb-2">
             Developer Tools
           </h1>

@@ -10,7 +10,6 @@ import { tools } from "../_lib/tools"
 
 const NavBar = () => {
   const pathname = usePathname()
-  const isHome = pathname === "/developer"
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,7 +30,7 @@ const NavBar = () => {
   return (
     <nav className="flex items-center gap-6 px-4 py-2.5 border-b border-dev-border bg-dev-canvas">
       <Link
-        href={isHome ? "/" : "/developer"}
+        href="/developer"
         className="shrink-0 transition-opacity hover:opacity-80"
       >
         <Image
