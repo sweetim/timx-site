@@ -1,7 +1,7 @@
 "use client"
 
 import clsx from "clsx"
-import { Download, Lock, MoveHorizontal, MoveVertical, Scale, Trash2, Unlock } from "lucide-react"
+import { Download, Lock, MoveHorizontal, MoveVertical, Scaling, Trash2, Unlock } from "lucide-react"
 import { memo, useCallback, useEffect, useRef, useState } from "react"
 import { match } from "ts-pattern"
 import StepperInput from "../../../_components/stepper-input"
@@ -273,7 +273,7 @@ function ImageScaler({
             <SidebarActions
               primaryAction={
                 status.phase === "editing" || status.phase === "scaled"
-                  ? { label: "Scale Image", icon: <Scale className="size-4" />, onClick: handleScale }
+                  ? { label: "Scale Image", icon: <Scaling className="size-4" />, onClick: handleScale }
                   : undefined
               }
               download={
@@ -342,7 +342,7 @@ function ImageScaler({
                 </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={handleScale} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-accent-blue text-white hover:bg-dev-accent-blue/90 transition-colors cursor-pointer">
-                    <Scale className="w-4 h-4" />
+                    <Scaling className="w-4 h-4" />
                     Scale
                   </button>
                   <button type="button" onClick={handleClear} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors cursor-pointer">
@@ -372,7 +372,7 @@ function ImageScaler({
                 </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={handleScale} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-accent-blue text-white hover:bg-dev-accent-blue/90 transition-colors cursor-pointer">
-                    <Scale className="w-4 h-4" />
+                    <Scaling className="w-4 h-4" />
                     Re-scale
                   </button>
                   <button type="button" onClick={handleClear} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium bg-dev-button text-dev-text hover:bg-dev-button-hover transition-colors cursor-pointer">
@@ -560,10 +560,11 @@ function ScaleControls({
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs text-dev-text-secondary flex items-center gap-1">
+            <label htmlFor="scale-width" className="text-xs text-dev-text-secondary flex items-center gap-1">
               <MoveHorizontal className="size-3" /> Width
             </label>
             <StepperInput
+              id="scale-width"
               value={displayWidth}
               onChange={(e) => setDraftWidth(e.target.value)}
               onBlur={commitWidth}
@@ -574,10 +575,11 @@ function ScaleControls({
             />
           </div>
           <div>
-            <label className="text-xs text-dev-text-secondary flex items-center gap-1">
+            <label htmlFor="scale-height" className="text-xs text-dev-text-secondary flex items-center gap-1">
               <MoveVertical className="size-3" /> Height
             </label>
             <StepperInput
+              id="scale-height"
               value={displayHeight}
               onChange={(e) => setDraftHeight(e.target.value)}
               onBlur={commitHeight}

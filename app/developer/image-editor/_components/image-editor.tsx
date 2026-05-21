@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
-import { Crop, Eraser, Images, Info, Layers, Scale, X } from "lucide-react"
+import { Crop, Eraser, Images, Info, Layers, Scaling, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -83,7 +83,7 @@ const TOOLS: ToolItem[] = [
     name: "Scale",
     shortName: "Scale",
     description: "Resize an image by percentage or explicit dimensions.",
-    icon: Scale,
+    icon: Scaling,
   },
 ]
 
