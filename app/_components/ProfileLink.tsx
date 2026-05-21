@@ -1,7 +1,7 @@
 import clsx from "clsx"
 
 import Image from "next/image"
-import type { CSSProperties, FC } from "react"
+import type { ComponentType, CSSProperties, FC } from "react"
 
 const blobShapes = [
   "60% 40% 30% 70% / 60% 30% 70% 40%",
@@ -13,7 +13,9 @@ const blobShapes = [
 ]
 
 export type ProfileLinkProps = {
-  imageUrl: string
+  icon?: ComponentType<{ size?: number; color?: string }>
+  color?: string
+  imageUrl?: string
   linkUrl: string
   label: string
   isRounded?: boolean
@@ -21,6 +23,8 @@ export type ProfileLinkProps = {
 }
 
 const ProfileLink: FC<ProfileLinkProps> = ({
+  icon: Icon,
+  color,
   imageUrl,
   linkUrl,
   label,
@@ -51,12 +55,16 @@ const ProfileLink: FC<ProfileLinkProps> = ({
             : undefined
         }
       >
-        <Image
-          src={imageUrl}
-          height={36}
-          width={36}
-          alt={label}
-        />
+        {Icon && color ? (
+          <Icon size={36} color={color} />
+        ) : (
+          <Image
+            src={imageUrl!}
+            height={36}
+            width={36}
+            alt={label}
+          />
+        )}
       </a>
     </div>
   )

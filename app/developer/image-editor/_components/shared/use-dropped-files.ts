@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 type UseDroppedFilesOptions = {
   isActive: boolean
@@ -13,11 +13,14 @@ function useDroppedFiles({
   droppedFilesKey,
   onLoad,
 }: UseDroppedFilesOptions) {
+  const onLoadRef = useRef(onLoad)
+  useEffect(() => { onLoadRef.current = onLoad }, [onLoad])
+
   useEffect(() => {
     if (!isActive) return
     if (!droppedFiles || droppedFiles.length === 0) return
-    onLoad(droppedFiles)
-  }, [isActive, droppedFiles, droppedFilesKey, onLoad])
+    onLoadRef.current(droppedFiles)
+  }, [isActive, droppedFiles, droppedFilesKey])
 }
 
 export default useDroppedFiles

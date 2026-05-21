@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 import type { LucideIcon } from "lucide-react"
-import { Crop, Eraser, Images, Info, Layers, X } from "lucide-react"
+import { Crop, Eraser, Images, Info, Layers, Scale, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -13,8 +13,9 @@ const ImageCropper = dynamic(() => import("./image-cropper/"), { ssr: false })
 const ScreenshotStitcher = dynamic(() => import("./image-stitch/"), {
   ssr: false,
 })
+const ImageScaler = dynamic(() => import("./image-scaler/"), { ssr: false })
 
-export type EditorTool = "background" | "crop" | "stitch"
+export type EditorTool = "background" | "crop" | "stitch" | "scale"
 
 export type SourceImage = {
   id: string
@@ -76,6 +77,13 @@ const TOOLS: ToolItem[] = [
     shortName: "Stitch",
     description: "Stack mobile screenshots in equal frames for landing pages.",
     icon: Images,
+  },
+  {
+    id: "scale",
+    name: "Scale",
+    shortName: "Scale",
+    description: "Resize an image by percentage or explicit dimensions.",
+    icon: Scale,
   },
 ]
 
@@ -188,6 +196,23 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
     )
     sourceImagesRef.current = nextSourceImages
     setSourceImages(nextSourceImages)
+
+    if (nextSourceImages.length === 0) {
+      setSharedImage((previousImage) => {
+        if (previousImage) URL.revokeObjectURL(previousImage.url)
+        sharedImageRef.current = null
+        return null
+      })
+      setBackgroundRemovalResults((previousResults) => {
+        for (const result of Object.values(previousResults)) {
+          URL.revokeObjectURL(result.url)
+        }
+        backgroundRemovalResultsRef.current = {}
+        return {}
+      })
+      setWorkspaceResetKey((key) => key + 1)
+      return
+    }
 
     setBackgroundRemovalResults((previousResults) => {
       const previousResult = previousResults[id]
@@ -440,6 +465,27 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               }
               onClearWorkspace={handleClearWorkspace}
               onResult={(blob) => handleResult("stitch", blob)}
+              onCopyToClipboard={handleCopyToClipboard}
+              hasClipboard={clipboard != null}
+              droppedFiles={droppedFiles}
+              droppedFilesKey={droppedFilesKey}
+              canvasDropProps={canvasDropProps}
+              sourceImages={sourceImages}
+              onRemoveSourceImage={removeSourceImage}
+              onAddSourceImages={addFilesToSourceImages}
+            />
+          </div>
+          <div className={activeTool === "scale" ? "h-full" : "hidden"}>
+            <ImageScaler
+              variant="panel"
+              isActive={activeTool === "scale"}
+              initialImage={sharedImage}
+              workspaceResetKey={workspaceResetKey}
+              onSourceImage={(blob, name) =>
+                handleSourceImage("scale", blob, name)
+              }
+              onClearWorkspace={handleClearWorkspace}
+              onResult={(blob) => handleResult("scale", blob)}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}

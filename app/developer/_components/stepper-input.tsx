@@ -45,6 +45,7 @@ export default function StepperInput({
         type="button"
         onClick={onDecrement}
         aria-label="Decrement"
+        tabIndex={-1}
         className="no-bounce flex items-center justify-center w-9 h-9 text-dev-text-secondary hover:text-dev-text hover:bg-dev-button transition-colors cursor-pointer select-none shrink-0"
       >
         −
@@ -65,6 +66,7 @@ export default function StepperInput({
         type="button"
         onClick={onIncrement}
         aria-label="Increment"
+        tabIndex={-1}
         className="no-bounce flex items-center justify-center w-9 h-9 text-dev-text-secondary hover:text-dev-text hover:bg-dev-button transition-colors cursor-pointer select-none shrink-0"
       >
         +

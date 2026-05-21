@@ -291,11 +291,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 
 | File | Purpose |
 |---|---|
-| `public/github.svg` | GitHub icon |
-| `public/gitlab.svg` | GitLab icon |
-| `public/docker.svg` | Docker icon |
 | `public/linkedin.svg` | LinkedIn icon |
-| `public/stackoverflow.svg` | Stack Overflow icon |
 | `public/timx-logo.png` | Site logo |
 | `public/sql-wasm.wasm` | sql.js WASM binary for client-side SQLite in DB Explorer |
 
@@ -401,7 +397,9 @@ type ProfileFeaturedLink = {
 
 ```typescript
 type ProfileLinkProps = {
-  imageUrl: string
+  icon?: ComponentType<{ size?: number; color?: string }>
+  color?: string
+  imageUrl?: string
   linkUrl: string
   label: string
   isRounded?: boolean

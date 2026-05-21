@@ -28,13 +28,18 @@ export default function EditorInfoContent() {
             screenshots into aligned frames with consistent sizing and
             configurable spacing. Export as a single PNG.
           </li>
+          <li>
+            <strong className="text-dev-text">Scale</strong> — Resize images by
+            percentage or explicit width and height. Lock or unlock the aspect
+            ratio for proportional or freeform scaling.
+          </li>
         </ul>
 
         <h3 className="text-lg font-semibold text-dev-text mb-3">How to Use</h3>
         <ol className="list-decimal list-inside text-dev-text-secondary space-y-1.5">
           <li>
-            Select a tool from the left rail (Background Remover, Crop, or
-            Stitcher)
+            Select a tool from the left rail (Background Remover, Crop,
+            Stitcher, or Scale)
           </li>
           <li>
             Upload an image by dropping it on the canvas, pasting from

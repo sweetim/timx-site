@@ -1,11 +1,21 @@
+import {
+  SiDocker,
+  SiDockerHex,
+  SiGithub,
+  SiGithubHex,
+  SiGitlab,
+  SiGitlabHex,
+  SiStackoverflow,
+  SiStackoverflowHex,
+} from "@icons-pack/react-simple-icons"
 import type { Metadata } from "next"
 import { ItemListJsonLd, PersonJsonLd } from "@/app/_components/json-ld"
 import Profile, {
   type ProfileFeaturedLink,
   type ProfileProps,
 } from "@/app/_components/Profile"
-import opengraph from "@/app/opengraph.jpg"
 import { tools } from "@/app/developer/_lib/tools"
+import opengraph from "@/app/opengraph.jpg"
 
 const siteUrl = "https://timx.co"
 const homepageTitle = "Tim - Software Maker in Tokyo"
@@ -56,32 +66,26 @@ function getProfile(): ProfileProps {
   return {
     title: "Hi, I'm Tim.",
     description:
-      "I build practical software for the web, artificial intelligence, robotics, and developer workflows.",
-    summary:
-      "My work favors simple interfaces, local-first browser tools, and systems that turn technical ideas into useful products.",
+      "I build and scale autonomous ecosystems. My expertise spans pioneering a nation’s first public-road delivery robots , scaling international engineering teams from zero , and architecting enterprise GenAI frameworks for massive productivity gains.",
     location: "Tokyo, Japan",
-    imageUrl: "https://avatars.githubusercontent.com/u/6851767?v=4",
-    craftAreas: [
-      "Embedded",
-      "Cloud",
-      "Mobile",
-      "AI",
-      "Robotics",
-      "Blockchain",
-    ],
+    imageUrl: "/profile-image.webp",
+    craftAreas: ["Embedded", "Mobile", "Cloud", "AI", "Robotics", "Blockchain"],
     linkUrl: [
       {
-        imageUrl: "/gitlab.svg",
+        icon: SiGitlab,
+        color: SiGitlabHex,
         linkUrl: "https://gitlab.com/users/hosweetim/projects",
         label: "GitLab",
       },
       {
-        imageUrl: "/github.svg",
+        icon: SiGithub,
+        color: SiGithubHex,
         linkUrl: "https://github.com/sweetim",
         label: "GitHub",
       },
       {
-        imageUrl: "/docker.svg",
+        icon: SiDocker,
+        color: SiDockerHex,
         linkUrl: "https://hub.docker.com/r/timx/",
         label: "Docker Hub",
       },
@@ -91,7 +95,8 @@ function getProfile(): ProfileProps {
         label: "LinkedIn",
       },
       {
-        imageUrl: "/stackoverflow.svg",
+        icon: SiStackoverflow,
+        color: SiStackoverflowHex,
         linkUrl: "https://stackoverflow.com/users/2297825/tim",
         label: "Stack Overflow",
         isRounded: false,
@@ -111,11 +116,11 @@ export default function Home() {
         url={siteUrl}
         jobTitle="Software Developer"
         description={homepageDescription}
-        image="https://avatars.githubusercontent.com/u/6851767?v=4"
+        image={`${siteUrl}${opengraph.src}`}
         knowsAbout={[
           "Embedded systems",
-          "Cloud computing",
           "Mobile development",
+          "Cloud computing",
           "Robotics",
           "Artificial intelligence",
           "Blockchain",
