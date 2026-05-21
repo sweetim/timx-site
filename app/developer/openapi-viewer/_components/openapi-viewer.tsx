@@ -218,7 +218,27 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     setFileName(null)
     setShowSuggestions(false)
     if (fileInputRef.current) fileInputRef.current.value = ""
+    if (history.state?.loaded) history.back()
   }, [])
+
+  useEffect(() => {
+    if (state.phase === "ready" && history.state?.loaded !== true) {
+      history.pushState({ loaded: true }, "")
+    }
+  }, [state.phase])
+
+  useEffect(() => {
+    const handler = () => {
+      if (!history.state?.loaded && state.phase === "ready") {
+        setState({ phase: "empty" })
+        setSelectedEndpoint(null)
+        setFileName(null)
+        setShowSuggestions(false)
+      }
+    }
+    window.addEventListener("popstate", handler)
+    return () => window.removeEventListener("popstate", handler)
+  }, [state.phase])
 
   return (
     <div className="flex flex-col h-full bg-dev-canvas text-dev-text">
