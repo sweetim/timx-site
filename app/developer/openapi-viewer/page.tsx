@@ -7,7 +7,7 @@ import OpenApiViewer from "./_components/openapi-viewer"
 export const metadata: Metadata = {
   title: "OpenAPI Viewer — Free Online Tool",
   description:
-    "Visualize OpenAPI 3.x specifications with endpoint explorer, parameter details, request/response schemas with examples, security scheme visualization (Bearer, API Key, OAuth 2.0, OpenID Connect), and a lint engine that flags missing summaries, descriptions, operationIds, responses, and security schemes. Supports JSON and YAML. Runs entirely in your browser.",
+    "Visualize OpenAPI 3.x specifications with endpoint explorer, parameter details, request/response schemas with examples, security scheme visualization (Bearer, API Key, OAuth 2.0, OpenID Connect), and a lint engine that flags missing summaries, descriptions, operationIds, responses, and security schemes. Supports JSON and YAML. Runs entirely in your browser — no install, no Docker, no server required.",
   alternates: { canonical: "https://timx.co/developer/openapi-viewer" },
   openGraph: {
     title: "OpenAPI Viewer — Free Online Tool",
@@ -39,19 +39,21 @@ export default function OpenApiViewerPage() {
           "View request and response schemas with examples",
           "Visualize security schemes (Bearer, API Key, OAuth 2.0, OpenID Connect)",
           "Lint missing summaries, descriptions, operationIds, responses, and security schemes",
+          "Runs entirely in your browser — no Docker or server required",
         ]}
       />
       <OpenApiViewer landingContent={<LandingSection />} />
       <ToolSeoContent
         id="openapi-viewer-seo"
         heading="OpenAPI Viewer"
-        description="Use the OpenAPI Viewer to visualize OpenAPI 3.x JSON or YAML specifications in the browser. Browse endpoints, parameters, request and response schemas with examples, security schemes (Bearer, API Key, OAuth 2.0, OpenID Connect), and lint suggestions — all client-side."
+        description="Use the OpenAPI Viewer to visualize OpenAPI 3.x JSON or YAML specifications in the browser. Browse endpoints, parameters, request and response schemas with examples, security schemes (Bearer, API Key, OAuth 2.0, OpenID Connect), and lint suggestions — all client-side, no Docker or server required."
         features={[
           "Upload OpenAPI 3.x JSON or YAML specifications.",
           "Browse endpoints grouped by tag with method, path, summary, and schema details.",
           "View request and response schemas with inline examples.",
           "Visualize security schemes: Bearer, API Key, OAuth 2.0, and OpenID Connect.",
           "Lint for missing summaries, descriptions, operationIds, responses, and security schemes.",
+          "Runs entirely in your browser — no Docker or server required.",
         ]}
       />
     </>
