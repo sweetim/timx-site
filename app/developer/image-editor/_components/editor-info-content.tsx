@@ -7,9 +7,9 @@ export default function EditorInfoContent() {
         </h2>
         <p className="text-dev-text-secondary mb-6 leading-relaxed">
           A browser-based image editor with tools for removing backgrounds,
-          cropping images, stitching mobile screenshots, scaling, and exporting
-          to different formats. All processing happens locally — your images
-          never leave your device.
+          cropping images, stitching mobile screenshots, scaling, generating
+          favicon .ico files, and exporting to different formats. All processing
+          happens locally — your images never leave your device.
         </p>
 
         <h3 className="text-lg font-semibold text-dev-text mb-3">Tools</h3>
@@ -36,8 +36,9 @@ export default function EditorInfoContent() {
           </li>
           <li>
             <strong className="text-dev-text">Export</strong> — Convert images
-            to PNG, JPEG, or WebP. Adjust quality for lossy formats and see the
-            resulting file size before downloading.
+            to PNG, JPEG, WebP, or ICO favicon. Adjust quality for lossy formats
+            and choose from standard favicon sizes (16×16 to 256×256) for ICO
+            exports. See the resulting file size before downloading.
           </li>
         </ul>
 
@@ -52,7 +53,7 @@ export default function EditorInfoContent() {
             clipboard, or browsing
           </li>
           <li>Apply edits using the controls in the right panel</li>
-          <li>Download the result as PNG, JPEG, or WebP</li>
+          <li>Download the result as PNG, JPEG, WebP, or ICO</li>
         </ol>
       </div>
     </section>

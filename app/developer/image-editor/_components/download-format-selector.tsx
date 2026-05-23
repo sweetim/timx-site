@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 
-type DownloadFormat = "png" | "jpeg" | "webp"
+type DownloadFormat = "png" | "jpeg" | "webp" | "ico"
 
 type DownloadFormatOption = {
   label: string
@@ -15,6 +15,7 @@ const DOWNLOAD_FORMATS: DownloadFormatOption[] = [
   { label: "PNG", value: "png", mimeType: "image/png", extension: "png" },
   { label: "JPEG", value: "jpeg", mimeType: "image/jpeg", extension: "jpg" },
   { label: "WebP", value: "webp", mimeType: "image/webp", extension: "webp" },
+  { label: "ICO", value: "ico", mimeType: "image/x-icon", extension: "ico" },
 ]
 
 function getFormatOption(format: DownloadFormat): DownloadFormatOption {
@@ -33,7 +34,7 @@ async function downloadBlob(
   const option = getFormatOption(format)
 
   let finalBlob: Blob
-  if (format === "png") {
+  if (format === "png" || format === "ico") {
     finalBlob = original
   } else {
     finalBlob = await new Promise<Blob>((resolve, reject) => {
@@ -90,7 +91,7 @@ function DownloadFormatSelector({
   onChange,
 }: DownloadFormatSelectorProps) {
   return (
-    <div className="grid grid-cols-3 gap-1">
+    <div className="grid grid-cols-4 gap-1">
       {DOWNLOAD_FORMATS.map((format) => (
         <button
           key={format.value}

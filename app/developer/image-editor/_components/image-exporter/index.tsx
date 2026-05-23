@@ -1,5 +1,6 @@
 "use client"
 
+import clsx from "clsx"
 import { memo, useCallback, useEffect, useRef, useState } from "react"
 import type { DownloadFormat } from "../download-format-selector"
 import { downloadBlob, getFormatOption } from "../download-format-selector"
@@ -13,6 +14,8 @@ import useDroppedFiles from "../shared/use-dropped-files"
 import useSourceFileInput from "../shared/use-source-file-input"
 import useWorkspaceReset from "../shared/use-workspace-reset"
 import UploadZone from "../upload-zone"
+import type { IcoSize } from "./encode-ico"
+import { encodeIco, ICO_AVAILABLE_SIZES } from "./encode-ico"
 
 const EMPTY_SOURCE_IMAGES: SourceImage[] = []
 
@@ -42,6 +45,7 @@ function ImageExporter({
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const [quality, setQuality] = useState(92)
+  const [icoSize, setIcoSize] = useState<IcoSize>(32)
   const [exportedUrl, setExportedUrl] = useState<string | null>(null)
   const [exportedBlob, setExportedBlob] = useState<Blob | null>(null)
   const [sourceUrl, setSourceUrl] = useState<string | null>(null)
@@ -170,6 +174,20 @@ function ImageExporter({
     if (!sourceUrl) return
     let cancelled = false
 
+    if (downloadFormat === "ico") {
+      void encodeIco(sourceUrl, [icoSize]).then((blob) => {
+        if (cancelled) return
+        revokeExported()
+        const url = URL.createObjectURL(blob)
+        setExportedUrl(url)
+        setExportedBlob(blob)
+        onResult?.(blob)
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+
     const option = getFormatOption(downloadFormat)
     const img = new Image()
     img.onload = () => {
@@ -202,7 +220,7 @@ function ImageExporter({
     return () => {
       cancelled = true
     }
-  }, [sourceUrl, downloadFormat, quality, revokeExported, onResult])
+  }, [sourceUrl, downloadFormat, quality, icoSize, revokeExported, onResult])
 
   const handleSelectSource = (id: string) => {
     droppedFileRef.current = null
@@ -318,9 +336,11 @@ function ImageExporter({
                         Export Preview
                       </h2>
                       <p className="text-xs text-dev-text-secondary">
-                        {sourceDimensions
-                          ? `${sourceDimensions.width} × ${sourceDimensions.height}px`
-                          : ""}
+                        {downloadFormat === "ico"
+                          ? `${icoSize}×${icoSize}px`
+                          : sourceDimensions
+                            ? `${sourceDimensions.width} × ${sourceDimensions.height}px`
+                            : ""}
                         {" · "}
                         {formatFileSize(exportedBlob?.size ?? 0)}
                       </p>
@@ -345,7 +365,7 @@ function ImageExporter({
               <h2 className="text-base font-semibold text-dev-text">Export</h2>
               <p className="mt-1 text-xs leading-relaxed text-dev-text-secondary">
                 Convert an image to a different format with quality control for
-                lossy formats.
+                lossy formats, or generate a favicon (.ico).
               </p>
             </div>
 
@@ -377,6 +397,31 @@ function ImageExporter({
                   onChange={(e) => setQuality(Number(e.target.value))}
                   className="mt-2 w-full accent-dev-accent-blue"
                 />
+              </div>
+            ) : null}
+
+            {downloadFormat === "ico" && sourceUrl ? (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+                  Size
+                </p>
+                <div className="mt-2 grid grid-cols-4 gap-1">
+                  {ICO_AVAILABLE_SIZES.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setIcoSize(size)}
+                      className={clsx(
+                        "rounded px-2 py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                        icoSize === size
+                          ? "bg-dev-accent-blue text-white"
+                          : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+                      )}
+                    >
+                      {size}px
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
 
@@ -431,8 +476,8 @@ function ImageExporter({
             Image Exporter
           </h1>
           <p className="text-sm text-dev-text-secondary mb-6">
-            Upload an image and convert it to PNG, JPEG, or WebP with quality
-            control. Everything runs locally in your browser.
+            Upload an image and convert it to PNG, JPEG, WebP, or ICO favicon
+            with quality control. Everything runs locally in your browser.
           </p>
 
           {!sourceUrl ? (

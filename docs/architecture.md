@@ -179,6 +179,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 |---|---|
 | `app/layout.tsx` | Root layout (Mali font, global CSS, Google Analytics) |
 | `app/page.tsx` | Home page - maker profile landing page with homepage metadata, Person JSON-LD, ItemList JSON-LD, and selected developer-tool links |
+| `app/not-found.tsx` | Custom 404 page with "go home" link |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
 | `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, soft cyan/amber maker profile background, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
@@ -204,6 +205,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/db-explorer/_components/use-file-handle.ts` | Hook for recent files IndexedDB persistence via File System Access API |
 | `app/developer/db-explorer/_components/db-explorer.tsx` | DB Explorer orchestrator component (state management, phase rendering) |
 | `app/developer/db-explorer/_components/db-explorer-reducer.ts` | DB Explorer reducer (DbExplorerState, DbExplorerAction, ts-pattern dispatch) |
+| `app/developer/db-explorer/_components/landing-section.tsx` | Server-rendered landing section with feature cards for SEO |
 | `app/developer/db-explorer/_components/empty-state.tsx` | Empty/landing state with file upload and recent files list |
 | `app/developer/db-explorer/_components/table-sidebar.tsx` | Sidebar showing loaded tables with row counts |
 | `app/developer/db-explorer/_components/query-editor.tsx` | CodeMirror SQL query editor with clause-aware column autocomplete (SELECT list, WHERE, ORDER BY, GROUP BY, HAVING), run button, and Ctrl+Enter shortcut |
@@ -228,7 +230,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/background-remover/_components/compute-progress.tsx` | Step-by-step progress indicator |
 | `app/developer/image-editor/_components/background-remover/_components/download-progress.tsx` | Model download progress bar |
 | `app/developer/image-editor/_components/upload-zone.tsx` | Shared drag-and-drop upload area with single/multiple image copy |
-| `app/developer/image-editor/_components/download-format-selector.tsx` | Shared download format selector (PNG, JPEG, WebP) and format conversion utility |
+| `app/developer/image-editor/_components/download-format-selector.tsx` | Shared download format selector (PNG, JPEG, WebP, ICO) and format conversion utility |
 | `app/developer/image-editor/_components/canvas-drop-overlay.tsx` | Canvas-level drag overlay with label |
 | `app/developer/image-editor/_components/shared/types.ts` | Shared editor tool prop contract used by Background Remover, Crop, and Screenshot Stitcher |
 | `app/developer/image-editor/_components/shared/tool-panel-layout.tsx` | Shared two-column canvas/sidebar layout for image editor tool panels |
@@ -249,7 +251,10 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/image-stitch/constants.ts` | Checkerboard background style |
 | `app/developer/image-editor/_components/image-stitch/_hooks/use-screenshot-stitcher.ts` | Screenshot Stitcher hook for image list state, frame settings, stitching, export, and reset logic |
 | `app/developer/image-editor/_components/image-stitch/_lib/stitch-canvas.ts` | Canvas API stitching logic (frame layout, export) |
-| `app/developer/image-editor/_components/image-exporter/index.tsx` | Image Exporter client component (format conversion, quality control, file size preview) |
+| `app/developer/image-editor/_components/image-exporter/index.tsx` | Image Exporter client component (format conversion, quality control, favicon ICO export, file size preview) |
+| `app/developer/image-editor/_components/image-exporter/encode-ico.ts` | ICO favicon encoder (resizes to 16/32/48px, packs PNG payloads into ICO binary) |
+| `app/developer/image-editor/_components/image-scaler/index.tsx` | Image Scaler client component (percentage or dimension resize, Canvas API export) |
+| `app/developer/image-editor/_components/image-scaler/_hooks/use-image-scaler.ts` | Scaler hook for image loading, percentage/dimension state, and Canvas API export |
 | `app/developer/llm-usage/_components/llm-usage.tsx` | LLM Pricing main client component (filter/search, provider groups) |
 | `app/developer/llm-usage/_components/llm-usage-info.tsx` | LLM Pricing SEO heading, intro copy, and educational sections |
 | `app/developer/llm-usage/_components/provider-section.tsx` | Expandable provider table with sort headers |
@@ -260,9 +265,11 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/llm-usage/page.tsx` | LLM Pricing route page that renders the client-side OpenRouter fetcher |
 | `app/developer/og-preview/_lib/fetch-og.ts` | Server action: fetches URL and extracts OG/Twitter meta tags |
 | `app/developer/og-preview/_components/og-preview.tsx` | OG Preview client component |
+| `app/developer/og-preview/_components/landing-section.tsx` | Server-rendered landing section with feature cards for SEO |
 | `app/developer/og-preview/page.tsx` | OG Preview route page |
 | `app/developer/black-screen/page.tsx` | Black Screen route page |
 | `app/developer/black-screen/_components/black-screen-button.tsx` | Fullscreen black screen toggle (enter via button, exit via Escape/click) |
+| `app/developer/black-screen/_components/landing-section.tsx` | Server-rendered landing section with feature cards for SEO |
 | `app/developer/openapi-viewer/page.tsx` | OpenAPI Viewer route page |
 | `app/developer/openapi-viewer/_components/landing-section.tsx` | Server-rendered landing section with H1, subtitle, and feature cards for SEO |
 | `app/developer/openapi-viewer/_components/openapi-viewer.tsx` | OpenAPI Viewer orchestrator (state management, phase rendering, accepts landing content) |
@@ -296,8 +303,16 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | File | Purpose |
 |---|---|
 | `public/linkedin.svg` | LinkedIn icon |
+| `public/profile-image.webp` | Profile avatar image |
 | `public/timx-logo.png` | Site logo |
 | `public/sql-wasm.wasm` | sql.js WASM binary for client-side SQLite in DB Explorer |
+| `public/image-editor-og.jpg` | Open Graph image for Image Editor tool |
+| `public/json-viewer-og.jpg` | Open Graph image for JSON Viewer tool |
+| `public/llm-pricing-og.jpg` | Open Graph image for LLM Pricing tool |
+| `public/db-explorer-og.jpg` | Open Graph image for DB Explorer tool |
+| `public/og-preview-og.jpg` | Open Graph image for OG Preview tool |
+| `public/black-screen-og.jpg` | Open Graph image for Black Screen tool |
+| `public/openapi-viewer-og.jpg` | Open Graph image for OpenAPI Viewer tool |
 
 ## Dependencies
 
@@ -601,7 +616,7 @@ type UploadZoneProps = {
 ### Download format types (app/developer/image-editor/_components/download-format-selector.tsx)
 
 ```typescript
-type DownloadFormat = "png" | "jpeg" | "webp"
+type DownloadFormat = "png" | "jpeg" | "webp" | "ico"
 ```
 
 ### Image Cropper types (app/developer/image-editor/_components/image-cropper/types.ts)
