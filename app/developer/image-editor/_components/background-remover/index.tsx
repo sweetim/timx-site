@@ -15,6 +15,11 @@ const EMPTY_BACKGROUND_REMOVAL_RESULTS: Record<
   BackgroundRemovalResult
 > = {}
 
+type StaticColorRemovalError = {
+  sourceId: string
+  message: string
+}
+
 import useClipboardPaste from "../shared/use-clipboard-paste"
 import useDroppedFiles from "../shared/use-dropped-files"
 import useSourceFileInput from "../shared/use-source-file-input"
@@ -24,9 +29,21 @@ import ComputeProgress from "./_components/compute-progress"
 import DownloadProgress from "./_components/download-progress"
 import ErrorState from "./_components/error-state"
 import ResultView from "./_components/result-view"
+import StaticColorRemovalControls from "./_components/static-color-removal-controls"
 import useBackgroundRemoverPool from "./_hooks/use-background-remover-pool"
+import {
+  DEFAULT_STATIC_COLOR_REMOVAL_COLOR,
+  DEFAULT_STATIC_COLOR_REMOVAL_TOLERANCE,
+} from "./constants"
+import { removeStaticColor } from "./utils"
 
-function ProcessingOverlay() {
+type ProcessingOverlayProps = {
+  label?: string
+}
+
+function ProcessingOverlay({
+  label = "Removing background",
+}: ProcessingOverlayProps) {
   const [dots, setDots] = useState(0)
 
   useEffect(() => {
@@ -41,7 +58,8 @@ function ProcessingOverlay() {
         <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-dev-accent-blue animate-spin" />
       </div>
       <p className="text-sm font-medium text-dev-text">
-        Removing background{".".repeat(dots)}
+        {label}
+        {".".repeat(dots)}
       </p>
     </div>
   )
@@ -67,13 +85,28 @@ const BackgroundRemover = ({
 }: EditorToolProps) => {
   const isPanel = variant === "panel"
   const activeSourceIdRef = useRef<string | null>(null)
+  const sourceImagesRef = useRef(sourceImages)
   const backgroundRemovalResultsRef = useRef(backgroundRemovalResults)
+  const staticColorRemovalRequestIdRef = useRef(0)
+  useEffect(() => {
+    sourceImagesRef.current = sourceImages
+  }, [sourceImages])
   useEffect(() => {
     backgroundRemovalResultsRef.current = backgroundRemovalResults
   }, [backgroundRemovalResults])
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const [isDragOver, setIsDragOver] = useState(false)
+  const [staticColorRemovalColor, setStaticColorRemovalColor] = useState(
+    DEFAULT_STATIC_COLOR_REMOVAL_COLOR,
+  )
+  const [staticColorRemovalTolerance, setStaticColorRemovalTolerance] =
+    useState(DEFAULT_STATIC_COLOR_REMOVAL_TOLERANCE)
+  const [staticColorRemovalSourceId, setStaticColorRemovalSourceId] = useState<
+    string | null
+  >(null)
+  const [staticColorRemovalError, setStaticColorRemovalError] =
+    useState<StaticColorRemovalError | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { sourceFileInputRef, handleSourceFileInput } = useSourceFileInput({
@@ -104,6 +137,18 @@ const BackgroundRemover = ({
   const displayResultUrl =
     activeCachedResult?.url
     ?? (activeJobStatus?.phase === "done" ? activeJobStatus.resultUrl : null)
+  const isAiProcessing = activeJobStatus?.phase === "processing"
+  const isRemovingStaticColor = staticColorRemovalSourceId !== null
+  const isRemovingActiveStaticColor =
+    staticColorRemovalSourceId === activeSourceId
+  const isActiveSourceProcessing = isAiProcessing || isRemovingActiveStaticColor
+  const processingOverlayLabel = isRemovingActiveStaticColor
+    ? "Removing selected color"
+    : "Removing background"
+  const activeStaticColorRemovalError =
+    staticColorRemovalError?.sourceId === activeSourceId
+      ? staticColorRemovalError.message
+      : null
 
   const imageStatuses = useMemo((): Record<
     string,
@@ -113,14 +158,22 @@ const BackgroundRemover = ({
     for (const img of sourceImages) {
       if (backgroundRemovalResults[img.id]) {
         statuses[img.id] = "done"
-      } else if (jobStatuses[img.id]?.phase === "processing") {
+      } else if (
+        jobStatuses[img.id]?.phase === "processing"
+        || staticColorRemovalSourceId === img.id
+      ) {
         statuses[img.id] = "processing"
       } else if (jobStatuses[img.id]?.phase === "error") {
         statuses[img.id] = "error"
       }
     }
     return statuses
-  }, [sourceImages, backgroundRemovalResults, jobStatuses])
+  }, [
+    sourceImages,
+    backgroundRemovalResults,
+    jobStatuses,
+    staticColorRemovalSourceId,
+  ])
 
   const handleFiles = useCallback(
     async (files: File[] | FileList | null) => {
@@ -137,6 +190,7 @@ const BackgroundRemover = ({
       if (firstSource) {
         activeSourceIdRef.current = firstSource.id
         setActiveSourceId(firstSource.id)
+        setStaticColorRemovalError(null)
         onSourceImage?.(firstSource.blob, firstSource.name)
       }
     },
@@ -180,9 +234,75 @@ const BackgroundRemover = ({
   }, [displayResultUrl, downloadFormat])
 
   const handleStartProcessing = useCallback(() => {
-    if (!activeSource) return
+    if (!activeSource || isRemovingStaticColor) return
+    setStaticColorRemovalError(null)
     enqueue(activeSource.id, activeSource.blob, activeSource.name)
-  }, [activeSource, enqueue])
+  }, [activeSource, enqueue, isRemovingStaticColor])
+
+  const handleStaticColorChange = useCallback((color: string) => {
+    setStaticColorRemovalColor(color)
+    setStaticColorRemovalError(null)
+  }, [])
+
+  const handleStaticColorToleranceChange = useCallback((tolerance: number) => {
+    setStaticColorRemovalTolerance(tolerance)
+    setStaticColorRemovalError(null)
+  }, [])
+
+  const invalidateStaticColorRemoval = useCallback(() => {
+    staticColorRemovalRequestIdRef.current += 1
+    setStaticColorRemovalSourceId(null)
+  }, [])
+
+  const handleRemoveStaticColor = useCallback(async () => {
+    if (!activeSource || isAiProcessing || isRemovingStaticColor) return
+
+    const requestId = staticColorRemovalRequestIdRef.current + 1
+    staticColorRemovalRequestIdRef.current = requestId
+    setStaticColorRemovalSourceId(activeSource.id)
+    setStaticColorRemovalError(null)
+
+    try {
+      const inputBlob = activeCachedResult?.blob ?? activeSource.blob
+      const blob = await removeStaticColor(
+        inputBlob,
+        staticColorRemovalColor,
+        staticColorRemovalTolerance,
+      )
+
+      const sourceStillExists = sourceImagesRef.current.some(
+        (source) => source.id === activeSource.id,
+      )
+      if (
+        staticColorRemovalRequestIdRef.current !== requestId
+        || !sourceStillExists
+      ) {
+        return
+      }
+
+      handlePoolResult(activeSource.id, blob)
+    } catch (error) {
+      if (staticColorRemovalRequestIdRef.current !== requestId) return
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to remove the selected color."
+      setStaticColorRemovalError({ sourceId: activeSource.id, message })
+    } finally {
+      if (staticColorRemovalRequestIdRef.current === requestId) {
+        setStaticColorRemovalSourceId(null)
+      }
+    }
+  }, [
+    activeSource,
+    activeCachedResult,
+    handlePoolResult,
+    isAiProcessing,
+    isRemovingStaticColor,
+    staticColorRemovalColor,
+    staticColorRemovalTolerance,
+  ])
 
   const handleSelectSource = useCallback(
     (id: string) => {
@@ -190,6 +310,7 @@ const BackgroundRemover = ({
       if (!source) return
       activeSourceIdRef.current = source.id
       setActiveSourceId(source.id)
+      setStaticColorRemovalError(null)
       onSourceImage?.(source.blob, source.name)
     },
     [sourceImages, onSourceImage],
@@ -197,17 +318,32 @@ const BackgroundRemover = ({
 
   const handleRemoveSourceImage = useCallback(
     (id: string) => {
+      if (staticColorRemovalSourceId === id) invalidateStaticColorRemoval()
       cancel(id)
       onRemoveSourceImage?.(id)
     },
-    [cancel, onRemoveSourceImage],
+    [
+      cancel,
+      invalidateStaticColorRemoval,
+      onRemoveSourceImage,
+      staticColorRemovalSourceId,
+    ],
   )
 
   const handleRemoveActiveSource = useCallback(() => {
     if (activeSourceId) cancel(activeSourceId)
+    if (activeSourceId && staticColorRemovalSourceId === activeSourceId) {
+      invalidateStaticColorRemoval()
+    }
     activeSourceIdRef.current = null
     setActiveSourceId(null)
-  }, [activeSourceId, cancel])
+    setStaticColorRemovalError(null)
+  }, [
+    activeSourceId,
+    cancel,
+    invalidateStaticColorRemoval,
+    staticColorRemovalSourceId,
+  ])
 
   const handleAddToSource = useCallback(async () => {
     if (!activeSourceId) return
@@ -220,11 +356,13 @@ const BackgroundRemover = ({
   }, [activeSourceId, onAddSourceImages])
 
   const handleClear = useCallback(() => {
+    invalidateStaticColorRemoval()
     activeSourceIdRef.current = null
     setActiveSourceId(null)
+    setStaticColorRemovalError(null)
     clearAll()
     onClearWorkspace?.()
-  }, [clearAll, onClearWorkspace])
+  }, [clearAll, invalidateStaticColorRemoval, onClearWorkspace])
 
   useEffect(() => {
     activeSourceIdRef.current = activeSourceId
@@ -249,8 +387,10 @@ const BackgroundRemover = ({
   useWorkspaceReset({
     workspaceResetKey,
     onReset: () => {
+      invalidateStaticColorRemoval()
       activeSourceIdRef.current = null
       setActiveSourceId(null)
+      setStaticColorRemovalError(null)
       clearAll()
     },
   })
@@ -283,14 +423,12 @@ const BackgroundRemover = ({
                     src={activeSource.url}
                     alt="Preview"
                     className={`w-full h-auto max-h-125 object-contain rounded-md ${
-                      activeJobStatus?.phase === "processing"
-                        ? "opacity-40"
-                        : ""
+                      isActiveSourceProcessing ? "opacity-40" : ""
                     }`}
                   />
-                  {activeJobStatus?.phase === "processing" ? (
+                  {isActiveSourceProcessing ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <ProcessingOverlay />
+                      <ProcessingOverlay label={processingOverlayLabel} />
                     </div>
                   ) : null}
                 </div>
@@ -346,17 +484,32 @@ const BackgroundRemover = ({
               imageStatuses={imageStatuses}
             />
 
+            {activeSource ? (
+              <div className="mt-3">
+                <StaticColorRemovalControls
+                  color={staticColorRemovalColor}
+                  tolerance={staticColorRemovalTolerance}
+                  disabled={isAiProcessing || isRemovingStaticColor}
+                  error={activeStaticColorRemovalError}
+                  onColorChange={handleStaticColorChange}
+                  onToleranceChange={handleStaticColorToleranceChange}
+                  onRemoveColor={() => void handleRemoveStaticColor()}
+                />
+              </div>
+            ) : null}
+
             {activeSource
             && !displayResultUrl
-            && activeJobStatus?.phase !== "processing"
+            && !isAiProcessing
             && activeJobStatus?.phase !== "error" ? (
               <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
                 <button
                   type="button"
                   onClick={handleStartProcessing}
-                  className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
+                  disabled={isRemovingStaticColor}
+                  className="w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Remove Background
+                  Remove Background AI
                 </button>
               </div>
             ) : null}
@@ -390,7 +543,8 @@ const BackgroundRemover = ({
                 <button
                   type="button"
                   onClick={handleStartProcessing}
-                  className="mt-2 w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer"
+                  disabled={isRemovingStaticColor}
+                  className="mt-2 w-full rounded bg-dev-accent-blue px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-dev-accent-blue/90 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Retry
                 </button>
@@ -470,21 +624,33 @@ const BackgroundRemover = ({
                   src={activeSource.url}
                   alt="Preview"
                   className={`w-full h-auto max-h-125 object-contain rounded-md ${
-                    activeJobStatus?.phase === "processing" ? "opacity-40" : ""
+                    isActiveSourceProcessing ? "opacity-40" : ""
                   }`}
                 />
-                {activeJobStatus?.phase === "processing" ? (
+                {isActiveSourceProcessing ? (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <ProcessingOverlay />
+                    <ProcessingOverlay label={processingOverlayLabel} />
                   </div>
                 ) : null}
               </div>
+              <div className="mx-auto max-w-sm">
+                <StaticColorRemovalControls
+                  color={staticColorRemovalColor}
+                  tolerance={staticColorRemovalTolerance}
+                  disabled={isAiProcessing || isRemovingStaticColor}
+                  error={activeStaticColorRemovalError}
+                  onColorChange={handleStaticColorChange}
+                  onToleranceChange={handleStaticColorToleranceChange}
+                  onRemoveColor={() => void handleRemoveStaticColor()}
+                />
+              </div>
               <div className="flex justify-center gap-3">
-                {activeJobStatus?.phase !== "processing" ? (
+                {!isAiProcessing ? (
                   <button
                     type="button"
                     onClick={handleStartProcessing}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-accent-blue hover:brightness-110 text-white transition-all cursor-pointer"
+                    disabled={isRemovingStaticColor}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-sm rounded-full bg-dev-accent-blue hover:brightness-110 text-white transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Remove Background
                   </button>
@@ -501,14 +667,27 @@ const BackgroundRemover = ({
           ) : null}
 
           {activeSource && displayResultUrl ? (
-            <ResultView
-              originalUrl={activeSource.url}
-              resultUrl={displayResultUrl}
-              downloadFormat={downloadFormat}
-              onDownload={handleDownload}
-              onFormatChange={setDownloadFormat}
-              onReset={handleClear}
-            />
+            <div className="space-y-4">
+              <ResultView
+                originalUrl={activeSource.url}
+                resultUrl={displayResultUrl}
+                downloadFormat={downloadFormat}
+                onDownload={handleDownload}
+                onFormatChange={setDownloadFormat}
+                onReset={handleClear}
+              />
+              <div className="mx-auto max-w-sm">
+                <StaticColorRemovalControls
+                  color={staticColorRemovalColor}
+                  tolerance={staticColorRemovalTolerance}
+                  disabled={isAiProcessing || isRemovingStaticColor}
+                  error={activeStaticColorRemovalError}
+                  onColorChange={handleStaticColorChange}
+                  onToleranceChange={handleStaticColorToleranceChange}
+                  onRemoveColor={() => void handleRemoveStaticColor()}
+                />
+              </div>
+            </div>
           ) : null}
 
           {activeSource
