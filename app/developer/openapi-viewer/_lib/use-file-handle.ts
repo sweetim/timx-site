@@ -187,14 +187,14 @@ export type RecentHandleFile = {
 
 export async function loadFileFromHandle(
   fileName: string,
-): Promise<File | null> {
+): Promise<{ file: File; handle: FileSystemFileHandle } | null> {
   const stored = await getHandleEntry(fileName)
   if (!stored) return null
   const perm = await (stored.handle as HandleWithPermission).requestPermission({
     mode: "read",
   })
   if (perm !== "granted") return null
-  return stored.handle.getFile()
+  return { file: await stored.handle.getFile(), handle: stored.handle }
 }
 
 export async function loadPastedSpecContent(

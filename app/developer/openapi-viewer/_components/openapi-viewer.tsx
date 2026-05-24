@@ -1,7 +1,7 @@
 "use client"
 
 import clsx from "clsx"
-import { AlertTriangle, Upload, X } from "lucide-react"
+import { AlertTriangle, RefreshCw, Upload, X } from "lucide-react"
 import {
   type FC,
   type ReactNode,
@@ -52,6 +52,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
   )
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [currentHandle, setCurrentHandle] = useState<FileSystemFileHandle | null>(null)
 
   const loadRawSpec = useCallback(
     (raw: string, name: string, handle?: FileSystemFileHandle, isPaste?: boolean) => {
@@ -175,7 +176,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
           await refreshFiles()
           return
         }
-        const text = await result.text()
+        const text = await result.file.text()
         const spec = parseSpec(text)
         const endpoints = extractEndpoints(spec)
         setState({ phase: "ready", spec, endpoints })
@@ -183,6 +184,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
         setSelectedEndpoint(null)
         setShowSuggestions(false)
         setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
+        setCurrentHandle(result.handle)
         await updateHandleMetadata(fileName, spec.info.title, spec.info.version)
         await refreshFiles()
       } catch {
@@ -218,6 +220,7 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
           ],
         })
         const file = await handle.getFile()
+        setCurrentHandle(handle)
         const reader = new FileReader()
         reader.onload = () =>
           loadRawSpec(reader.result as string, file.name, handle)
@@ -244,9 +247,45 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
     setSelectedEndpoint(null)
     setFileName(null)
     setShowSuggestions(false)
+    setCurrentHandle(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
     if (history.state?.loaded) history.back()
   }, [])
+
+  const handleRefresh = useCallback(async () => {
+    if (!currentHandle) return
+    try {
+      const file = await currentHandle.getFile()
+      const reader = new FileReader()
+      reader.onload = () => {
+        try {
+          const raw = reader.result as string
+          const spec = parseSpec(raw)
+          const endpoints = extractEndpoints(spec)
+          setState({ phase: "ready", spec, endpoints })
+          setSelectedEndpoint(null)
+          setShowSuggestions(false)
+          setExpandedGroups(new Set(endpoints.map((g) => g.tag)))
+        } catch (error) {
+          setState({
+            phase: "error",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to parse OpenAPI spec",
+          })
+        }
+      }
+      reader.onerror = () =>
+        setState({ phase: "error", message: "Failed to read file" })
+      reader.readAsText(file)
+    } catch {
+      setState({
+        phase: "error",
+        message: "Failed to refresh. The file may have been moved or permissions were denied.",
+      })
+    }
+  }, [currentHandle])
 
   useEffect(() => {
     if (state.phase === "ready" && history.state?.loaded !== true) {
@@ -316,6 +355,16 @@ const OpenApiViewer: FC<{ landingContent: ReactNode }> = ({
                   improvement suggestions.
                 </h1>
                 <div className="flex gap-2 shrink-0">
+                  {currentHandle && (
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-sm rounded bg-dev-button hover:bg-dev-button-hover transition-colors cursor-pointer text-dev-text"
+                      onClick={handleRefresh}
+                    >
+                      <RefreshCw size={14} />
+                      <span>Refresh</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={clsx(
