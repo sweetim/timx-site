@@ -182,7 +182,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/not-found.tsx` | Custom 404 page with "go home" link |
 | `app/robots.ts` | robots.txt generation (allows all, references sitemap) |
 | `app/sitemap.ts` | XML sitemap listing all static pages, including developer tools |
-| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, soft cyan/amber maker profile background, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
+| `app/globals.css` | Tailwind import, theme tokens, scrollbar styles, maker profile background image styling, profile tool-card line clamp, social link animations, and global button bounce (hover:scale-105 active:scale-95) |
 | `app/privacy/page.tsx` | Privacy policy page |
 | `app/terms/page.tsx` | Terms of service page |
 | `app/_components/Profile.tsx` | Centered maker profile landing component with avatar, hero text, responsive icon craft-card grid, connect links, and selected work cards |
@@ -304,6 +304,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | File | Purpose |
 |---|---|
 | `public/linkedin.svg` | LinkedIn icon |
+| `public/bg.webp` | Doodle background image for the home page |
 | `public/profile-image.webp` | Profile avatar image |
 | `public/timx-logo.png` | Site logo |
 | `public/sql-wasm.wasm` | sql.js WASM binary for client-side SQLite in DB Explorer |

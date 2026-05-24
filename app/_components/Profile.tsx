@@ -70,7 +70,7 @@ const Profile: FC<ProfileProps> = (props) => {
         >
           <ScrambleText text={props.title} />
         </h1>
-        <p className="mt-3 text-base leading-6 text-slate-700">
+        <p className="mt-3 text-base leading-6 text-slate-950">
           {props.description}
         </p>
       </div>
@@ -120,7 +120,7 @@ const Profile: FC<ProfileProps> = (props) => {
           >
             Things I&apos;ve Built
           </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <p className="mt-2 text-sm leading-6 text-slate-950">
             A few of the practical , browser-based tools I build to make
             development work faster.
           </p>

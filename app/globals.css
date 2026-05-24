@@ -79,10 +79,7 @@
 }
 
 .maker-profile-background {
-    background:
-        radial-gradient(circle at 18% 12%, rgb(56 189 248 / 0.14), transparent 28rem),
-        radial-gradient(circle at 82% 18%, rgb(251 191 36 / 0.14), transparent 24rem),
-        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    background: url('/bg.webp') center / cover no-repeat fixed;
 }
 
 .profile-tool-description {
