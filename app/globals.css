@@ -82,6 +82,12 @@
     background: url('/bg.webp') center / cover no-repeat fixed;
 }
 
+@media (max-width: 640px) {
+    .maker-profile-background {
+        background: url('/bg-mobile.webp') center / cover no-repeat fixed;
+    }
+}
+
 .profile-tool-description {
     display: -webkit-box;
     overflow: hidden;
