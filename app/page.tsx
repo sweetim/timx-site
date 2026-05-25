@@ -1,4 +1,6 @@
 import {
+  SiDiscord,
+  SiDiscordHex,
   SiDocker,
   SiDockerHex,
   SiGithub,
@@ -22,22 +24,27 @@ const homepageTitle = "Tim - Software Maker in Tokyo"
 const homepageDescription =
   "Tim is a software maker in Tokyo building practical tools and systems for the web, artificial intelligence, robotics, blockchain, and developer workflows."
 
-const featuredToolSlugs = new Set([
-  "json-viewer",
+const featuredToolSlugs = [
+  "llm-usage",
   "image-editor",
   "db-explorer",
   "openapi-viewer",
-])
+]
 
 function getFeaturedToolLinks(): ProfileFeaturedLink[] {
-  return tools
-    .filter(({ slug }) => featuredToolSlugs.has(slug))
-    .map(({ name, slug, description, icon }) => ({
-      title: name,
-      description,
-      href: `/developer/${slug}`,
-      icon,
-    }))
+  const toolMap = new Map(tools.map((t) => [t.slug, t]))
+  return featuredToolSlugs
+    .map((slug) => {
+      const tool = toolMap.get(slug)
+      if (!tool) return null
+      return {
+        title: tool.name,
+        description: tool.description,
+        href: `/developer/${tool.slug}`,
+        icon: tool.icon,
+      }
+    })
+    .filter(Boolean) as ProfileFeaturedLink[]
 }
 
 export const metadata: Metadata = {
@@ -82,6 +89,12 @@ function getProfile(): ProfileProps {
         color: SiGithubHex,
         linkUrl: "https://github.com/sweetim",
         label: "GitHub",
+      },
+      {
+        icon: SiDiscord,
+        color: SiDiscordHex,
+        linkUrl: "https://discord.gg/6Wzx6rBShQ",
+        label: "Discord",
       },
       {
         icon: SiDocker,

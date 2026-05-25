@@ -13,7 +13,7 @@ import Image from "next/image"
 import Link from "next/link"
 import type { FC } from "react"
 
-import ProfileLink, { type ProfileLinkProps } from "./ProfileLink"
+import { type ProfileLinkProps } from "./ProfileLink"
 import ScrambleText from "./ScrambleText"
 
 export type ProfileProps = {
@@ -94,20 +94,46 @@ const Profile: FC<ProfileProps> = (props) => {
         })}
       </div>
 
-      <div className="mt-8 flex flex-col items-center gap-3">
-        <p className="text-xs font-medium uppercase tracking-widest text-slate-400">
-          Connect
-        </p>
-        <div className="flex gap-3">
-          {props.linkUrl.map((link, i) => (
-            <ProfileLink
-              key={link.label}
-              index={i}
-              {...link}
-            />
-          ))}
+      <section
+        className="mt-8"
+        aria-labelledby="connect-heading"
+      >
+        <div className="text-center">
+          <h2
+            id="connect-heading"
+            className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl"
+          >
+            Connect
+          </h2>
         </div>
-      </div>
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {props.linkUrl.map((link) => {
+            const Icon = link.icon
+
+            return (
+              <a
+                key={link.label}
+                href={link.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3 text-center text-xs font-medium text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                {Icon ? (
+                  <Icon size={20} color={link.color} />
+                ) : (
+                  <Image
+                    src={link.imageUrl!}
+                    height={20}
+                    width={20}
+                    alt={link.label}
+                  />
+                )}
+                {link.label}
+              </a>
+            )
+          })}
+        </div>
+      </section>
 
       <section
         className="mt-12"
