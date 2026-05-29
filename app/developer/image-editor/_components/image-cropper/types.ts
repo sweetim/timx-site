@@ -12,6 +12,7 @@ export type DragState = {
   startX: number
   startY: number
   startCrop: CropRect
+  canvasZoom: number
 }
 
 export type Status =

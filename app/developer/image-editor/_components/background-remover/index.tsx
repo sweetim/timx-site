@@ -69,6 +69,8 @@ const BackgroundRemover = ({
   variant = "page",
   isActive = true,
   workspaceResetKey = 0,
+  activeSourceId: activeSourceIdProp,
+  onActiveSourceChange,
   onResult,
   onSourceImage,
   onClearWorkspace,
@@ -88,13 +90,7 @@ const BackgroundRemover = ({
   const sourceImagesRef = useRef(sourceImages)
   const backgroundRemovalResultsRef = useRef(backgroundRemovalResults)
   const staticColorRemovalRequestIdRef = useRef(0)
-  useEffect(() => {
-    sourceImagesRef.current = sourceImages
-  }, [sourceImages])
-  useEffect(() => {
-    backgroundRemovalResultsRef.current = backgroundRemovalResults
-  }, [backgroundRemovalResults])
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
+  const activeSourceId = activeSourceIdProp ?? null
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const [isDragOver, setIsDragOver] = useState(false)
   const [staticColorRemovalColor, setStaticColorRemovalColor] = useState(
@@ -189,7 +185,7 @@ const BackgroundRemover = ({
 
       if (firstSource) {
         activeSourceIdRef.current = firstSource.id
-        setActiveSourceId(firstSource.id)
+        onActiveSourceChange?.(firstSource.id)
         setStaticColorRemovalError(null)
         onSourceImage?.(firstSource.blob, firstSource.name)
       }
@@ -309,11 +305,11 @@ const BackgroundRemover = ({
       const source = sourceImages.find((img) => img.id === id)
       if (!source) return
       activeSourceIdRef.current = source.id
-      setActiveSourceId(source.id)
+      onActiveSourceChange?.(source.id)
       setStaticColorRemovalError(null)
       onSourceImage?.(source.blob, source.name)
     },
-    [sourceImages, onSourceImage],
+    [sourceImages, onSourceImage, onActiveSourceChange],
   )
 
   const handleRemoveSourceImage = useCallback(
@@ -336,13 +332,14 @@ const BackgroundRemover = ({
       invalidateStaticColorRemoval()
     }
     activeSourceIdRef.current = null
-    setActiveSourceId(null)
+    onActiveSourceChange?.(null)
     setStaticColorRemovalError(null)
   }, [
     activeSourceId,
     cancel,
     invalidateStaticColorRemoval,
     staticColorRemovalSourceId,
+    onActiveSourceChange,
   ])
 
   const handleAddToSource = useCallback(async () => {
@@ -358,11 +355,11 @@ const BackgroundRemover = ({
   const handleClear = useCallback(() => {
     invalidateStaticColorRemoval()
     activeSourceIdRef.current = null
-    setActiveSourceId(null)
+    onActiveSourceChange?.(null)
     setStaticColorRemovalError(null)
     clearAll()
     onClearWorkspace?.()
-  }, [clearAll, invalidateStaticColorRemoval, onClearWorkspace])
+  }, [clearAll, invalidateStaticColorRemoval, onClearWorkspace, onActiveSourceChange])
 
   useEffect(() => {
     activeSourceIdRef.current = activeSourceId
@@ -389,7 +386,7 @@ const BackgroundRemover = ({
     onReset: () => {
       invalidateStaticColorRemoval()
       activeSourceIdRef.current = null
-      setActiveSourceId(null)
+      onActiveSourceChange?.(null)
       setStaticColorRemovalError(null)
       clearAll()
     },

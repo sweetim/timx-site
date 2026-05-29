@@ -231,8 +231,9 @@ function useImageCropper({
     (newDrag: DragState) => {
       const ratio = resolveRatio(aspectPreset, customRatio)
       const handleMove = (e: MouseEvent) => {
-        const dx = e.clientX - newDrag.startX
-        const dy = e.clientY - newDrag.startY
+        const zoom = newDrag.canvasZoom
+        const dx = (e.clientX - newDrag.startX) / zoom
+        const dy = (e.clientY - newDrag.startY) / zoom
         const sc = newDrag.startCrop
         const maxX = displayDimensions.width
         const maxY = displayDimensions.height

@@ -1,3 +1,5 @@
+import { useContext } from "react"
+import CanvasZoomContext from "../shared/canvas-zoom-context"
 import { getCursorForHandle } from "./_lib/crop-math"
 import { HANDLE_SIZE } from "./constants"
 import type { AnchorMode, CropRect, DragState } from "./types"
@@ -11,6 +13,7 @@ export function CropOverlay({
   anchorMode: AnchorMode
   onDragStart: (drag: DragState) => void
 }) {
+  const canvasZoom = useContext(CanvasZoomContext)
   const handleHalf = HANDLE_SIZE / 2
   const handles: { type: DragState["type"]; style: React.CSSProperties }[] = [
     {
@@ -119,6 +122,7 @@ export function CropOverlay({
             startX: e.clientX,
             startY: e.clientY,
             startCrop: { ...crop },
+            canvasZoom,
           })
         }}
       />
@@ -143,6 +147,7 @@ export function CropOverlay({
               startX: e.clientX,
               startY: e.clientY,
               startCrop: { ...crop },
+              canvasZoom,
             })
           }}
         />

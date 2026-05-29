@@ -30,6 +30,8 @@ function ImageCropper({
   variant = "page",
   isActive = true,
   workspaceResetKey = 0,
+  activeSourceId: activeSourceIdProp,
+  onActiveSourceChange,
   onResult,
   onSourceImage,
   onClearWorkspace,
@@ -46,10 +48,8 @@ function ImageCropper({
   const droppedFileRef = useRef<File | null>(null)
   const loadedSourceIdRef = useRef<string | null>(null)
   const sourceImagesRef = useRef(sourceImages)
-  useEffect(() => {
-    sourceImagesRef.current = sourceImages
-  }, [sourceImages])
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
+  useEffect(() => { sourceImagesRef.current = sourceImages }, [sourceImages])
+  const activeSourceId = activeSourceIdProp ?? null
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const { sourceFileInputRef, handleSourceFileInput } = useSourceFileInput({
     onAddSourceImages,
@@ -91,14 +91,14 @@ function ImageCropper({
 
       if (firstSource) {
         loadedSourceIdRef.current = firstSource.id
-        setActiveSourceId(firstSource.id)
+        onActiveSourceChange?.(firstSource.id)
         const file = new File([firstSource.blob], firstSource.name, {
           type: firstSource.blob.type || "image/png",
         })
         loadImage(file, false)
       }
     },
-    [onAddSourceImages, loadImage],
+    [onAddSourceImages, loadImage, onActiveSourceChange],
   )
 
   useDroppedFiles({
@@ -118,10 +118,10 @@ function ImageCropper({
     )
     if (match) {
       loadedSourceIdRef.current = match.id
-      setActiveSourceId(match.id)
+      onActiveSourceChange?.(match.id)
       droppedFileRef.current = null
     }
-  }, [isActive])
+  }, [isActive, onActiveSourceChange])
 
   useClipboardPaste({
     isActive,
@@ -135,7 +135,7 @@ function ImageCropper({
     onReset: () => {
       droppedFileRef.current = null
       loadedSourceIdRef.current = null
-      setActiveSourceId(null)
+      onActiveSourceChange?.(null)
       resetLocal()
     },
   })
@@ -161,16 +161,16 @@ function ImageCropper({
 
   const handleSelectSource = (id: string) => {
     droppedFileRef.current = null
-    setActiveSourceId(id)
+    onActiveSourceChange?.(id)
   }
 
   const handleClear = useCallback(() => {
     droppedFileRef.current = null
     loadedSourceIdRef.current = null
-    setActiveSourceId(null)
+    onActiveSourceChange?.(null)
     resetLocal()
     onClearWorkspace?.()
-  }, [resetLocal, onClearWorkspace])
+  }, [resetLocal, onClearWorkspace, onActiveSourceChange])
 
   const handleDownload = useCallback(async () => {
     if (status.phase !== "cropped") return
@@ -352,7 +352,7 @@ function ImageCropper({
               activeSourceId={activeSourceId}
               onSelectSource={handleSelectSource}
               onRemoveSourceImage={onRemoveSourceImage}
-              onRemoveActiveSource={() => setActiveSourceId(null)}
+              onRemoveActiveSource={() => onActiveSourceChange?.(null)}
               onAddSourceImages={onAddSourceImages}
               sourceFileInputRef={sourceFileInputRef}
             />

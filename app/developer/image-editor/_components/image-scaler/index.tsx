@@ -25,6 +25,8 @@ function ImageScaler({
   variant = "page",
   isActive = true,
   workspaceResetKey = 0,
+  activeSourceId: activeSourceIdProp,
+  onActiveSourceChange,
   onResult,
   onSourceImage,
   onClearWorkspace,
@@ -42,7 +44,7 @@ function ImageScaler({
   const loadedSourceIdRef = useRef<string | null>(null)
   const sourceImagesRef = useRef(sourceImages)
   useEffect(() => { sourceImagesRef.current = sourceImages }, [sourceImages])
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
+  const activeSourceId = activeSourceIdProp ?? null
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const { sourceFileInputRef, handleSourceFileInput } = useSourceFileInput({ onAddSourceImages })
 
@@ -76,12 +78,12 @@ function ImageScaler({
 
       if (firstSource) {
         loadedSourceIdRef.current = firstSource.id
-        setActiveSourceId(firstSource.id)
+        onActiveSourceChange?.(firstSource.id)
         const file = new File([firstSource.blob], firstSource.name, { type: firstSource.blob.type || "image/png" })
         loadImage(file, false)
       }
     },
-    [onAddSourceImages, loadImage],
+    [onAddSourceImages, loadImage, onActiveSourceChange],
   )
 
   useDroppedFiles({
@@ -99,10 +101,10 @@ function ImageScaler({
     const match = sourceImagesRef.current.find((img) => img.blob === droppedFileRef.current)
     if (match) {
       loadedSourceIdRef.current = match.id
-      setActiveSourceId(match.id)
+      onActiveSourceChange?.(match.id)
       droppedFileRef.current = null
     }
-  }, [isActive])
+  }, [isActive, onActiveSourceChange])
 
   useClipboardPaste({ isActive, onFiles: (files) => { void handleFiles(files) } })
 
@@ -111,7 +113,7 @@ function ImageScaler({
     onReset: () => {
       droppedFileRef.current = null
       loadedSourceIdRef.current = null
-      setActiveSourceId(null)
+      onActiveSourceChange?.(null)
       resetLocal()
     },
   })
@@ -128,16 +130,16 @@ function ImageScaler({
 
   const handleSelectSource = (id: string) => {
     droppedFileRef.current = null
-    setActiveSourceId(id)
+    onActiveSourceChange?.(id)
   }
 
   const handleClear = useCallback(() => {
     droppedFileRef.current = null
     loadedSourceIdRef.current = null
-    setActiveSourceId(null)
+    onActiveSourceChange?.(null)
     resetLocal()
     onClearWorkspace?.()
-  }, [resetLocal, onClearWorkspace])
+  }, [resetLocal, onClearWorkspace, onActiveSourceChange])
 
   const handleDownload = useCallback(async () => {
     if (status.phase !== "scaled") return
@@ -251,7 +253,7 @@ function ImageScaler({
               activeSourceId={activeSourceId}
               onSelectSource={handleSelectSource}
               onRemoveSourceImage={onRemoveSourceImage}
-              onRemoveActiveSource={() => setActiveSourceId(null)}
+              onRemoveActiveSource={() => onActiveSourceChange?.(null)}
               onAddSourceImages={onAddSourceImages}
               sourceFileInputRef={sourceFileInputRef}
             />

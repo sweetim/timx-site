@@ -117,6 +117,7 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
   const [backgroundRemovalResults, setBackgroundRemovalResults] = useState<
     Record<string, BackgroundRemovalResult>
   >({})
+  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
   const [workspaceResetKey, setWorkspaceResetKey] = useState(0)
   const [isCanvasDragOver, setIsCanvasDragOver] = useState(false)
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
@@ -227,9 +228,12 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
         backgroundRemovalResultsRef.current = {}
         return {}
       })
+      setActiveSourceId(null)
       setWorkspaceResetKey((key) => key + 1)
       return
     }
+
+    setActiveSourceId((prev) => (prev === id ? null : prev))
 
     setBackgroundRemovalResults((previousResults) => {
       const previousResult = previousResults[id]
@@ -318,6 +322,7 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
       backgroundRemovalResultsRef.current = {}
       return {}
     })
+    setActiveSourceId(null)
     setWorkspaceResetKey((key) => key + 1)
   }, [])
 
@@ -432,6 +437,8 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               variant="panel"
               isActive={activeTool === "background"}
               initialImage={sharedImage}
+              activeSourceId={activeSourceId}
+              onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
               onSourceImage={(blob, name) =>
                 handleSourceImage("background", blob, name)
@@ -455,6 +462,8 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               variant="panel"
               isActive={activeTool === "crop"}
               initialImage={sharedImage}
+              activeSourceId={activeSourceId}
+              onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
               onSourceImage={(blob, name) =>
                 handleSourceImage("crop", blob, name)
@@ -497,6 +506,8 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               variant="panel"
               isActive={activeTool === "scale"}
               initialImage={sharedImage}
+              activeSourceId={activeSourceId}
+              onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
               onSourceImage={(blob, name) =>
                 handleSourceImage("scale", blob, name)
@@ -518,6 +529,8 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               variant="panel"
               isActive={activeTool === "export"}
               initialImage={sharedImage}
+              activeSourceId={activeSourceId}
+              onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
               onSourceImage={(blob, name) =>
                 handleSourceImage("export", blob, name)

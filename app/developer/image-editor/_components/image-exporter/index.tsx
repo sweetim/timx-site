@@ -23,6 +23,8 @@ function ImageExporter({
   variant = "page",
   isActive = true,
   workspaceResetKey = 0,
+  activeSourceId: activeSourceIdProp,
+  onActiveSourceChange,
   onResult,
   onSourceImage,
   onClearWorkspace,
@@ -42,7 +44,7 @@ function ImageExporter({
   useEffect(() => {
     sourceImagesRef.current = sourceImages
   }, [sourceImages])
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(null)
+  const activeSourceId = activeSourceIdProp ?? null
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
   const [quality, setQuality] = useState(92)
   const [icoSize, setIcoSize] = useState<IcoSize>(32)
@@ -100,14 +102,14 @@ function ImageExporter({
 
       if (firstSource) {
         loadedSourceIdRef.current = firstSource.id
-        setActiveSourceId(firstSource.id)
+        onActiveSourceChange?.(firstSource.id)
         const file = new File([firstSource.blob], firstSource.name, {
           type: firstSource.blob.type || "image/png",
         })
         loadImage(file, false)
       }
     },
-    [onAddSourceImages, loadImage],
+    [onAddSourceImages, loadImage, onActiveSourceChange],
   )
 
   useDroppedFiles({
@@ -127,10 +129,10 @@ function ImageExporter({
     )
     if (found) {
       loadedSourceIdRef.current = found.id
-      setActiveSourceId(found.id)
+      onActiveSourceChange?.(found.id)
       droppedFileRef.current = null
     }
-  }, [isActive])
+  }, [isActive, onActiveSourceChange])
 
   useClipboardPaste({
     isActive,
@@ -144,7 +146,7 @@ function ImageExporter({
     onReset: () => {
       droppedFileRef.current = null
       loadedSourceIdRef.current = null
-      setActiveSourceId(null)
+      onActiveSourceChange?.(null)
       setSourceUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev)
         return null
@@ -224,7 +226,7 @@ function ImageExporter({
 
   const handleSelectSource = (id: string) => {
     droppedFileRef.current = null
-    setActiveSourceId(id)
+    onActiveSourceChange?.(id)
   }
 
   const handleAddToSource = useCallback(async () => {
@@ -243,7 +245,7 @@ function ImageExporter({
   const handleClear = useCallback(() => {
     droppedFileRef.current = null
     loadedSourceIdRef.current = null
-    setActiveSourceId(null)
+    onActiveSourceChange?.(null)
     setSourceUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return null
@@ -251,7 +253,7 @@ function ImageExporter({
     revokeExported()
     setSourceDimensions(null)
     onClearWorkspace?.()
-  }, [revokeExported, onClearWorkspace])
+  }, [revokeExported, onClearWorkspace, onActiveSourceChange])
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click()
@@ -374,7 +376,7 @@ function ImageExporter({
               activeSourceId={activeSourceId}
               onSelectSource={handleSelectSource}
               onRemoveSourceImage={onRemoveSourceImage}
-              onRemoveActiveSource={() => setActiveSourceId(null)}
+              onRemoveActiveSource={() => onActiveSourceChange?.(null)}
               onAddSourceImages={onAddSourceImages}
               sourceFileInputRef={sourceFileInputRef}
             />

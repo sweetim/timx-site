@@ -9,6 +9,8 @@ export type EditorToolProps = {
   variant?: "page" | "panel"
   isActive?: boolean
   initialImage?: SharedEditorImage | null
+  activeSourceId?: string | null
+  onActiveSourceChange?: (id: string | null) => void
   workspaceResetKey?: number
   onResult?: (blob: Blob) => void
   onSourceImage?: (blob: Blob, name: string) => void
