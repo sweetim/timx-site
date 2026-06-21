@@ -2,7 +2,7 @@
 
 ## Overview
 
-timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no API routes and no database. Most processing runs client-side in the browser; the LLM Pricing tool fetches OpenRouter model data client-side, and the OG Preview tool uses a server action for server-side URL fetching.
+timx-site is a personal portfolio and developer tools site built with Next.js 16 (App Router) and React 19. It is a single-deployment Next.js application with no database. Most processing runs client-side in the browser; the LLM Pricing tool fetches OpenRouter model data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the Gitropolis tool uses GitHub OAuth API routes plus a server action for authenticated GitHub data access.
 
 ## Tech stack
 
@@ -29,6 +29,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /                          → Profile page (home)
 /privacy                   → Privacy policy
 /terms                     → Terms of service
+/gitropolis                → Gitropolis (GitHub contribution heatmap)
 /developer                 → Developer tools index
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
@@ -37,9 +38,12 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/og-preview      → OG Preview tool
 /developer/black-screen    → Black Screen (pixel & dust checker) tool
 /developer/openapi-viewer  → OpenAPI Viewer tool
+/api/github/login          → GitHub OAuth authorize redirect (sets state cookie)
+/api/github/callback       → GitHub OAuth token exchange (sets token cookie)
+/api/github/logout         → Clears the Gitropolis token cookie
 ```
 
-All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, and the DB Explorer tool uses sql.js (WASM) in a Web Worker to parse SQLite files off the main thread.
+All tool routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRouter data client-side, the OG Preview tool uses a server action for server-side URL fetching, the DB Explorer tool uses sql.js (WASM) in a Web Worker to parse SQLite files off the main thread, and the Gitropolis tool uses GitHub OAuth route handlers plus a server action that calls the GitHub GraphQL API.
 
 ## Execution flow
 
@@ -139,14 +143,25 @@ All routes are static (no dynamic segments). The LLM Pricing tool fetches OpenRo
 7. A "Suggestions" toggle analyzes the spec for completeness issues: missing descriptions, missing summaries, missing operation IDs, missing examples, missing error responses, missing server definitions, undefined security scheme references, and unused security scheme definitions. Suggestions are categorized by severity (error, warning, info).
 8. Selecting a recent file re-requests read permission and reads the current file contents from the stored handle; the user can load a new file at any time via the "New File" button.
 
+### Gitropolis flow
+
+1. `/gitropolis` renders a server-rendered `LandingSection` (H1, feature cards) passed into the `Gitropolis` client component, plus breadcrumb and WebApplication JSON-LD.
+2. On mount, the client component calls the `getGithubData` server action, which reads the `gitropolis_token` httpOnly cookie. With no token it returns `unauthenticated`; otherwise it makes two GitHub GraphQL calls — first `viewer { login name avatarUrl createdAt }` to learn the account's first year, then one query with an aliased `contributionsCollection` (Jan 1 – Dec 31) per year from that first year to the current year — and returns the viewer profile plus one `YearContributions` entry per year. Intensity level is derived server-side as `colors.indexOf(day.color)`. The access token never leaves the server.
+3. The `unauthenticated` phase renders the landing section, an optional error banner (decoded from the `?error=` query parameter set by the callback route), and a "Sign in with GitHub" link to `/api/github/login`.
+4. `GET /api/github/login` generates a random `state`, stores it in a short-lived `gitropolis_oauth_state` httpOnly cookie, and redirects to GitHub's authorize URL with the `read:user` scope and a `redirect_uri` derived from the request origin.
+5. GitHub redirects back to `GET /api/github/callback?code=...&state=...`, which validates the `state` against the cookie, exchanges the code for an access token at GitHub's token endpoint (using the server-side `GITHUB_CLIENT_SECRET`), stores the token in a `gitropolis_token` httpOnly cookie, and redirects to `/gitropolis`. Failures (state mismatch, exchange error, denied access, missing config) redirect with a descriptive `?error=` code.
+6. The `ready` phase renders a user card (avatar, name, login, all-time total contributions, sign-out button) followed by one section per year (newest first), each with a year header and a `ContributionHeatmap` — a GitHub-style 53-week × 7-day calendar with month labels, a weekday gutter, five intensity levels mapped to dev-theme green, and a Less/More legend. Each day exposes a native tooltip with its contribution count and date.
+7. Signing out issues `POST /api/github/logout`, which deletes the token cookie, and the client reloads the page, returning to the `unauthenticated` phase.
+
 ## Key design decisions
 
-- **No API routes**: browser tools run client-side; LLM Pricing fetches OpenRouter data from the client, and OG Preview uses a server action for server-side URL fetching.
+- **No API routes**: browser tools run client-side; LLM Pricing fetches OpenRouter data from the client, and OG Preview uses a server action for server-side URL fetching. (Gitropolis is the exception: it adds GitHub OAuth route handlers and a server action because OAuth token exchange requires a server-side client secret.)
 - **Web Worker for AI inference**: background removal runs off the main thread to keep the UI responsive.
 - **Tool registry pattern**: tools are defined centrally in `app/developer/_lib/tools.ts` and referenced by both the index page and the navbar.
 - **ts-pattern for exhaustive matching**: used throughout for state machine transitions and conditional rendering.
 - **Private component folders**: components prefixed with `_` (e.g. `_components`, `_lib`, `_hooks`) are colocated with their routes and excluded from routing.
 - **Colocated Storybook stories**: UI stories live beside the components they document as `*.stories.tsx` files under `app/`.
+- **Server-held OAuth token**: Gitropolis keeps the GitHub access token in an httpOnly, sameSite=lax cookie; only the server action reads it, so the token is never exposed to client JavaScript.
 
 ## File map
 
@@ -289,8 +304,17 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/openapi-viewer/_lib/schema-resolver.tsx` | $ref resolution, example generation, highlighted JSON preview, and example/schema tab switcher |
 | `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent file labeling helpers |
 | `app/developer/openapi-viewer/_lib/use-file-handle.ts` | IndexedDB persistence for OpenAPI Viewer file handles and recent-file metadata |
+| `app/gitropolis/page.tsx` | Gitropolis route page (metadata, JSON-LD, SEO content, client orchestrator) |
+| `app/gitropolis/_components/gitropolis.tsx` | Gitropolis client orchestrator (auth phase machine, login/sign-out, renders one heatmap per year) |
+| `app/gitropolis/_components/contribution-heatmap.tsx` | GitHub-style contribution calendar heatmap (months, weekday gutter, intensity levels, legend) |
+| `app/gitropolis/_components/landing-section.tsx` | Server-rendered landing section with feature cards for SEO |
+| `app/gitropolis/_components/types.ts` | Gitropolis shared types (ContributionDay/Week, GithubUser, YearContributions, GithubData) |
+| `app/gitropolis/_lib/github.ts` | Server action reading the token cookie and fetching every contribution year via GitHub GraphQL |
+| `app/api/github/login/route.ts` | GitHub OAuth authorize redirect (generates and stores CSRF state, redirects to GitHub) |
+| `app/api/github/callback/route.ts` | GitHub OAuth callback (validates state, exchanges code for token, sets token cookie, redirects) |
+| `app/api/github/logout/route.ts` | Clears the Gitropolis token cookie |
 
-Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`.
 
 ### `app/` assets
 
@@ -366,11 +390,13 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 
 ## Environment variables
 
-This application uses one environment variable:
+This application uses the following environment variables:
 
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`). Optional; if unset, the GA script is not loaded. |
+| `GITHUB_CLIENT_ID` | GitHub OAuth app client ID. Required for Gitropolis sign-in. The matching `redirect_uri` (`<origin>/api/github/callback`, e.g. `http://localhost:3000/api/github/callback` in dev and `https://timx.co/api/github/callback` in prod) must be registered on the GitHub OAuth app. |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret. Required for Gitropolis sign-in. Server-side only; never exposed to the client. |
 
 ## Types
 
@@ -819,6 +845,47 @@ type Suggestion = {
   message: string
   path?: string
 }
+```
+
+### Gitropolis types (app/gitropolis/_components/types.ts)
+
+```typescript
+type ContributionDay = {
+  date: string
+  contributionCount: number
+  weekday: number
+  intensityLevel: number
+}
+
+type ContributionWeek = {
+  contributionDays: ContributionDay[]
+}
+
+type GithubUser = {
+  login: string
+  name: string | null
+  avatarUrl: string
+}
+
+type YearContributions = {
+  year: number
+  totalContributions: number
+  weeks: ContributionWeek[]
+}
+
+type GithubData = {
+  user: GithubUser
+  years: YearContributions[]
+}
+```
+
+### Gitropolis server action result (app/gitropolis/_lib/github.ts)
+
+```typescript
+type GithubDataResult =
+  | { status: "unauthenticated" }
+  | { status: "ok"; data: GithubData }
+  | { status: "error"; message: string }
 ```
 
 ## Theme tokens
