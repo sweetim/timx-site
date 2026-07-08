@@ -1,22 +1,22 @@
 import type { Metadata } from "next"
 import { BreadcrumbListJsonLd, WebApplicationJsonLd } from "@/app/_components/json-ld"
 import { ToolSeoContent } from "../_components/seo-content"
-import BitCalculator from "./_components/bit-calculator"
+import BitwiseVisualizer from "./_components/bitwise-visualizer"
 
 export const metadata: Metadata = {
-  title: "Bit Calculator — Free Online Tool",
+  title: "Bitwise Visualizer — Free Online Tool",
   description:
     "Perform bitwise operations (AND, OR, XOR, NOT, shifts) on hex, decimal, and binary values with a visual bit grid. Compare values bit-by-bit in 8, 16, 32, or 64 bit widths.",
-  alternates: { canonical: "https://timx.co/developer/bit-calculator" },
+  alternates: { canonical: "https://timx.co/developer/bitwise-visualizer" },
   openGraph: {
-    title: "Bit Calculator — Free Online Tool",
+    title: "Bitwise Visualizer — Free Online Tool",
     description:
       "Perform bitwise operations (AND, OR, XOR, NOT, shifts) on hex, decimal, and binary values with a visual bit grid.",
-    url: "https://timx.co/developer/bit-calculator",
+    url: "https://timx.co/developer/bitwise-visualizer",
   },
 }
 
-export default function BitCalculatorPage() {
+export default function BitwiseVisualizerPage() {
   return (
     <>
       <BreadcrumbListJsonLd
@@ -24,15 +24,15 @@ export default function BitCalculatorPage() {
           { name: "Home", url: "https://timx.co" },
           { name: "Developer Tools", url: "https://timx.co/developer" },
           {
-            name: "Bit Calculator",
-            url: "https://timx.co/developer/bit-calculator",
+            name: "Bitwise Visualizer",
+            url: "https://timx.co/developer/bitwise-visualizer",
           },
         ]}
       />
       <WebApplicationJsonLd
-        name="Bit Calculator"
+        name="Bitwise Visualizer"
         description="Perform bitwise operations (AND, OR, XOR, NOT, shifts) on hex, decimal, and binary values with a visual bit grid."
-        url="https://timx.co/developer/bit-calculator"
+        url="https://timx.co/developer/bitwise-visualizer"
         applicationCategory="DeveloperApplication"
         featureList={[
           "AND, OR, XOR, NOT, and left/right shift operators",
@@ -42,11 +42,11 @@ export default function BitCalculatorPage() {
           "Toggle individual bits by clicking cells",
         ]}
       />
-      <BitCalculator />
+      <BitwiseVisualizer />
       <ToolSeoContent
-        id="bit-calculator-seo"
-        heading="Free Online Bit Calculator"
-        description="Use the Bit Calculator to combine hex, decimal, and binary values with AND, OR, XOR, NOT, and shift operators. Values are shown as an aligned bit grid grouped by nibble, so you can compare operands and results bit-by-bit. Choose 8, 16, 32, or 64 bit widths and toggle individual bits directly. All processing runs in your browser."
+        id="bitwise-visualizer-seo"
+        heading="Free Online Bitwise Visualizer"
+        description="Use the Bitwise Visualizer to combine hex, decimal, and binary values with AND, OR, XOR, NOT, and shift operators. Values are shown as an aligned bit grid grouped by nibble, so you can compare operands and results bit-by-bit. Choose 8, 16, 32, or 64 bit widths and toggle individual bits directly. All processing runs in your browser."
         features={[
           "Apply AND, OR, XOR, and NOT plus left and right shifts to two operands.",
           "See every value as an aligned binary grid with hex nibble labels for instant hex-to-binary comparison.",

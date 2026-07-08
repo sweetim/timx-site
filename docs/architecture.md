@@ -31,7 +31,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /terms                     → Terms of service
 /gitropolis                → Gitropolis (GitHub contribution heatmap)
 /developer                 → Developer tools index
-/developer/bit-calculator  → Bit Calculator tool
+/developer/bitwise-visualizer  → Bitwise Visualizer tool
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
 /developer/llm-usage       → LLM Pricing tool
@@ -89,9 +89,9 @@ All tool routes are static (no dynamic segments). The LLM Pricing tool fetches O
 7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
 8. The result is displayed with download format and reset actions.
 
-### Bit Calculator flow
+### Bitwise Visualizer flow
 
-1. `/developer/bit-calculator` renders a visible `Bit Calculator` H1 and subtitle, the client component workspace, plus non-visual practical SEO content in the route.
+1. `/developer/bitwise-visualizer` renders a visible `Bitwise Visualizer` H1 and subtitle, the client component workspace, plus non-visual practical SEO content in the route.
 2. The user selects a bit width (8, 16, 32, or 64) and an operator (AND, OR, XOR, NOT, SHL, SHR). Switching width remasks both operands to the new width.
 3. Two operands A and B each expose synced Hex/Dec/Bin inputs; editing any one parses it in that base (BigInt) and regenerates the other two. NOT is unary (only A is shown); SHL/SHR treat B as the shift count.
 4. Each operand renders as an aligned bit grid grouped into nibbles with the matching hex digit above each group, so hex-to-binary comparison is immediate. Set bits are highlighted; bits where A and B differ get an orange ring for AND/OR/XOR.
@@ -159,8 +159,8 @@ All tool routes are static (no dynamic segments). The LLM Pricing tool fetches O
 3. The `unauthenticated` phase renders the landing section, an optional error banner (decoded from the `?error=` query parameter set by the callback route), and a "Sign in with GitHub" link to `/api/github/login`.
 4. `GET /api/github/login` generates a random `state`, stores it in a short-lived `gitropolis_oauth_state` httpOnly cookie, and redirects to GitHub's authorize URL with the `read:user` scope and a `redirect_uri` derived from the request origin.
 5. GitHub redirects back to `GET /api/github/callback?code=...&state=...`, which validates the `state` against the cookie, exchanges the code for an access token at GitHub's token endpoint (using the server-side `GITHUB_CLIENT_SECRET`), stores the token in a `gitropolis_token` httpOnly cookie, and redirects to `/gitropolis`. Failures (state mismatch, exchange error, denied access, missing config) redirect with a descriptive `?error=` code.
-6. The `ready` phase renders a user card (avatar, name, login, all-time total contributions, sign-out button) followed by one section per year (newest first), each with a year header and a `ContributionHeatmap` — a GitHub-style 53-week × 7-day calendar with month labels, a weekday gutter, five intensity levels mapped to dev-theme green, and a Less/More legend. Each day exposes a native tooltip with its contribution count and date.
-7. Signing out issues `POST /api/github/logout`, which deletes the token cookie, and the client reloads the page, returning to the `unauthenticated` phase.
+6. The `ready` phase renders **only the current year** as a full-bleed isometric city that fills the content area below the nav bar. `ContributionCity` mounts an R3F `<Canvas>` rendering `CityScene`: the year's contribution days are reflowed into a near-square town grid where each day is an isometric building whose **height** maps to its `intensityLevel` (color is freed for a Townscaper-style pastel look with deterministic per-tile hue jitter), rendered as rounded blocks with varied rooftops (flat/chimney/dome/gable) sitting on a calm reflective water plane (MeshReflectorMaterial) under an in-scene Sky, with soft warm lighting, sky-tinted fog, a smooth anti-aliased render, an auto-fit orthographic camera at the iso angle, OrbitControls (rotate/zoom), a hover tooltip (count + date), and PNG export via the preserved WebGL drawing buffer. A "Drag to rotate · scroll to zoom" hint and a PNG export button float over the canvas corners. The per-year list, City/Heatmap toggle, user card, and sign-out control are no longer surfaced in the `ready` phase.
+7. Signing out is still available via `POST /api/github/logout` (which deletes the token cookie), but it is no longer surfaced from the `ready` phase.
 
 ## Key design decisions
 
@@ -221,8 +221,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
 | `app/developer/_components/button-click-feedback.stories.tsx` | Storybook showcase of global button click feedback styles |
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
-| `app/developer/bit-calculator/_components/bit-calculator.tsx` | Bit Calculator client component (BigInt bitwise ops, synced hex/dec/bin inputs, nibble-grouped bit grids, clickable bits) |
-| `app/developer/bit-calculator/page.tsx` | Bit Calculator route page |
+| `app/developer/bitwise-visualizer/_components/bitwise-visualizer.tsx` | Bitwise Visualizer client component (BigInt bitwise ops, synced hex/dec/bin inputs, nibble-grouped bit grids, clickable bits) |
+| `app/developer/bitwise-visualizer/page.tsx` | Bitwise Visualizer route page |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component with crawlable H1 and tool workspace |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants, escapeSqlIdentifier) |
@@ -316,16 +316,21 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent file labeling helpers |
 | `app/developer/openapi-viewer/_lib/use-file-handle.ts` | IndexedDB persistence for OpenAPI Viewer file handles and recent-file metadata |
 | `app/gitropolis/page.tsx` | Gitropolis route page (metadata, JSON-LD, SEO content, client orchestrator) |
-| `app/gitropolis/_components/gitropolis.tsx` | Gitropolis client orchestrator (auth phase machine, login/sign-out, renders one heatmap per year) |
+| `app/gitropolis/_components/gitropolis.tsx` | Gitropolis client orchestrator (auth phase machine, login; `ready` phase renders the current year's full-bleed isometric city) |
+| `app/gitropolis/_components/contribution-city.tsx` | Isometric contribution city client component (R3F Canvas, hover tooltip, PNG export, smooth anti-aliased render with an in-scene Sky background; fills its container with floating controls) |
+| `app/gitropolis/_components/city-scene.tsx` | Three.js scene for the contribution city (in-scene Sky, reflective calm water via MeshReflectorMaterial, soft warm lighting with fog, auto-fit orthographic camera, OrbitControls, buildings) |
+| `app/gitropolis/_components/building.tsx` | Single Townscaper-style building block by intensity tier (rounded pastel mesh, deterministic rooftop variant: flat/chimney/dome/gable) |
 | `app/gitropolis/_components/contribution-heatmap.tsx` | GitHub-style contribution calendar heatmap (months, weekday gutter, intensity levels, legend) |
 | `app/gitropolis/_components/landing-section.tsx` | Server-rendered landing section with feature cards for SEO |
 | `app/gitropolis/_components/types.ts` | Gitropolis shared types (ContributionDay/Week, GithubUser, YearContributions, GithubData) |
+| `app/gitropolis/_lib/iso-types.ts` | Isometric city shared types (BuildingType, CityTile, CityPalette, CityModel) |
+| `app/gitropolis/_lib/city-build.ts` | Pure mapping from contribution days to city tiles (reflowed into a near-square footprint; heights, building types, grid positions, deterministic pastel hue jitter per tile) |
 | `app/gitropolis/_lib/github.ts` | Server action reading the token cookie and fetching every contribution year via GitHub GraphQL |
 | `app/api/github/login/route.ts` | GitHub OAuth authorize redirect (generates and stores CSRF state, redirects to GitHub) |
 | `app/api/github/callback/route.ts` | GitHub OAuth callback (validates state, exchanges code for token, sets token cookie, redirects) |
 | `app/api/github/logout/route.ts` | Clears the Gitropolis token cookie |
 
-Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`, and `app/gitropolis/_components/contribution-city.stories.tsx`.
 
 ### `app/` assets
 
@@ -365,6 +370,8 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `@icons-pack/react-simple-icons` | ^13.13.0 | Brand and social SVG icons |
 | `@imgly/background-removal` | ^1.7.0 | Client-side AI background removal |
 | `@next/third-parties` | ^16.2.4 | Google Analytics integration |
+| `@react-three/drei` | ^10.7.7 | Three.js helpers (OrbitControls, OrthographicCamera) for Gitropolis city view |
+| `@react-three/fiber` | ^9.6.1 | React renderer for Three.js for Gitropolis city view |
 | `@tanstack/react-virtual` | ^3.13.24 | Virtual scrolling for DB Explorer result table |
 | `clsx` | ^2.1.1 | Conditional CSS class joining |
 | `date-fns` | ^4.1.0 | Date formatting utilities |
@@ -377,6 +384,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `remark-gfm` | ^4.0.1 | GitHub Flavored Markdown plugin for react-markdown |
 | `js-yaml` | ^4.1.1 | YAML parser for OpenAPI Viewer |
 | `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Explorer tool |
+| `three` | ^0.184.0 | WebGL engine for the Gitropolis isometric contribution city |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
 
 ### Dev dependencies
@@ -391,6 +399,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `@types/react` | ^19 | React type definitions |
 | `@types/react-dom` | ^19 | React DOM type definitions |
 | `@types/sql.js` | ^1.4.11 | sql.js type definitions |
+| `@types/three` | ^0.184.1 | Three.js type definitions |
 | `eslint` | ^9 | JavaScript linter |
 | `eslint-config-next` | 16.2.2 | Next.js ESLint config |
 | `eslint-plugin-storybook` | ^10.3.4 | Storybook ESLint plugin |
@@ -693,7 +702,7 @@ type Status =
 type ImageCropperProps = EditorToolProps
 ```
 
-### Bit Calculator types (app/developer/bit-calculator/_components/bit-calculator.tsx)
+### Bitwise Visualizer types (app/developer/bitwise-visualizer/_components/bitwise-visualizer.tsx)
 
 ```typescript
 type BitWidth = 8 | 16 | 32 | 64
@@ -905,6 +914,35 @@ type GithubDataResult =
   | { status: "unauthenticated" }
   | { status: "ok"; data: GithubData }
   | { status: "error"; message: string }
+```
+
+### Isometric city types (app/gitropolis/_lib/iso-types.ts)
+
+```typescript
+type BuildingType = "ground" | "low" | "mid" | "tall" | "skyscraper"
+
+type CityTile = {
+  week: number
+  weekday: number
+  x: number
+  z: number
+  height: number
+  type: BuildingType
+  color: string
+  date: string
+  contributionCount: number
+}
+
+type CityPalette = {
+  ground: string
+  levels: [string, string, string, string, string]
+}
+
+type CityModel = {
+  tiles: CityTile[]
+  gridWidth: number
+  gridDepth: number
+}
 ```
 
 ## Theme tokens

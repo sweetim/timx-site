@@ -22,7 +22,7 @@ const OPERATORS: {
   { id: "not", symbol: "~", label: "NOT", unary: true },
   { id: "shl", symbol: "<<", label: "SHL", unary: false },
   { id: "shr", symbol: ">>", label: "SHR", unary: false },
-  { id: "none", symbol: "", label: "VIEW", unary: false },
+  { id: "none", symbol: "", label: "VALUE", unary: false },
 ]
 
 const FIELD_META: Record<Field, { label: string }> = {
@@ -251,7 +251,7 @@ const OperandEditor: FC<OperandEditorProps> = ({
   )
 }
 
-export default function BitCalculator() {
+export default function BitwiseVisualizer() {
   const [width, setWidth] = useState<BitWidth>(8)
   const [operator, setOperator] = useState<Operator>("and")
   const [a, setA] = useState<bigint>(BigInt(0b10101010))
@@ -289,7 +289,7 @@ export default function BitCalculator() {
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <h1 className="mb-1 text-2xl font-semibold text-dev-text">
-        Bit Calculator
+        Bitwise Visualizer
       </h1>
       <p className="mb-6 text-sm text-dev-text-secondary">
         Compare and combine hex values bit-by-bit. Edit any field, toggle bits

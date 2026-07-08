@@ -19,8 +19,8 @@ export type Tool = {
 
 export const tools: Tool[] = [
   {
-    name: "Bit Calculator",
-    slug: "bit-calculator",
+    name: "Bitwise Visualizer",
+    slug: "bitwise-visualizer",
     description:
       "Perform bitwise AND, OR, XOR, NOT, and shifts with a visual bit grid in hex, decimal, and binary",
     icon: Binary,
