@@ -31,9 +31,6 @@ export default function ScrambleText({ text, className }: ScrambleTextProps) {
     const start = performance.now()
     let rafId: number
 
-    setDisplay(current.join(""))
-    setResolved(new Set())
-
     const tick = () => {
       const elapsed = performance.now() - start
       let changed = false

@@ -623,8 +623,6 @@ function AspectRatioToolbar({
     String(Math.round(customRatio * 100)),
   )
   const [denominator, setDenominator] = useState("100")
-  const denominatorRef = useRef(denominator)
-  denominatorRef.current = denominator
 
   const applyCustomRatio = useCallback(
     (num: string, den: string) => {
@@ -640,9 +638,9 @@ function AspectRatioToolbar({
   const handleNumeratorChange = useCallback(
     (value: string) => {
       setNumerator(value)
-      applyCustomRatio(value, denominatorRef.current)
+      applyCustomRatio(value, denominator)
     },
-    [applyCustomRatio],
+    [applyCustomRatio, denominator],
   )
 
   const handleDenominatorChange = useCallback(
