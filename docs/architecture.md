@@ -31,6 +31,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /terms                     → Terms of service
 /gitropolis                → Gitropolis (GitHub contribution heatmap)
 /developer                 → Developer tools index
+/developer/bit-calculator  → Bit Calculator tool
 /developer/json-viewer     → JSON Viewer tool
 /developer/image-editor    → Image Editor tool
 /developer/llm-usage       → LLM Pricing tool
@@ -87,6 +88,14 @@ All tool routes are static (no dynamic segments). The LLM Pricing tool fetches O
 6. User drags handles to resize or the rectangle body to reposition the crop area.
 7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
 8. The result is displayed with download format and reset actions.
+
+### Bit Calculator flow
+
+1. `/developer/bit-calculator` renders a visible `Bit Calculator` H1 and subtitle, the client component workspace, plus non-visual practical SEO content in the route.
+2. The user selects a bit width (8, 16, 32, or 64) and an operator (AND, OR, XOR, NOT, SHL, SHR). Switching width remasks both operands to the new width.
+3. Two operands A and B each expose synced Hex/Dec/Bin inputs; editing any one parses it in that base (BigInt) and regenerates the other two. NOT is unary (only A is shown); SHL/SHR treat B as the shift count.
+4. Each operand renders as an aligned bit grid grouped into nibbles with the matching hex digit above each group, so hex-to-binary comparison is immediate. Set bits are highlighted; bits where A and B differ get an orange ring for AND/OR/XOR.
+5. Bits are toggleable by clicking cells; the Result is recomputed live and shown as Hex/Dec/Bin readouts plus its own bit grid.
 
 ### JSON Viewer flow
 
@@ -212,6 +221,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
 | `app/developer/_components/button-click-feedback.stories.tsx` | Storybook showcase of global button click feedback styles |
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
+| `app/developer/bit-calculator/_components/bit-calculator.tsx` | Bit Calculator client component (BigInt bitwise ops, synced hex/dec/bin inputs, nibble-grouped bit grids, clickable bits) |
+| `app/developer/bit-calculator/page.tsx` | Bit Calculator route page |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component with crawlable H1 and tool workspace |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
 | `app/developer/db-explorer/_components/types.ts` | DB Explorer shared types (TableInfo, QueryResult, DbState, constants, escapeSqlIdentifier) |
@@ -680,6 +691,14 @@ type Status =
   | { phase: "cropped"; originalUrl: string; croppedUrl: string }
 
 type ImageCropperProps = EditorToolProps
+```
+
+### Bit Calculator types (app/developer/bit-calculator/_components/bit-calculator.tsx)
+
+```typescript
+type BitWidth = 8 | 16 | 32 | 64
+type Operator = "and" | "or" | "xor" | "not" | "shl" | "shr"
+type Field = "hex" | "dec" | "bin"
 ```
 
 ### JSON Viewer types (app/developer/json-viewer/_components/json-viewer.tsx)
