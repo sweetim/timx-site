@@ -221,7 +221,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/_components/stepper-input.tsx` | Reusable numeric stepper input used by image editor controls |
 | `app/developer/_components/button-click-feedback.stories.tsx` | Storybook showcase of global button click feedback styles |
 | `app/developer/_components/number-input.stories.tsx` | Storybook showcase of number input styles |
-| `app/developer/bitwise-visualizer/_components/bitwise-visualizer.tsx` | Bitwise Visualizer client component (BigInt bitwise ops, synced hex/dec/bin inputs, nibble-grouped bit grids, clickable bits) |
+| `app/developer/bitwise-visualizer/_components/bitwise-visualizer.tsx` | Client-only dynamic (`ssr: false`) wrapper that loads the implementation |
+| `app/developer/bitwise-visualizer/_components/bitwise-visualizer-impl.tsx` | Bitwise Visualizer client component (BigInt bitwise ops, synced hex/dec/bin inputs, nibble-grouped bit grids, clickable bits; persisted width/operator via localStorage) |
 | `app/developer/bitwise-visualizer/page.tsx` | Bitwise Visualizer route page |
 | `app/developer/json-viewer/_components/json-viewer.tsx` | JSON Viewer client component with crawlable H1 and tool workspace |
 | `app/developer/json-viewer/page.tsx` | JSON Viewer route page |
@@ -702,7 +703,7 @@ type Status =
 type ImageCropperProps = EditorToolProps
 ```
 
-### Bitwise Visualizer types (app/developer/bitwise-visualizer/_components/bitwise-visualizer.tsx)
+### Bitwise Visualizer types (app/developer/bitwise-visualizer/_components/bitwise-visualizer-impl.tsx)
 
 ```typescript
 type BitWidth = 8 | 16 | 32 | 64
