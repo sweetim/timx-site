@@ -25,7 +25,7 @@ const homepageDescription =
   "Tim is a software maker in Tokyo building practical tools and systems for the web, artificial intelligence, robotics, blockchain, and developer workflows."
 
 const featuredToolSlugs = [
-  "llm-usage",
+  "bitwise-visualizer",
   "image-editor",
   "db-explorer",
   "openapi-viewer",

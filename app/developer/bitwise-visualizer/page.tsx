@@ -51,7 +51,7 @@ export default function BitwiseVisualizerPage() {
           "Apply AND, OR, XOR, and NOT plus left and right shifts to two operands.",
           "See every value as an aligned binary grid with hex nibble labels for instant hex-to-binary comparison.",
           "Work in 8, 16, 32, or 64 bit widths with synced hex, decimal, and binary inputs.",
-          "Toggle any bit by clicking its cell, with differing bits highlighted between operands.",
+          "Toggle any bit by clicking its cell, with bits that differ from A ringed in orange.",
         ]}
       />
     </>

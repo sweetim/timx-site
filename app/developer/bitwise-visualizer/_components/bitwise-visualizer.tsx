@@ -146,16 +146,23 @@ const BitGrid: FC<BitGridProps> = ({
                       title={`Bit ${index}`}
                       onClick={() => onToggle?.(index)}
                       className={clsx(
-                        "flex size-7 items-center justify-center rounded-sm font-mono text-xs transition-colors",
+                        "flex size-7 items-center justify-center transition-colors",
                         editable && "no-bounce cursor-pointer hover:opacity-80",
-                        isSet
-                          ? "bg-dev-accent-blue text-dev-canvas"
-                          : "bg-dev-inset text-dev-text-secondary",
-                        isDiff && "ring-1 ring-dev-accent-orange",
+                        isDiff
+                          && "rounded-sm ring-1 ring-inset ring-dev-accent-orange",
                         !editable && "cursor-default",
                       )}
                     >
-                      {isSet ? "1" : "0"}
+                      <span
+                        className={clsx(
+                          "flex size-5 items-center justify-center rounded-sm font-mono text-xs",
+                          isSet
+                            ? "bg-dev-accent-blue text-dev-canvas"
+                            : "bg-dev-inset text-dev-text-secondary",
+                        )}
+                      >
+                        {isSet ? "1" : "0"}
+                      </span>
                     </button>
                   )
                 })}
@@ -279,12 +286,14 @@ export default function BitwiseVisualizer() {
   const isView = operator === "none"
   const activeOperator = OPERATORS.find((item) => item.id === operator)
 
-  const diffMask = useMemo(() => {
+  const operandDiffMask = useMemo(() => {
     if (operator === "and" || operator === "or" || operator === "xor") {
       return a ^ b
     }
     return undefined
   }, [operator, a, b])
+
+  const resultDiffMask = useMemo(() => result ^ a, [result, a])
 
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-8">
@@ -330,7 +339,9 @@ export default function BitwiseVisualizer() {
                   : "text-dev-text-secondary hover:text-dev-text",
               )}
             >
-                {option.symbol ? `${option.symbol} ${option.label}` : option.label}
+              {option.symbol
+                ? `${option.symbol} ${option.label}`
+                : option.label}
             </button>
           ))}
         </div>
@@ -343,11 +354,10 @@ export default function BitwiseVisualizer() {
           value={a}
           onChange={setA}
           onBitToggle={toggleA}
-          diffMask={diffMask}
         />
 
-        {!isView &&
-          (isUnary ? (
+        {!isView
+          && (isUnary ? (
             <div className="flex justify-center">
               <span className="font-mono text-lg text-dev-link">
                 {activeOperator?.symbol}A
@@ -366,7 +376,7 @@ export default function BitwiseVisualizer() {
                 value={b}
                 onChange={setB}
                 onBitToggle={toggleB}
-                diffMask={diffMask}
+                diffMask={operandDiffMask}
               />
             </>
           ))}
@@ -397,7 +407,7 @@ export default function BitwiseVisualizer() {
             <BitGrid
               value={result}
               width={width}
-              diffMask={diffMask}
+              diffMask={resultDiffMask}
             />
           </div>
         )}
@@ -405,7 +415,8 @@ export default function BitwiseVisualizer() {
 
       <p className="mt-6 text-xs text-dev-text-secondary">
         Tip: click any bit cell in A or B to toggle it. Orange rings mark bits
-        where A and B differ so AND, OR, and XOR results read at a glance.
+        that differ from A — on B where it disagrees, and on the Result where
+        the operation changed a bit.
       </p>
     </div>
   )
