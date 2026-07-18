@@ -88,7 +88,6 @@ const BackgroundRemover = ({
   const isPanel = variant === "panel"
   const activeSourceIdRef = useRef<string | null>(null)
   const sourceImagesRef = useRef(sourceImages)
-  const backgroundRemovalResultsRef = useRef(backgroundRemovalResults)
   const staticColorRemovalRequestIdRef = useRef(0)
   const activeSourceId = activeSourceIdProp ?? null
   const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("png")
@@ -190,7 +189,7 @@ const BackgroundRemover = ({
         onSourceImage?.(firstSource.blob, firstSource.name)
       }
     },
-    [onAddSourceImages, onSourceImage],
+    [onAddSourceImages, onActiveSourceChange, onSourceImage],
   )
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -344,13 +343,13 @@ const BackgroundRemover = ({
 
   const handleAddToSource = useCallback(async () => {
     if (!activeSourceId) return
-    const blob = backgroundRemovalResultsRef.current[activeSourceId]?.blob
+    const blob = backgroundRemovalResults[activeSourceId]?.blob
     if (!blob) return
     const file = new File([blob], "background-removed.png", {
       type: blob.type || "image/png",
     })
     await onAddSourceImages?.([file])
-  }, [activeSourceId, onAddSourceImages])
+  }, [activeSourceId, backgroundRemovalResults, onAddSourceImages])
 
   const handleClear = useCallback(() => {
     invalidateStaticColorRemoval()
@@ -359,11 +358,20 @@ const BackgroundRemover = ({
     setStaticColorRemovalError(null)
     clearAll()
     onClearWorkspace?.()
-  }, [clearAll, invalidateStaticColorRemoval, onClearWorkspace, onActiveSourceChange])
+  }, [
+    clearAll,
+    invalidateStaticColorRemoval,
+    onClearWorkspace,
+    onActiveSourceChange,
+  ])
 
   useEffect(() => {
     activeSourceIdRef.current = activeSourceId
   }, [activeSourceId])
+
+  useEffect(() => {
+    sourceImagesRef.current = sourceImages
+  }, [sourceImages])
 
   useDroppedFiles({
     isActive,
