@@ -39,6 +39,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/og-preview      → OG Preview tool
 /developer/black-screen    → Black Screen (pixel & dust checker) tool
 /developer/openapi-viewer  → OpenAPI Viewer tool
+/developer/markdown-formatter → Markdown Formatter tool
 /api/github/login          → GitHub OAuth authorize redirect (sets state cookie)
 /api/github/callback       → GitHub OAuth token exchange (sets token cookie)
 /api/github/logout         → Clears the Gitropolis token cookie
@@ -318,6 +319,11 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/openapi-viewer/_lib/schema-resolver.tsx` | $ref resolution, example generation, highlighted JSON preview, and example/schema tab switcher |
 | `app/developer/openapi-viewer/_lib/recent-files.ts` | Recent file labeling helpers |
 | `app/developer/openapi-viewer/_lib/use-file-handle.ts` | IndexedDB persistence for OpenAPI Viewer file handles and recent-file metadata |
+| `app/developer/markdown-formatter/page.tsx` | Markdown Formatter route page |
+| `app/developer/markdown-formatter/_components/markdown-formatter.tsx` | Markdown Formatter client component (input/output panes, format/copy/download actions, live stats) |
+| `app/developer/markdown-formatter/_components/markdown-preview.tsx` | GFM-aware markdown preview renderer (react-markdown + remark-gfm) |
+| `app/developer/markdown-formatter/_lib/format-markdown.ts` | remark + remark-gfm formatter that normalizes and aligns markdown |
+| `app/developer/markdown-formatter/_lib/sample-markdown.ts` | Sample markdown document loaded into the formatter on first render |
 | `app/gitropolis/page.tsx` | Gitropolis route page (metadata, JSON-LD, SEO content, client orchestrator) |
 | `app/gitropolis/_components/gitropolis.tsx` | Gitropolis client orchestrator (auth phase machine, login; `ready` phase renders the current year's full-bleed isometric city) |
 | `app/gitropolis/_components/contribution-city.tsx` | Isometric contribution city client component (R3F Canvas, hover tooltip, PNG export, smooth anti-aliased render with an in-scene Sky background; fills its container with floating controls) |
@@ -333,7 +339,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/api/github/callback/route.ts` | GitHub OAuth callback (validates state, exchanges code for token, sets token cookie, redirects) |
 | `app/api/github/logout/route.ts` | Clears the Gitropolis token cookie |
 
-Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`, and `app/gitropolis/_components/contribution-city.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/markdown-formatter/_components/markdown-formatter.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`, and `app/gitropolis/_components/contribution-city.stories.tsx`.
 
 ### `app/` assets
 
@@ -358,6 +364,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `public/og-preview-og.jpg` | Open Graph image for OG Preview tool |
 | `public/black-screen-og.jpg` | Open Graph image for Black Screen tool |
 | `public/openapi-viewer-og.jpg` | Open Graph image for OpenAPI Viewer tool |
+| `public/markdown-formatter-og.jpg` | Open Graph image for Markdown Formatter tool |
 
 ## Dependencies
 

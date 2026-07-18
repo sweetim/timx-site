@@ -74,6 +74,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${base}/developer/markdown-formatter`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${base}/gitropolis`,
       lastModified: now,
       changeFrequency: "monthly",

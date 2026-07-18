@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     description:
       "Format and clean up markdown in your browser. Align GFM tables with nice padding, normalize list markers, and preview the rendered output.",
     url: "https://timx.co/developer/markdown-formatter",
+    images: ["/markdown-formatter-og.jpg"],
   },
 }
 
