@@ -248,6 +248,8 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/background-remover/types.ts` | Status, phase, and per-image processing types |
 | `app/developer/image-editor/_components/background-remover/constants.ts` | Compute step labels, progress ring dimensions, and static color removal defaults |
 | `app/developer/image-editor/_components/background-remover/utils.ts` | Progress mapping, formatting utilities, and static color Canvas transform |
+| `app/developer/image-editor/_components/background-remover/remove-static-color.ts` | Spawns the static color removal Web Worker and resolves the transparent PNG result |
+| `app/developer/image-editor/_components/background-remover/static-color-removal.worker.ts` | Web Worker that applies static color removal on an OffscreenCanvas |
 | `app/developer/image-editor/_components/background-remover/checkerboard-pattern.tsx` | SVG checkerboard pattern for transparency |
 | `app/developer/image-editor/_components/background-remover/image-comparison-slider.tsx` | Drag-to-compare original vs result |
 | `app/developer/image-editor/_components/background-remover/_hooks/use-background-remover-pool.ts` | Pool hook: per-image worker management, concurrent processing |

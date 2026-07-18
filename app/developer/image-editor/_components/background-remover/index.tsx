@@ -35,7 +35,7 @@ import {
   DEFAULT_STATIC_COLOR_REMOVAL_COLOR,
   DEFAULT_STATIC_COLOR_REMOVAL_TOLERANCE,
 } from "./constants"
-import { removeStaticColor } from "./utils"
+import { removeStaticColor } from "./remove-static-color"
 
 type ProcessingOverlayProps = {
   label?: string
