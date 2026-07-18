@@ -4,6 +4,7 @@ import {
   BookOpen,
   Braces,
   Database,
+  FileText,
   Globe,
   Images,
   Monitor,
@@ -69,5 +70,12 @@ export const tools: Tool[] = [
     slug: "openapi-viewer",
     description: "Browse OpenAPI specs, endpoints, parameters, and schemas",
     icon: BookOpen,
+  },
+  {
+    name: "Markdown Formatter",
+    slug: "markdown-formatter",
+    description:
+      "Format markdown, align GFM tables with padded columns, and preview the rendered output",
+    icon: FileText,
   },
 ]
