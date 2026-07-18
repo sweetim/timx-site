@@ -33,13 +33,15 @@ function useImageScaler({ onResult, onSourceImage }: UseImageScalerOptions = {})
   const loadImage = useCallback((file: File, notifySource = true) => {
     if (notifySource) onSourceImageRef.current?.(file, file.name)
 
-    const prev = statusRef.current
-    if (prev.phase === "editing") URL.revokeObjectURL(prev.imageUrl)
-    else if (prev.phase === "scaled") URL.revokeObjectURL(prev.originalUrl)
-
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
+      const prev = statusRef.current
+      if (prev.phase === "editing") URL.revokeObjectURL(prev.imageUrl)
+      else if (prev.phase === "scaled") {
+        URL.revokeObjectURL(prev.originalUrl)
+        URL.revokeObjectURL(prev.scaledUrl)
+      }
       imageRef.current = img
       naturalDimensionsRef.current = { width: img.naturalWidth, height: img.naturalHeight }
       setPercentage(100)
@@ -51,6 +53,9 @@ function useImageScaler({ onResult, onSourceImage }: UseImageScalerOptions = {})
         imageWidth: img.naturalWidth,
         imageHeight: img.naturalHeight,
       })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
     }
     img.src = url
   }, [])
@@ -70,10 +75,7 @@ function useImageScaler({ onResult, onSourceImage }: UseImageScalerOptions = {})
     setTargetWidth(clamped)
     const { width, height } = naturalDimensionsRef.current
     if (lockAspectRatio && width > 0) {
-      const newHeight = Math.round(clamped * height / width)
-      setTargetHeight(newHeight)
-      setPercentage(Math.round(clamped / width * 100))
-    } else {
+      setTargetHeight(Math.round(clamped * height / width))
       setPercentage(Math.round(clamped / width * 100))
     }
   }, [lockAspectRatio])
@@ -83,10 +85,7 @@ function useImageScaler({ onResult, onSourceImage }: UseImageScalerOptions = {})
     setTargetHeight(clamped)
     const { width, height } = naturalDimensionsRef.current
     if (lockAspectRatio && height > 0) {
-      const newWidth = Math.round(clamped * width / height)
-      setTargetWidth(newWidth)
-      setPercentage(Math.round(clamped / height * 100))
-    } else {
+      setTargetWidth(Math.round(clamped * width / height))
       setPercentage(Math.round(clamped / height * 100))
     }
   }, [lockAspectRatio])
@@ -104,6 +103,8 @@ function useImageScaler({ onResult, onSourceImage }: UseImageScalerOptions = {})
     canvas.height = targetHeight
     const ctx = canvas.getContext("2d")
     if (!ctx) return
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = "high"
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
     canvas.toBlob((blob) => {
       if (!blob) return

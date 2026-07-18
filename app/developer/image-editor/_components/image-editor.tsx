@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react"
 import dynamic from "next/dynamic"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const BackgroundRemover = dynamic(() => import("./background-remover"), {
   ssr: false,
@@ -108,6 +108,40 @@ export type ImageEditorProps = {
   infoContent: React.ReactNode
 }
 
+const BLOB_TYPE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/x-icon": "ico",
+}
+
+function convertBlobToPng(blob: Blob): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const canvas = document.createElement("canvas")
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const context = canvas.getContext("2d")
+      if (!context) {
+        reject(new Error("Canvas context unavailable"))
+        return
+      }
+      context.drawImage(img, 0, 0)
+      canvas.toBlob((pngBlob) => {
+        if (pngBlob) resolve(pngBlob)
+        else reject(new Error("PNG conversion failed"))
+      }, "image/png")
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error("Failed to load image"))
+    }
+    img.src = objectUrl
+  })
+}
+
 function ImageEditor({ infoContent }: ImageEditorProps) {
   const [activeTool, setActiveTool] = useState<EditorTool>("background")
   const [showInfo, setShowInfo] = useState(false)
@@ -185,7 +219,13 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
     let didAddSource = false
 
     for (const item of valid) {
-      const existing = nextSourceImages.find((img) => img.blob === item.blob)
+      const existing = nextSourceImages.find(
+        (img) =>
+          img.blob === item.blob
+          || (img.name === item.name
+            && img.blob.size === item.blob.size
+            && img.blob.type === item.blob.type),
+      )
       if (existing) {
         URL.revokeObjectURL(item.url)
         added.push(existing)
@@ -299,7 +339,8 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
   const handleResult = useCallback(
     (originTool: EditorTool, blob: Blob) => {
       setClipboard(blob)
-      rememberSharedImage(blob, `${originTool}-result.png`, originTool)
+      const extension = BLOB_TYPE_EXTENSIONS[blob.type] ?? "png"
+      rememberSharedImage(blob, `${originTool}-result.${extension}`, originTool)
     },
     [rememberSharedImage],
   )
@@ -329,8 +370,12 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
   const handleCopyToClipboard = useCallback(async () => {
     if (!clipboard) return
     try {
+      const pngBlob =
+        clipboard.type === "image/png"
+          ? clipboard
+          : await convertBlobToPng(clipboard)
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": clipboard }),
+        new ClipboardItem({ "image/png": pngBlob }),
       ])
     } catch {}
   }, [clipboard])
@@ -340,40 +385,65 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
     setActiveTool(id)
   }, [])
 
-  const canvasDropProps: CanvasDropProps = {
-    isDragOver: isCanvasDragOver,
-    overlayLabel:
-      activeTool === "stitch"
-        ? "Drop images to add to canvas"
-        : "Drop an image to get started",
-    onDragOver: useCallback((e: React.DragEvent) => {
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsCanvasDragOver(true)
+  }, [])
+  const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+    setIsCanvasDragOver(false)
+  }, [])
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent) => {
       e.preventDefault()
-      setIsCanvasDragOver(true)
-    }, []),
-    onDragEnter: useCallback((e: React.DragEvent) => {
-      e.preventDefault()
-      setIsCanvasDragOver(true)
-    }, []),
-    onDragLeave: useCallback((e: React.DragEvent) => {
-      e.preventDefault()
-      if (e.currentTarget.contains(e.relatedTarget as Node)) return
       setIsCanvasDragOver(false)
-    }, []),
-    onDrop: useCallback(
-      (e: React.DragEvent) => {
-        e.preventDefault()
-        setIsCanvasDragOver(false)
-        const files = Array.from(e.dataTransfer.files).filter((f) =>
-          f.type.startsWith("image/"),
-        )
-        if (files.length === 0) return
-        setDroppedFilesKey((key) => key + 1)
-        setDroppedFiles(files)
-        void addFilesToSourceImages(files)
-      },
-      [addFilesToSourceImages],
-    ),
-  }
+      const files = Array.from(e.dataTransfer.files).filter((f) =>
+        f.type.startsWith("image/"),
+      )
+      if (files.length === 0) return
+      setDroppedFilesKey((key) => key + 1)
+      setDroppedFiles(files)
+      void addFilesToSourceImages(files)
+    },
+    [addFilesToSourceImages],
+  )
+
+  const canvasDropProps: CanvasDropProps = useMemo(
+    () => ({
+      isDragOver: isCanvasDragOver,
+      overlayLabel:
+        activeTool === "stitch"
+          ? "Drop images to add to canvas"
+          : "Drop an image to get started",
+      onDragOver: handleCanvasDragOver,
+      onDragEnter: handleCanvasDragOver,
+      onDragLeave: handleCanvasDragLeave,
+      onDrop: handleCanvasDrop,
+    }),
+    [
+      isCanvasDragOver,
+      activeTool,
+      handleCanvasDragOver,
+      handleCanvasDragLeave,
+      handleCanvasDrop,
+    ],
+  )
+
+  const toolHandlers = useMemo(() => {
+    const buildHandlers = (tool: EditorTool) => ({
+      onSourceImage: (blob: Blob, name: string) =>
+        handleSourceImage(tool, blob, name),
+      onResult: (blob: Blob) => handleResult(tool, blob),
+    })
+    return {
+      background: buildHandlers("background"),
+      crop: buildHandlers("crop"),
+      stitch: buildHandlers("stitch"),
+      scale: buildHandlers("scale"),
+      export: buildHandlers("export"),
+    }
+  }, [handleSourceImage, handleResult])
 
   return (
     <div className="h-full min-h-full bg-dev-canvas text-dev-text lg:grid lg:grid-cols-[4.5rem_minmax(0,1fr)]">
@@ -440,11 +510,9 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               activeSourceId={activeSourceId}
               onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
-              onSourceImage={(blob, name) =>
-                handleSourceImage("background", blob, name)
-              }
+              onSourceImage={toolHandlers.background.onSourceImage}
               onClearWorkspace={handleClearWorkspace}
-              onResult={(blob) => handleResult("background", blob)}
+              onResult={toolHandlers.background.onResult}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}
@@ -465,11 +533,9 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               activeSourceId={activeSourceId}
               onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
-              onSourceImage={(blob, name) =>
-                handleSourceImage("crop", blob, name)
-              }
+              onSourceImage={toolHandlers.crop.onSourceImage}
               onClearWorkspace={handleClearWorkspace}
-              onResult={(blob) => handleResult("crop", blob)}
+              onResult={toolHandlers.crop.onResult}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}
@@ -486,11 +552,9 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               isActive={activeTool === "stitch"}
               initialImage={sharedImage}
               workspaceResetKey={workspaceResetKey}
-              onSourceImage={(blob, name) =>
-                handleSourceImage("stitch", blob, name)
-              }
+              onSourceImage={toolHandlers.stitch.onSourceImage}
               onClearWorkspace={handleClearWorkspace}
-              onResult={(blob) => handleResult("stitch", blob)}
+              onResult={toolHandlers.stitch.onResult}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}
@@ -509,11 +573,9 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               activeSourceId={activeSourceId}
               onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
-              onSourceImage={(blob, name) =>
-                handleSourceImage("scale", blob, name)
-              }
+              onSourceImage={toolHandlers.scale.onSourceImage}
               onClearWorkspace={handleClearWorkspace}
-              onResult={(blob) => handleResult("scale", blob)}
+              onResult={toolHandlers.scale.onResult}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}
@@ -532,11 +594,9 @@ function ImageEditor({ infoContent }: ImageEditorProps) {
               activeSourceId={activeSourceId}
               onActiveSourceChange={setActiveSourceId}
               workspaceResetKey={workspaceResetKey}
-              onSourceImage={(blob, name) =>
-                handleSourceImage("export", blob, name)
-              }
+              onSourceImage={toolHandlers.export.onSourceImage}
               onClearWorkspace={handleClearWorkspace}
-              onResult={(blob) => handleResult("export", blob)}
+              onResult={toolHandlers.export.onResult}
               onCopyToClipboard={handleCopyToClipboard}
               hasClipboard={clipboard != null}
               droppedFiles={droppedFiles}

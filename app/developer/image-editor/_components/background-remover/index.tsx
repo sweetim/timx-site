@@ -581,14 +581,14 @@ const BackgroundRemover = ({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               className="hidden"
               onChange={handleFileInputChange}
             />
             <input
               ref={sourceFileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               multiple
               className="hidden"
               onChange={handleSourceFileInput}
@@ -709,7 +709,7 @@ const BackgroundRemover = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/*"
         className="hidden"
         onChange={handleFileInputChange}
       />

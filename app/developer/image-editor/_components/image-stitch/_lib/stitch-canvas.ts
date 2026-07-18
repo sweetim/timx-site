@@ -1,6 +1,6 @@
 import type { ImageItem } from "../types"
 
-const MAX_CANVAS_DIMENSION = 16384
+export const MAX_CANVAS_DIMENSION = 16384
 
 export function loadImageFile(
   file: File,
@@ -73,8 +73,15 @@ export function stitchImages({
       direction === "horizontal"
         ? frameHeight
         : frameHeight * images.length + totalSpacing
-    canvas.width = Math.min(canvas.width, MAX_CANVAS_DIMENSION)
-    canvas.height = Math.min(canvas.height, MAX_CANVAS_DIMENSION)
+
+    if (
+      canvas.width > MAX_CANVAS_DIMENSION
+      || canvas.height > MAX_CANVAS_DIMENSION
+    ) {
+      resolve(null)
+      return
+    }
+
     const context = canvas.getContext("2d")
 
     if (!context) {

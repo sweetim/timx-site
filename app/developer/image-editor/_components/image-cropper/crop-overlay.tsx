@@ -105,7 +105,7 @@ export function CropOverlay({
       <button
         type="button"
         aria-label="Move crop area"
-        className="no-bounce absolute border-2 border-white/70 bg-transparent"
+        className="no-bounce absolute touch-none border-2 border-white/70 bg-transparent"
         style={{
           left: crop.x,
           top: crop.y,
@@ -114,7 +114,7 @@ export function CropOverlay({
           cursor: anchorMode === "edge" ? "move" : "default",
           pointerEvents: anchorMode === "edge" ? "auto" : "none",
         }}
-        onMouseDown={(e) => {
+        onPointerDown={(e) => {
           if (anchorMode !== "edge") return
           e.preventDefault()
           onDragStart({
@@ -131,7 +131,7 @@ export function CropOverlay({
           key={type}
           type="button"
           aria-label={`Resize ${type}`}
-          className="no-bounce absolute bg-white border border-dev-border rounded-sm"
+          className="no-bounce absolute touch-none bg-white border border-dev-border rounded-sm"
           style={{
             ...style,
             width: HANDLE_SIZE,
@@ -139,7 +139,7 @@ export function CropOverlay({
             cursor: getCursorForHandle(type),
             zIndex: 10,
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             e.preventDefault()
             e.stopPropagation()
             onDragStart({

@@ -54,6 +54,7 @@ function ScreenshotStitcher({
     transparentBackground,
     isProcessing,
     stitched,
+    stitchError,
     fileInputRef,
     setFrameWidth,
     setFrameHeight,
@@ -364,6 +365,12 @@ function ScreenshotStitcher({
               onTransparentBackgroundChange={setTransparentBackground}
             />
 
+            {stitchError ? (
+              <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+                <p className="text-xs text-dev-accent-red">{stitchError}</p>
+              </div>
+            ) : null}
+
             <SidebarActions
               primaryAction={{
                 label: isProcessing ? "Stitching..." : "Stitch Screenshots",
@@ -395,7 +402,7 @@ function ScreenshotStitcher({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               multiple
               className="hidden"
               onChange={handleFileInput}
@@ -403,7 +410,7 @@ function ScreenshotStitcher({
             <input
               ref={sourceFileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               multiple
               className="hidden"
               onChange={handleSourceFileInput}
@@ -579,6 +586,10 @@ function ScreenshotStitcher({
                 </div>
               </div>
 
+              {stitchError ? (
+                <p className="text-xs text-dev-accent-red">{stitchError}</p>
+              ) : null}
+
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -643,7 +654,7 @@ function ScreenshotStitcher({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/*"
         multiple
         className="hidden"
         onChange={handleFileInput}

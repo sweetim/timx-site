@@ -177,14 +177,19 @@ function ImageExporter({
     let cancelled = false
 
     if (downloadFormat === "ico") {
-      void encodeIco(sourceUrl, [icoSize]).then((blob) => {
-        if (cancelled) return
-        revokeExported()
-        const url = URL.createObjectURL(blob)
-        setExportedUrl(url)
-        setExportedBlob(blob)
-        onResult?.(blob)
-      })
+      void encodeIco(sourceUrl, [icoSize])
+        .then((blob) => {
+          if (cancelled) return
+          revokeExported()
+          const url = URL.createObjectURL(blob)
+          setExportedUrl(url)
+          setExportedBlob(blob)
+          onResult?.(blob)
+        })
+        .catch(() => {
+          if (cancelled) return
+          revokeExported()
+        })
       return () => {
         cancelled = true
       }
@@ -216,6 +221,10 @@ function ImageExporter({
         option.mimeType,
         downloadFormat === "png" ? undefined : quality / 100,
       )
+    }
+    img.onerror = () => {
+      if (cancelled) return
+      revokeExported()
     }
     img.src = sourceUrl
 
@@ -452,14 +461,14 @@ function ImageExporter({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               className="hidden"
               onChange={handleFileInputChange}
             />
             <input
               ref={sourceFileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/*"
               multiple
               className="hidden"
               onChange={handleSourceFileInput}
@@ -546,7 +555,7 @@ function ImageExporter({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/*"
         className="hidden"
         onChange={handleFileInputChange}
       />

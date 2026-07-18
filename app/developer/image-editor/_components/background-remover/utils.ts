@@ -1,16 +1,6 @@
 import { match, P } from "ts-pattern"
 import { COMPUTE_STEPS } from "./constants"
-import type { ComputePhase, ProcessingStatus, Status } from "./types"
-
-type ProcessingState = Extract<Status, { phase: "processing" }>
-
-export function resolveProgressUpdate(
-  prev: ProcessingState,
-  nextStatus: ProcessingStatus,
-  progress: number,
-): { immediate: ProcessingState } {
-  return { immediate: { ...prev, status: nextStatus, progress } }
-}
+import type { ComputePhase, ProcessingStatus } from "./types"
 
 export function mapProgressKeyToPhase(key: string): ProcessingStatus {
   return match(key)
@@ -58,11 +48,13 @@ export function formatProgressLabel(
     .exhaustive()
 }
 
-function parseHexColor(color: string): {
+export type RgbColor = {
   red: number
   green: number
   blue: number
-} {
+}
+
+function parseHexColor(color: string): RgbColor {
   const match = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color)
   if (!match) throw new Error("Choose a valid color to remove.")
 
@@ -73,62 +65,55 @@ function parseHexColor(color: string): {
   }
 }
 
-function loadImageFromObjectUrl(objectUrl: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
+export function applyStaticColorRemoval(
+  data: Uint8ClampedArray,
+  target: RgbColor,
+  tolerance: number,
+): void {
+  const feather = Math.round(tolerance * 0.5)
 
-    image.onload = () => {
-      resolve(image)
+  for (let index = 0; index < data.length; index += 4) {
+    const maxDiff = Math.max(
+      Math.abs(data[index] - target.red),
+      Math.abs(data[index + 1] - target.green),
+      Math.abs(data[index + 2] - target.blue),
+    )
+
+    if (maxDiff <= tolerance) {
+      data[index + 3] = 0
+    } else if (feather > 0 && maxDiff <= tolerance + feather) {
+      data[index + 3] = Math.round(
+        (data[index + 3] * (maxDiff - tolerance)) / feather,
+      )
     }
-    image.onerror = () => {
-      reject(new Error("Failed to load the selected image."))
-    }
-    image.src = objectUrl
-  })
+  }
 }
 
-export async function removeStaticColor(
+export function removeStaticColor(
   blob: Blob,
   color: string,
   tolerance: number,
 ): Promise<Blob> {
   const target = parseHexColor(color)
   const normalizedTolerance = Math.max(0, Math.min(255, Math.round(tolerance)))
-  const objectUrl = URL.createObjectURL(blob)
 
-  try {
-    const image = await loadImageFromObjectUrl(objectUrl)
-    const canvas = document.createElement("canvas")
-    canvas.width = image.naturalWidth
-    canvas.height = image.naturalHeight
-
-    const context = canvas.getContext("2d", { willReadFrequently: true })
-    if (!context) throw new Error("Canvas context unavailable.")
-
-    context.drawImage(image, 0, 0)
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-    const { data } = imageData
-
-    for (let index = 0; index < data.length; index += 4) {
-      const redMatches =
-        Math.abs(data[index] - target.red) <= normalizedTolerance
-      const greenMatches =
-        Math.abs(data[index + 1] - target.green) <= normalizedTolerance
-      const blueMatches =
-        Math.abs(data[index + 2] - target.blue) <= normalizedTolerance
-
-      if (redMatches && greenMatches && blueMatches) data[index + 3] = 0
+  return new Promise<Blob>((resolve, reject) => {
+    const worker = new Worker(
+      new URL("./static-color-removal.worker.ts", import.meta.url),
+    )
+    worker.onmessage = (
+      event: MessageEvent<
+        { type: "done"; blob: Blob } | { type: "error"; message: string }
+      >,
+    ) => {
+      worker.terminate()
+      if (event.data.type === "done") resolve(event.data.blob)
+      else reject(new Error(event.data.message))
     }
-
-    context.putImageData(imageData, 0, 0)
-
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((resultBlob) => {
-        if (resultBlob) resolve(resultBlob)
-        else reject(new Error("Failed to encode the transparent image."))
-      }, "image/png")
-    })
-  } finally {
-    URL.revokeObjectURL(objectUrl)
-  }
+    worker.onerror = () => {
+      worker.terminate()
+      reject(new Error("Failed to remove the selected color."))
+    }
+    worker.postMessage({ blob, target, tolerance: normalizedTolerance })
+  })
 }

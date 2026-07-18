@@ -262,7 +262,7 @@ function ImageScaler({
               <ScaleControls
                 percentage={percentage}
                 targetWidth={targetWidth}
-                targetHeight={lockAspectRatio ? targetHeight : targetHeight}
+                targetHeight={targetHeight}
                 lockAspectRatio={lockAspectRatio}
                 onPercentageChange={handlePercentageChange}
                 onWidthChange={handleWidthChange}
@@ -294,8 +294,8 @@ function ImageScaler({
         }
         hiddenInputs={
           <>
-            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFileInputChange} />
-            <input ref={sourceFileInputRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="hidden" onChange={handleSourceFileInput} />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInputChange} />
+            <input ref={sourceFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleSourceFileInput} />
           </>
         }
       />
@@ -403,7 +403,7 @@ function ImageScaler({
         </div>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleFileInputChange} />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileInputChange} />
     </div>
   )
 }

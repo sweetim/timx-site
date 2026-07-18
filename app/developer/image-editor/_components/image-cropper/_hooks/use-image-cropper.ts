@@ -82,16 +82,21 @@ function useImageCropper({
   const loadImage = useCallback((file: File, notifySource = true) => {
     if (notifySource) onSourceImageRef.current?.(file, file.name)
 
-    const prev = statusRef.current
-    if (prev.phase === "editing") URL.revokeObjectURL(prev.imageUrl)
-    else if (prev.phase === "cropped") URL.revokeObjectURL(prev.originalUrl)
-
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      imageRef.current = img
       const wrapper = wrapperRef.current
-      if (!wrapper) return
+      if (!wrapper) {
+        URL.revokeObjectURL(url)
+        return
+      }
+      const prev = statusRef.current
+      if (prev.phase === "editing") URL.revokeObjectURL(prev.imageUrl)
+      else if (prev.phase === "cropped") {
+        URL.revokeObjectURL(prev.originalUrl)
+        URL.revokeObjectURL(prev.croppedUrl)
+      }
+      imageRef.current = img
       const containerWidth = Math.min(wrapper.clientWidth, MAX_DISPLAY_WIDTH)
       const containerHeight = Math.min(
         Math.max(wrapper.clientHeight, 400),
@@ -117,6 +122,9 @@ function useImageCropper({
         imageWidth: img.naturalWidth,
         imageHeight: img.naturalHeight,
       })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
     }
     img.src = url
   }, [])
@@ -230,7 +238,7 @@ function useImageCropper({
   const handleDragStart = useCallback(
     (newDrag: DragState) => {
       const ratio = resolveRatio(aspectPreset, customRatio)
-      const handleMove = (e: MouseEvent) => {
+      const handleMove = (e: PointerEvent) => {
         const zoom = newDrag.canvasZoom
         const dx = (e.clientX - newDrag.startX) / zoom
         const dy = (e.clientY - newDrag.startY) / zoom
@@ -267,8 +275,9 @@ function useImageCropper({
         }
       }
       const handleUp = () => {
-        window.removeEventListener("mousemove", handleMove)
-        window.removeEventListener("mouseup", handleUp)
+        window.removeEventListener("pointermove", handleMove)
+        window.removeEventListener("pointerup", handleUp)
+        window.removeEventListener("pointercancel", handleUp)
         dragCleanupRef.current = null
         if (anchorModeRef.current === "center" && newDrag.type !== "move") {
           const dims = displayDimensionsRef.current
@@ -287,11 +296,13 @@ function useImageCropper({
           )
         }
       }
-      window.addEventListener("mousemove", handleMove)
-      window.addEventListener("mouseup", handleUp)
+      window.addEventListener("pointermove", handleMove)
+      window.addEventListener("pointerup", handleUp)
+      window.addEventListener("pointercancel", handleUp)
       dragCleanupRef.current = () => {
-        window.removeEventListener("mousemove", handleMove)
-        window.removeEventListener("mouseup", handleUp)
+        window.removeEventListener("pointermove", handleMove)
+        window.removeEventListener("pointerup", handleUp)
+        window.removeEventListener("pointercancel", handleUp)
       }
     },
     [displayDimensions, anchorMode, aspectPreset, customRatio],

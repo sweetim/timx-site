@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { SourceImage } from "../../image-editor"
-import { loadImageFile, stitchImages } from "../_lib/stitch-canvas"
+import {
+  loadImageFile,
+  MAX_CANVAS_DIMENSION,
+  stitchImages,
+} from "../_lib/stitch-canvas"
 import type { ImageItem, StackDirection, StitchedImage } from "../types"
 
 type UseScreenshotStitcherOptions = {
@@ -27,6 +31,7 @@ function useScreenshotStitcher({
   const [transparentBackground, setTransparentBackground] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [stitched, setStitched] = useState<StitchedImage | null>(null)
+  const [stitchError, setStitchError] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imagesRef = useRef(images)
@@ -81,6 +86,7 @@ function useScreenshotStitcher({
         if (previousStitched) URL.revokeObjectURL(previousStitched.url)
         return null
       })
+      setStitchError(null)
     },
     [onSourceImage, onAddSourceImages],
   )
@@ -95,11 +101,33 @@ function useScreenshotStitcher({
       if (previousStitched) URL.revokeObjectURL(previousStitched.url)
       return null
     })
+    setStitchError(null)
   }, [])
 
   const handleStitch = useCallback(async () => {
     if (images.length === 0 || frameWidth < 1 || frameHeight < 1) return
 
+    const totalSpacing = Math.max(0, images.length - 1) * imageSpacing
+    const outputWidth =
+      direction === "horizontal"
+        ? frameWidth * images.length + totalSpacing
+        : frameWidth
+    const outputHeight =
+      direction === "horizontal"
+        ? frameHeight
+        : frameHeight * images.length + totalSpacing
+
+    if (
+      outputWidth > MAX_CANVAS_DIMENSION
+      || outputHeight > MAX_CANVAS_DIMENSION
+    ) {
+      setStitchError(
+        `The output would be ${outputWidth}×${outputHeight}px, which exceeds the ${MAX_CANVAS_DIMENSION}px canvas limit. Reduce the frame size, spacing, or number of images.`,
+      )
+      return
+    }
+
+    setStitchError(null)
     setIsProcessing(true)
     const blob = await stitchImages({
       images,
@@ -111,16 +139,6 @@ function useScreenshotStitcher({
     })
 
     if (blob) {
-      const outputWidth =
-        direction === "horizontal"
-          ? frameWidth * images.length
-            + Math.max(0, images.length - 1) * imageSpacing
-          : frameWidth
-      const outputHeight =
-        direction === "horizontal"
-          ? frameHeight
-          : frameHeight * images.length
-            + Math.max(0, images.length - 1) * imageSpacing
       const output: StitchedImage = {
         url: URL.createObjectURL(blob),
         fileName: `stitched-screenshots-${direction}.png`,
@@ -134,6 +152,10 @@ function useScreenshotStitcher({
         return output
       })
       onResult?.(blob)
+    } else {
+      setStitchError(
+        "Failed to generate the stitched image. Try a smaller output size.",
+      )
     }
 
     setIsProcessing(false)
@@ -153,10 +175,12 @@ function useScreenshotStitcher({
     if (stitched) URL.revokeObjectURL(stitched.url)
     setImages([])
     setStitched(null)
+    setStitchError(null)
     setFrameWidth(390)
     setFrameHeight(844)
     setImageSpacing(0)
     setDirection("horizontal")
+    setBackgroundColor("#000000")
     setTransparentBackground(true)
   }, [images, stitched])
 
@@ -171,6 +195,7 @@ function useScreenshotStitcher({
     transparentBackground,
     isProcessing,
     stitched,
+    stitchError,
     fileInputRef,
     setFrameWidth,
     setFrameHeight,

@@ -1,6 +1,7 @@
 "use client"
 
 import clsx from "clsx"
+import { encodeIco } from "./image-exporter/encode-ico"
 
 type DownloadFormat = "png" | "jpeg" | "webp" | "ico"
 
@@ -34,8 +35,10 @@ async function downloadBlob(
   const option = getFormatOption(format)
 
   let finalBlob: Blob
-  if (format === "png" || format === "ico") {
+  if (original.type === option.mimeType) {
     finalBlob = original
+  } else if (format === "ico") {
+    finalBlob = await encodeIco(blobUrl, [16, 32, 48])
   } else {
     finalBlob = await new Promise<Blob>((resolve, reject) => {
       const objectUrl = URL.createObjectURL(original)

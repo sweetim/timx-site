@@ -15,7 +15,12 @@ function useBackgroundRemoverPool(options?: UseBackgroundRemoverPoolOptions) {
     Record<string, PerImageStatus>
   >({})
   const workersRef = useRef<Record<string, Worker>>({})
+  const jobStatusesRef = useRef(jobStatuses)
   const onResultRef = useRef(options?.onResult)
+
+  useEffect(() => {
+    jobStatusesRef.current = jobStatuses
+  }, [jobStatuses])
 
   useEffect(() => {
     onResultRef.current = options?.onResult
@@ -64,14 +69,18 @@ function useBackgroundRemoverPool(options?: UseBackgroundRemoverPoolOptions) {
           .exhaustive()
       }
 
-      setJobStatuses((prev) => ({
-        ...prev,
-        [sourceId]: {
-          phase: "processing",
-          status: { phase: "downloading-model" },
-          progress: 0,
-        },
-      }))
+      setJobStatuses((prev) => {
+        const previous = prev[sourceId]
+        if (previous?.phase === "done") URL.revokeObjectURL(previous.resultUrl)
+        return {
+          ...prev,
+          [sourceId]: {
+            phase: "processing",
+            status: { phase: "downloading-model" },
+            progress: 0,
+          },
+        }
+      })
 
       worker.postMessage({ type: "process", file })
     },
@@ -107,6 +116,9 @@ function useBackgroundRemoverPool(options?: UseBackgroundRemoverPoolOptions) {
     return () => {
       for (const worker of Object.values(workersRef.current)) {
         worker.terminate()
+      }
+      for (const status of Object.values(jobStatusesRef.current)) {
+        if (status.phase === "done") URL.revokeObjectURL(status.resultUrl)
       }
     }
   }, [])
