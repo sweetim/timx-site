@@ -27,6 +27,8 @@ export type Status =
 
 export type AnchorMode = "center" | "edge"
 
+export type CropShape = "rectangle" | "circle"
+
 export type AspectRatioPreset =
   | "free"
   | "1:1"

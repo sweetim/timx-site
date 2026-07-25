@@ -14,10 +14,18 @@ import {
 import {
   ASPECT_RATIOS,
   DEFAULT_ASPECT_RATIO,
+  DEFAULT_CROP_SHAPE,
   MAX_DISPLAY_HEIGHT,
   MAX_DISPLAY_WIDTH,
+  MIN_CROP,
 } from "../constants"
-import type { AnchorMode, AspectRatioPreset, DragState, Status } from "../types"
+import type {
+  AnchorMode,
+  AspectRatioPreset,
+  CropShape,
+  DragState,
+  Status,
+} from "../types"
 
 function resolveRatio(
   preset: AspectRatioPreset,
@@ -48,11 +56,13 @@ function useImageCropper({
   const [aspectPreset, setAspectPreset] =
     useState<AspectRatioPreset>(DEFAULT_ASPECT_RATIO)
   const [customRatio, setCustomRatio] = useState(1)
+  const [cropShape, setCropShapeState] = useState<CropShape>(DEFAULT_CROP_SHAPE)
   const [isDragOver, setIsDragOver] = useState(false)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const anchorModeRef = useRef(anchorMode)
+  const cropShapeRef = useRef(cropShape)
   const displayDimensionsRef = useRef(displayDimensions)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const resultBlobRef = useRef<Blob | null>(null)
@@ -63,6 +73,9 @@ function useImageCropper({
   useEffect(() => {
     anchorModeRef.current = anchorMode
   }, [anchorMode])
+  useEffect(() => {
+    cropShapeRef.current = cropShape
+  }, [cropShape])
   useEffect(() => {
     displayDimensionsRef.current = displayDimensions
   }, [displayDimensions])
@@ -108,7 +121,10 @@ function useImageCropper({
         containerWidth,
         containerHeight,
       )
-      const ratio = resolveRatio(DEFAULT_ASPECT_RATIO, customRatio)
+      const ratio =
+        cropShapeRef.current === "circle"
+          ? 1
+          : resolveRatio(DEFAULT_ASPECT_RATIO, customRatio)
       setDisplayDimensions({
         width: displayWidth,
         height: displayHeight,
@@ -204,7 +220,8 @@ function useImageCropper({
     (dimension: "width" | "height", value: string) => {
       const parsed = parseInt(value, 10)
       if (Number.isNaN(parsed) || parsed <= 0) return
-      const ratio = resolveRatio(aspectPreset, customRatio)
+      const ratio =
+        cropShape === "circle" ? 1 : resolveRatio(aspectPreset, customRatio)
       const { scale } = displayDimensions
       const maxX = displayDimensions.width
       const maxY = displayDimensions.height
@@ -232,12 +249,13 @@ function useImageCropper({
           : { x: crop.x, y: crop.y, width: newDisplayW, height: newDisplayH }
       setCrop(clampCrop(newCrop, maxX, maxY, ratio))
     },
-    [aspectPreset, customRatio, displayDimensions, crop, anchorMode],
+    [aspectPreset, customRatio, displayDimensions, crop, anchorMode, cropShape],
   )
 
   const handleDragStart = useCallback(
     (newDrag: DragState) => {
-      const ratio = resolveRatio(aspectPreset, customRatio)
+      const ratio =
+        cropShape === "circle" ? 1 : resolveRatio(aspectPreset, customRatio)
       const handleMove = (e: PointerEvent) => {
         const zoom = newDrag.canvasZoom
         const dx = (e.clientX - newDrag.startX) / zoom
@@ -281,7 +299,8 @@ function useImageCropper({
         dragCleanupRef.current = null
         if (anchorModeRef.current === "center" && newDrag.type !== "move") {
           const dims = displayDimensionsRef.current
-          const r = resolveRatio(aspectPreset, customRatio)
+          const r =
+            cropShape === "circle" ? 1 : resolveRatio(aspectPreset, customRatio)
           const centerX = newDrag.startCrop.x + newDrag.startCrop.width / 2
           const centerY = newDrag.startCrop.y + newDrag.startCrop.height / 2
           setCrop((prev) =>
@@ -305,7 +324,7 @@ function useImageCropper({
         window.removeEventListener("pointercancel", handleUp)
       }
     },
-    [displayDimensions, anchorMode, aspectPreset, customRatio],
+    [displayDimensions, anchorMode, aspectPreset, customRatio, cropShape],
   )
 
   const handleCrop = useCallback(() => {
@@ -324,6 +343,14 @@ function useImageCropper({
     canvas.height = Math.round(sourceHeight)
     const ctx = canvas.getContext("2d")
     if (!ctx) return
+    if (cropShape === "circle") {
+      const radius = Math.min(canvas.width, canvas.height) / 2
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(canvas.width / 2, canvas.height / 2, radius, 0, Math.PI * 2)
+      ctx.closePath()
+      ctx.clip()
+    }
     ctx.drawImage(
       img,
       sourceX,
@@ -335,6 +362,7 @@ function useImageCropper({
       canvas.width,
       canvas.height,
     )
+    if (cropShape === "circle") ctx.restore()
     canvas.toBlob((blob) => {
       if (!blob) return
       if (status.phase === "cropped") URL.revokeObjectURL(status.croppedUrl)
@@ -343,7 +371,7 @@ function useImageCropper({
       setStatus({ phase: "cropped", originalUrl, croppedUrl })
       onResult?.(blob)
     }, "image/png")
-  }, [status, crop, displayDimensions, onResult])
+  }, [status, crop, displayDimensions, onResult, cropShape])
 
   const resetLocal = useCallback(() => {
     match(status)
@@ -372,6 +400,34 @@ function useImageCropper({
     [loadImage],
   )
 
+  const handleCropShapeChange = useCallback(
+    (shape: CropShape) => {
+      setCropShapeState(shape)
+      if (shape !== "circle") return
+      setCrop((prev) => {
+        const cx = prev.x + prev.width / 2
+        const cy = prev.y + prev.height / 2
+        const maxHalf = Math.min(
+          cx,
+          cy,
+          displayDimensions.width - cx,
+          displayDimensions.height - cy,
+        )
+        const side = Math.max(
+          MIN_CROP,
+          Math.min(Math.min(prev.width, prev.height), maxHalf * 2),
+        )
+        return {
+          x: cx - side / 2,
+          y: cy - side / 2,
+          width: side,
+          height: side,
+        }
+      })
+    },
+    [displayDimensions],
+  )
+
   return {
     status,
     crop,
@@ -379,6 +435,7 @@ function useImageCropper({
     anchorMode,
     aspectPreset,
     customRatio,
+    cropShape,
     isDragOver,
     wrapperRef,
     fileInputRef,
@@ -386,6 +443,7 @@ function useImageCropper({
     setCrop,
     setAnchorMode,
     setAspectPreset,
+    setCropShape: handleCropShapeChange,
     setIsDragOver,
     loadImage,
     handleAspectRatioChange,

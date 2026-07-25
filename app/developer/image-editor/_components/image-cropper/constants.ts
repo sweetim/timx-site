@@ -1,4 +1,6 @@
-import type { AspectRatioOption, AspectRatioPreset } from "./types"
+import type { LucideIcon } from "lucide-react"
+import { Circle, Square } from "lucide-react"
+import type { AspectRatioOption, AspectRatioPreset, CropShape } from "./types"
 
 export const ASPECT_RATIOS: AspectRatioOption[] = [
   { label: "Free", preset: "free", ratio: null },
@@ -13,6 +15,17 @@ export const ASPECT_RATIOS: AspectRatioOption[] = [
 ]
 
 export const DEFAULT_ASPECT_RATIO: AspectRatioPreset = "1:1"
+
+export const DEFAULT_CROP_SHAPE: CropShape = "rectangle"
+
+export const CROP_SHAPES: {
+  label: string
+  shape: CropShape
+  icon: LucideIcon
+}[] = [
+  { label: "Rectangle", shape: "rectangle", icon: Square },
+  { label: "Circle", shape: "circle", icon: Circle },
+]
 
 export const HANDLE_SIZE = 10
 export const MAX_DISPLAY_WIDTH = 1024

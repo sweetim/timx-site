@@ -22,9 +22,9 @@ import useWorkspaceReset from "../shared/use-workspace-reset"
 import UploadZone from "../upload-zone"
 import useImageCropper from "./_hooks/use-image-cropper"
 import { clampCrop } from "./_lib/crop-math"
-import { ASPECT_RATIOS } from "./constants"
+import { ASPECT_RATIOS, CROP_SHAPES } from "./constants"
 import { CropOverlay } from "./crop-overlay"
-import type { AspectRatioPreset } from "./types"
+import type { AspectRatioPreset, CropShape } from "./types"
 
 function ImageCropper({
   variant = "page",
@@ -62,12 +62,14 @@ function ImageCropper({
     anchorMode,
     aspectPreset,
     customRatio,
+    cropShape,
     isDragOver,
     wrapperRef,
     fileInputRef,
     resultBlobRef,
     setCrop,
     setAnchorMode,
+    setCropShape,
     setIsDragOver,
     loadImage,
     handleAspectRatioChange,
@@ -194,10 +196,12 @@ function ImageCropper({
       const imageCx = displayDimensions.width / 2
       const imageCy = displayDimensions.height / 2
       const ratio =
-        aspectPreset === "custom"
-          ? customRatio
-          : (ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio
-            ?? null)
+        cropShape === "circle"
+          ? 1
+          : aspectPreset === "custom"
+            ? customRatio
+            : (ASPECT_RATIOS.find((ar) => ar.preset === aspectPreset)?.ratio
+              ?? null)
       return clampCrop(
         {
           x: imageCx - prev.width / 2,
@@ -210,7 +214,14 @@ function ImageCropper({
         ratio,
       )
     })
-  }, [setAnchorMode, setCrop, displayDimensions, aspectPreset, customRatio])
+  }, [
+    setAnchorMode,
+    setCrop,
+    displayDimensions,
+    aspectPreset,
+    customRatio,
+    cropShape,
+  ])
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click()
@@ -280,6 +291,7 @@ function ImageCropper({
                     <CropOverlay
                       crop={crop}
                       anchorMode={anchorMode}
+                      cropShape={cropShape}
                       onDragStart={handleDragStart}
                     />
                   </div>
@@ -359,13 +371,20 @@ function ImageCropper({
 
             {status.phase === "editing" || status.phase === "cropped" ? (
               <>
-                <AspectRatioToolbar
-                  aspectPreset={aspectPreset}
-                  customRatio={customRatio}
-                  onChange={handleAspectRatioChange}
-                  onCustomRatioChange={handleCustomRatioChange}
+                <CropShapeToolbar
+                  cropShape={cropShape}
+                  onChange={setCropShape}
                   variant="panel"
                 />
+                {cropShape !== "circle" && (
+                  <AspectRatioToolbar
+                    aspectPreset={aspectPreset}
+                    customRatio={customRatio}
+                    onChange={handleAspectRatioChange}
+                    onCustomRatioChange={handleCustomRatioChange}
+                    variant="panel"
+                  />
+                )}
                 <AnchorModeToolbar
                   anchorMode={anchorMode}
                   onChange={setAnchorMode}
@@ -461,13 +480,20 @@ function ImageCropper({
             .with({ phase: "editing" }, ({ imageUrl }) => (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  <AspectRatioToolbar
-                    aspectPreset={aspectPreset}
-                    customRatio={customRatio}
-                    onChange={handleAspectRatioChange}
-                    onCustomRatioChange={handleCustomRatioChange}
+                  <CropShapeToolbar
+                    cropShape={cropShape}
+                    onChange={setCropShape}
                     variant="page"
                   />
+                  {cropShape !== "circle" && (
+                    <AspectRatioToolbar
+                      aspectPreset={aspectPreset}
+                      customRatio={customRatio}
+                      onChange={handleAspectRatioChange}
+                      onCustomRatioChange={handleCustomRatioChange}
+                      variant="page"
+                    />
+                  )}
                   <AnchorModeToolbar
                     anchorMode={anchorMode}
                     onChange={setAnchorMode}
@@ -515,13 +541,20 @@ function ImageCropper({
             .with({ phase: "cropped" }, ({ originalUrl, croppedUrl }) => (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 flex-wrap">
-                  <AspectRatioToolbar
-                    aspectPreset={aspectPreset}
-                    customRatio={customRatio}
-                    onChange={handleAspectRatioChange}
-                    onCustomRatioChange={handleCustomRatioChange}
+                  <CropShapeToolbar
+                    cropShape={cropShape}
+                    onChange={setCropShape}
                     variant="page"
                   />
+                  {cropShape !== "circle" && (
+                    <AspectRatioToolbar
+                      aspectPreset={aspectPreset}
+                      customRatio={customRatio}
+                      onChange={handleAspectRatioChange}
+                      onCustomRatioChange={handleCustomRatioChange}
+                      variant="page"
+                    />
+                  )}
                   <AnchorModeToolbar
                     anchorMode={anchorMode}
                     onChange={setAnchorMode}
@@ -600,6 +633,67 @@ function ImageCropper({
         className="hidden"
         onChange={handleFileInputChange}
       />
+    </div>
+  )
+}
+
+type CropShapeToolbarProps = {
+  cropShape: CropShape
+  onChange: (shape: CropShape) => void
+  variant: "panel" | "page"
+}
+
+function CropShapeToolbar({
+  cropShape,
+  onChange,
+  variant,
+}: CropShapeToolbarProps) {
+  if (variant === "page") {
+    return (
+      <div className="flex items-center gap-1 border-l border-dev-border pl-4">
+        {CROP_SHAPES.map(({ label, shape, icon: Icon }) => (
+          <button
+            key={shape}
+            type="button"
+            title={label}
+            onClick={() => onChange(shape)}
+            className={clsx(
+              "p-1.5 rounded transition-colors cursor-pointer",
+              cropShape === shape
+                ? "bg-dev-accent-blue text-white"
+                : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+            )}
+          >
+            <Icon className="w-4 h-4" />
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-dev-border bg-dev-surface p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-dev-text-secondary">
+        Crop Shape
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {CROP_SHAPES.map(({ label, shape, icon: Icon }) => (
+          <button
+            key={shape}
+            type="button"
+            onClick={() => onChange(shape)}
+            className={clsx(
+              "flex items-center justify-center gap-1.5 rounded px-3 py-2 text-sm font-medium transition-colors cursor-pointer",
+              cropShape === shape
+                ? "bg-dev-accent-blue text-white"
+                : "bg-dev-button text-dev-text hover:bg-dev-button-hover",
+            )}
+          >
+            <Icon className="size-4" />
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

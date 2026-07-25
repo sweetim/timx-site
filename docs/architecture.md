@@ -84,10 +84,10 @@ All tool routes are static (no dynamic segments). The LLM Pricing tool fetches O
 1. User uploads or drops an image into `UploadZone`.
 2. The image is loaded and displayed scaled to fit the container.
 3. A centered crop rectangle overlay is rendered with 8 drag handles (corners + edges), defaulting to a 1:1 square aspect ratio.
-4. User selects an aspect ratio (Free, 1:1, 4:3, 3:4, 16:9, 9:16) and anchor mode (center or edge).
+4. User chooses a crop shape (Rectangle or Circle), an aspect ratio (Free, 1:1, 4:3, 3:4, 16:9, 9:16), and an anchor mode (center or edge). Selecting Circle locks the crop to a 1:1 square, hides the aspect-ratio controls, and renders a circular mask/border.
 5. In center anchor mode, handles expand/shrink the crop symmetrically from the center. In edge anchor mode, the opposite edge stays fixed.
 6. User drags handles to resize or the rectangle body to reposition the crop area.
-7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob.
+7. Clicking "Crop" extracts the selected region via Canvas API and produces a PNG blob. In Circle shape the canvas is clipped to a circle, so the output PNG has transparent corners.
 8. The result is displayed with download format and reset actions.
 
 ### Bitwise Visualizer flow
@@ -273,7 +273,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/image-editor/_components/shared/use-workspace-reset.ts` | Shared hook for workspace reset key handling |
 | `app/developer/image-editor/_components/image-cropper/index.tsx` | Image Cropper client component |
 | `app/developer/image-editor/_components/image-cropper/types.ts` | Cropper types (CropRect, DragState, Status, AnchorMode, etc.) |
-| `app/developer/image-editor/_components/image-cropper/constants.ts` | Aspect ratio presets and handle constants |
+| `app/developer/image-editor/_components/image-cropper/constants.ts` | Aspect ratio presets, crop shapes, and handle constants |
 | `app/developer/image-editor/_components/image-cropper/crop-overlay.tsx` | Draggable crop rectangle with 8 resize handles |
 | `app/developer/image-editor/_components/image-cropper/_hooks/use-image-cropper.ts` | Cropper hook for image loading, crop state, drag math, export, and reset logic |
 | `app/developer/image-editor/_components/image-cropper/_lib/crop-math.ts` | Crop math utilities (clamp, resize, aspect ratio) |
@@ -688,6 +688,8 @@ type CropRect = {
 }
 
 type AnchorMode = "center" | "edge"
+
+type CropShape = "rectangle" | "circle"
 
 type AspectRatioPreset = "free" | "1:1" | "4:3" | "3:4" | "16:9" | "9:16" | "21:9" | "2:1" | "custom"
 
