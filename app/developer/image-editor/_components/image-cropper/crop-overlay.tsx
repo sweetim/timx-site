@@ -18,8 +18,6 @@ export function CropOverlay({
   const canvasZoom = useContext(CanvasZoomContext)
   const handleHalf = HANDLE_SIZE / 2
   const isCircle = cropShape === "circle"
-  const cropCenterX = crop.x + crop.width / 2
-  const cropCenterY = crop.y + crop.height / 2
   const handles: { type: DragState["type"]; style: React.CSSProperties }[] = [
     {
       type: "nw",
@@ -92,8 +90,8 @@ export function CropOverlay({
               "radial-gradient(ellipse closest-side, transparent 99%, #000 100%)",
             WebkitMaskRepeat: "no-repeat",
             maskRepeat: "no-repeat",
-            WebkitMaskPosition: `${cropCenterX}px ${cropCenterY}px`,
-            maskPosition: `${cropCenterX}px ${cropCenterY}px`,
+            WebkitMaskPosition: `${crop.x}px ${crop.y}px`,
+            maskPosition: `${crop.x}px ${crop.y}px`,
             WebkitMaskSize: `${crop.width}px ${crop.height}px`,
             maskSize: `${crop.width}px ${crop.height}px`,
           }}
