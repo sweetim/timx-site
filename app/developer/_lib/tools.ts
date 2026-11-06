@@ -8,6 +8,7 @@ import {
   Globe,
   Images,
   Monitor,
+  QrCode,
   Scale,
 } from "lucide-react"
 
@@ -77,5 +78,12 @@ export const tools: Tool[] = [
     description:
       "Format markdown, align GFM tables with padded columns, and preview the rendered output",
     icon: FileText,
+  },
+  {
+    name: "QR Stream",
+    slug: "qr-stream",
+    description:
+      "Encode files into a playable QR code stream and scan it back with a camera or video",
+    icon: QrCode,
   },
 ]

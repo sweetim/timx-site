@@ -40,6 +40,7 @@ timx-site is a personal portfolio and developer tools site built with Next.js 16
 /developer/black-screen    → Black Screen (pixel & dust checker) tool
 /developer/openapi-viewer  → OpenAPI Viewer tool
 /developer/markdown-formatter → Markdown Formatter tool
+/developer/qr-stream          → QR Stream (file ↔ QR code stream) tool
 /api/github/login          → GitHub OAuth authorize redirect (sets state cookie)
 /api/github/callback       → GitHub OAuth token exchange (sets token cookie)
 /api/github/logout         → Clears the Gitropolis token cookie
@@ -152,6 +153,15 @@ All tool routes are static (no dynamic segments). The LLM Pricing tool fetches O
 6. Clicking an endpoint displays its details in the main panel: full URL, method badge, summary, description, operation ID, authorization requirements (resolved from per-operation or top-level security against defined security schemes), parameters table (path/query/header), request body schema with content types, and response schemas with status codes.
 7. A "Suggestions" toggle analyzes the spec for completeness issues: missing descriptions, missing summaries, missing operation IDs, missing examples, missing error responses, missing server definitions, undefined security scheme references, and unused security scheme definitions. Suggestions are categorized by severity (error, warning, info).
 8. Selecting a recent file re-requests read permission and reads the current file contents from the stored handle; the user can load a new file at any time via the "New File" button.
+
+### QR Stream flow
+
+1. `/developer/qr-stream` renders the `QrStream` client component with an Encode/Decode mode toggle, plus non-visual practical SEO content in the route.
+2. Encoding: the user uploads a file, which is split into ~700-byte chunks. Frame 1 is a JSON header (file name, MIME type, size, total frames) and each following frame is a JSON envelope with a 1-based frame index and base64 chunk, rendered to a QR code on demand via the `qrcode` library.
+3. The stream plays like a video on a canvas with play/pause, prev/next, loop, and a 1–10 fps frame-rate control. The encoder shows file size, frame count, and estimated transfer time, and can record the stream into a downloadable WebM video via `canvas.captureStream` + `MediaRecorder` (hidden when unsupported).
+4. Decoding: the user picks a live camera (`getUserMedia`, rear-facing preferred) or a user-provided video file. A `requestAnimationFrame` loop draws each playing video frame to an offscreen canvas and scans it with the `jsqr` library.
+5. Decoded frames are collected in a map keyed by frame index (duplicates ignored, out-of-order accepted, and a header naming a different stream resets the collection). The UI shows received/total frames, a progress bar, and missing frame numbers; the sender can loop until the receiver has every frame.
+6. When the header plus all data frames are collected, the chunks are decoded from base64, reassembled into a Blob (verified against the header's byte size), and offered as a download with the original file name and type.
 
 ### Gitropolis flow
 
@@ -324,6 +334,11 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/developer/markdown-formatter/_components/markdown-preview.tsx` | GFM-aware markdown preview renderer (react-markdown + remark-gfm) |
 | `app/developer/markdown-formatter/_lib/format-markdown.ts` | remark + remark-gfm formatter that normalizes and aligns markdown |
 | `app/developer/markdown-formatter/_lib/sample-markdown.ts` | Sample markdown document loaded into the formatter on first render |
+| `app/developer/qr-stream/page.tsx` | QR Stream route page |
+| `app/developer/qr-stream/_components/qr-stream.tsx` | QR Stream client shell with Encode/Decode mode toggle |
+| `app/developer/qr-stream/_components/encoder.tsx` | QR Stream encoder (file upload, chunked QR frames, playback controls, WebM export via MediaRecorder) |
+| `app/developer/qr-stream/_components/decoder.tsx` | QR Stream decoder (live camera and video-file scanning via jsqr, frame collection, progress, file reassembly and download) |
+| `app/developer/qr-stream/_lib/qr-protocol.ts` | QR Stream frame protocol (chunking, JSON envelopes, base64 helpers, frame parsing, file assembly) |
 | `app/gitropolis/page.tsx` | Gitropolis route page (metadata, JSON-LD, SEO content, client orchestrator) |
 | `app/gitropolis/_components/gitropolis.tsx` | Gitropolis client orchestrator (auth phase machine, login; `ready` phase renders the current year's full-bleed isometric city) |
 | `app/gitropolis/_components/contribution-city.tsx` | Isometric contribution city client component (R3F Canvas, hover tooltip, PNG export, smooth anti-aliased render with an in-scene Sky background; fills its container with floating controls) |
@@ -339,7 +354,7 @@ Generated or dependency-managed directories such as `.next/`, `node_modules/`, `
 | `app/api/github/callback/route.ts` | GitHub OAuth callback (validates state, exchanges code for token, sets token cookie, redirects) |
 | `app/api/github/logout/route.ts` | Clears the Gitropolis token cookie |
 
-Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/markdown-formatter/_components/markdown-formatter.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`, and `app/gitropolis/_components/contribution-city.stories.tsx`.
+Storybook stories are colocated with their UI components: `app/_components/Profile.stories.tsx`, `app/_components/ProfileLink.stories.tsx`, `app/developer/_components/nav-bar.stories.tsx`, `app/developer/_components/number-input.stories.tsx`, `app/developer/_components/button-click-feedback.stories.tsx`, `app/developer/json-viewer/_components/json-viewer.stories.tsx`, `app/developer/markdown-formatter/_components/markdown-formatter.stories.tsx`, `app/developer/openapi-viewer/_components/endpoint-sidebar.stories.tsx`, `app/developer/openapi-viewer/_components/security-section.stories.tsx`, `app/developer/image-editor/_components/image-editor.stories.tsx`, `app/developer/image-editor/_components/background-remover/index.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/compute-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/download-progress.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/error-state.stories.ts`, `app/developer/image-editor/_components/background-remover/_components/result-view.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/static-color-removal-controls.stories.tsx`, `app/developer/image-editor/_components/background-remover/_components/upload-zone.stories.ts`, `app/developer/image-editor/_components/background-remover/checkerboard-pattern.stories.tsx`, `app/developer/image-editor/_components/background-remover/image-comparison-slider.stories.tsx`, `app/developer/image-editor/_components/image-cropper/index.stories.tsx`, and `app/developer/image-editor/_components/image-stitch/index.stories.tsx`, and `app/gitropolis/_components/contribution-heatmap.stories.tsx`, and `app/gitropolis/_components/contribution-city.stories.tsx`, and `app/developer/qr-stream/_components/qr-stream.stories.tsx`.
 
 ### `app/` assets
 
@@ -393,6 +408,8 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `react-markdown` | ^10.1.0 | Markdown rendering |
 | `remark-gfm` | ^4.0.1 | GitHub Flavored Markdown plugin for react-markdown |
 | `js-yaml` | ^4.1.1 | YAML parser for OpenAPI Viewer |
+| `jsqr` | ^1.4.0 | QR code scanning for the QR Stream decoder |
+| `qrcode` | ^1.5.4 | QR code generation for the QR Stream encoder |
 | `sql.js` | ^1.14.1 | Client-side WASM SQLite for DB Explorer tool |
 | `three` | ^0.184.0 | WebGL engine for the Gitropolis isometric contribution city |
 | `ts-pattern` | ^5.9.0 | Pattern matching with exhaustive checks |
@@ -405,6 +422,7 @@ Storybook stories are colocated with their UI components: `app/_components/Profi
 | `@storybook/nextjs-vite` | ^10.3.4 | Storybook integration for Next.js |
 | `@tailwindcss/postcss` | ^4 | Tailwind CSS PostCSS plugin |
 | `@types/js-yaml` | ^4.0.9 | js-yaml type definitions |
+| `@types/qrcode` | ^1.5.6 | qrcode type definitions |
 | `@types/node` | ^25 | Node.js type definitions |
 | `@types/react` | ^19 | React type definitions |
 | `@types/react-dom` | ^19 | React DOM type definitions |
