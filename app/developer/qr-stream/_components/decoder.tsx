@@ -331,14 +331,16 @@ const QrStreamDecoder: FC = () => {
         {source === "camera" && (
           <div className="rounded-lg border border-dev-border p-4">
             <div className="flex flex-col items-center gap-3">
-              {cameraActive ? (
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  className="max-h-72 w-auto rounded border border-dev-border"
-                />
-              ) : (
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                className={clsx(
+                  "max-h-72 w-auto rounded border border-dev-border",
+                  !cameraActive && "hidden",
+                )}
+              />
+              {!cameraActive && (
                 <button
                   type="button"
                   className="inline-flex items-center gap-1.5 rounded p-1.5 px-3 py-1 text-sm bg-dev-accent-blue text-white transition-colors cursor-pointer"
